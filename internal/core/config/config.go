@@ -22,17 +22,18 @@ var (
 )
 
 type App struct {
-	Name           string
-	Env            string
-	Version        string
-	URL            string
-	Port           string
-	Debug          bool
-	LogLevel       string
-	Timezone       string
-	Locale         string
-	FallbackLocale string
-	PathLocale     string
+	Name               string
+	Env                string
+	Version            string
+	URL                string
+	Port               string
+	Debug              bool
+	LogLevel           string
+	Timezone           string
+	Locale             string
+	FallbackLocale     string
+	PathLocale         string
+	GracefullyShutdown time.Duration
 }
 
 type SwaggerInfo struct {
@@ -116,6 +117,7 @@ func LoadConfig() (Config, error) {
 	app.Locale = os.Getenv("APP_LOCALE")
 	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
+	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
 
 	var swagger Swagger
 	swagger.Host = os.Getenv("SWAGGER_HOST")

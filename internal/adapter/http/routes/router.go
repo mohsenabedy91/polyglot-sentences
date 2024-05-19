@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
@@ -10,11 +12,13 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"net/http"
 )
 
 // Router is a wrapper for HTTP router
 type Router struct {
 	*gin.Engine
+	log logger.Logger
 }
 
 // NewRouter creates a new HTTP router
@@ -65,11 +69,16 @@ func NewRouter(
 	}
 
 	return &Router{
-		router,
+		router, log,
 	}, nil
 }
 
 // Serve starts the HTTP server
-func (r *Router) Serve(listenAddr string) error {
-	return r.Run(listenAddr)
+func (r *Router) Serve(server *http.Server) {
+	go func() {
+		// service connections
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Error starting the HTTP server: %v", err), nil)
+		}
+	}()
 }

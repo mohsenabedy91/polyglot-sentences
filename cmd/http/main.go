@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
@@ -13,9 +14,11 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 // @securityDefinitions.apikey AuthBearer
@@ -78,16 +81,33 @@ func main() {
 
 	// Start server
 	listenAddr := fmt.Sprintf("%s:%s", cfg.App.URL, cfg.App.Port)
+	server := &http.Server{
+		Addr:    listenAddr,
+		Handler: router.Handler(),
+	}
 	log.Info(logger.Internal, logger.Startup, "Starting the HTTP server", map[logger.ExtraKey]interface{}{
-		logger.ListeningAddress: listenAddr,
+		logger.ListeningAddress: server,
 	})
 
-	if err = router.Serve(listenAddr); err != nil {
-		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Error starting the HTTP server: %v", err), nil)
-		os.Exit(1)
-	}
+	router.Serve(server)
 
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
 	<-signalCh
+
+	log.Info(logger.Internal, logger.Shutdown, "Shutdown Server ...", nil)
+
+	timeout := cfg.App.GracefullyShutdown * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("server Shutdown: %v", err), nil)
+	}
+
+	select {
+	case <-ctx.Done():
+		log.Info(logger.Internal, logger.Shutdown, "timeout of 5 seconds.", nil)
+	}
+	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
 }
