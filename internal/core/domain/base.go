@@ -34,6 +34,22 @@ const (
 	StatusDraft       StatusType = StatusDraftStr
 )
 
+func (r StatusType) String() *string {
+	var str string
+	switch r {
+	case StatusActive:
+		str = StatusActiveStr
+	case StatusDisabled:
+		str = StatusDisabledStr
+	case StatusUnpublished:
+		str = StatusUnpublishedStr
+	case StatusDraft:
+		str = StatusDraftStr
+	}
+
+	return &str
+}
+
 type UserStatusType string
 
 const (
