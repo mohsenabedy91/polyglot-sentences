@@ -21,17 +21,31 @@ type Base struct {
 type StatusType string
 
 const (
-	StatusActive      StatusType = "ACTIVE"
-	StatusDisabled    StatusType = "DISABLED"
-	StatusUnpublished StatusType = "UNPUBLISHED"
-	StatusDraft       StatusType = "DRAFT"
+	StatusActiveStr      = "ACTIVE"
+	StatusDisabledStr    = "DISABLED"
+	StatusUnpublishedStr = "UNPUBLISHED"
+	StatusDraftStr       = "DRAFT"
+)
+
+const (
+	StatusActive      StatusType = StatusActiveStr
+	StatusDisabled    StatusType = StatusDisabledStr
+	StatusUnpublished StatusType = StatusUnpublishedStr
+	StatusDraft       StatusType = StatusDraftStr
 )
 
 type UserStatusType string
 
 const (
-	UserStatusActive     UserStatusType = "ACTIVE"
-	UserStatusInActive   UserStatusType = "INACTIVE"
-	UserStatusUnVerified UserStatusType = "UNVERIFIED"
-	UserStatusBanned     UserStatusType = "BANNED"
+	UserStatusActiveStr     = "ACTIVE"
+	UserStatusInactiveStr   = "INACTIVE"
+	UserStatusUnverifiedStr = "UNVERIFIED"
+	UserStatusBannedStr     = "BANNED"
+)
+
+const (
+	UserStatusActive     UserStatusType = UserStatusActiveStr
+	UserStatusInActive   UserStatusType = UserStatusInactiveStr
+	UserStatusUnVerified UserStatusType = UserStatusUnverifiedStr
+	UserStatusBanned     UserStatusType = UserStatusBannedStr
 )

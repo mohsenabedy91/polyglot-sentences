@@ -21,6 +21,32 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 	}
 }
 
+// List godoc
+// @Security AuthBearer
+// @Summary List of user
+// @Description Get list of user
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{data=[]presenter.User} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID get_v1_users
+// @Router /v1/users [get]
+func (r UserHandler) List(ctx *gin.Context) {
+	users, err := r.userService.List(ctx.Request.Context())
+	if err != nil {
+		presenter.NewResponse(ctx, nil).Error(err).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToUserCollection(users),
+	).Echo()
+}
+
 // Get godoc
 // @Security AuthBearer
 // @Summary Get User
@@ -49,7 +75,7 @@ func (r UserHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	result := presenter.ToUserResource(user)
-
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToUserResource(user),
+	).Echo()
 }

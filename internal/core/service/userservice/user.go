@@ -53,3 +53,7 @@ func (r UserService) IsEmailUnique(ctx context.Context, email string) serviceerr
 func (r UserService) GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error) {
 	return r.userRepo.GetByEmail(ctx, email)
 }
+
+func (r UserService) List(ctx context.Context) ([]domain.User, serviceerror.Error) {
+	return r.userRepo.List(ctx)
+}

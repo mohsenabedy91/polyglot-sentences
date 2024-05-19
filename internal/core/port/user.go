@@ -13,6 +13,7 @@ type UserRepository interface {
 	Save(ctx context.Context, user *domain.User) serviceerror.Error
 	GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error)
+	List(ctx context.Context) ([]domain.User, serviceerror.Error)
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -21,4 +22,5 @@ type UserService interface {
 	RegisterUser(ctx context.Context, user domain.User) serviceerror.Error
 	GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error)
+	List(ctx context.Context) ([]domain.User, serviceerror.Error)
 }

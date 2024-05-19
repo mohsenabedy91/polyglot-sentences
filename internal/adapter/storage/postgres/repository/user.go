@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
@@ -75,12 +76,12 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) serviceerr
 }
 
 func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error) {
-	user := &domain.User{}
-	err := r.db.QueryRowContext(
+	row := r.db.QueryRowContext(
 		ctx,
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND uuid = $1",
 		uuid,
-	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Status)
+	)
+	user, err := scanUser(row)
 	if err != nil {
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -96,7 +97,7 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 		return nil, serviceerror.NewServiceError(serviceerror.UserInActive)
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error) {
@@ -116,4 +117,53 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	}
 
 	return user, nil
+}
+
+func (r *UserRepository) List(ctx context.Context) ([]domain.User, serviceerror.Error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL",
+	)
+	if err != nil {
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+	}
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return
+		}
+	}(rows)
+
+	var users []domain.User
+
+	for rows.Next() {
+		user, err := scanUser(rows)
+		if err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+			}
+			return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+	}
+
+	return users, nil
+}
+
+func scanUser(scanner postgres.Scanner) (domain.User, error) {
+	var user domain.User
+
+	err := scanner.Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Status)
+
+	return user, err
 }

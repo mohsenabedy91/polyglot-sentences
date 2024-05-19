@@ -15,3 +15,19 @@ type User struct {
 func (r User) IsActive() bool {
 	return r.Status == UserStatusActive
 }
+
+func (r UserStatusType) String() *string {
+	var str string
+	switch r {
+	case UserStatusActive:
+		str = UserStatusActiveStr
+	case UserStatusInActive:
+		str = UserStatusInactiveStr
+	case UserStatusUnVerified:
+		str = UserStatusUnverifiedStr
+	case UserStatusBanned:
+		str = UserStatusBannedStr
+	}
+
+	return &str
+}
