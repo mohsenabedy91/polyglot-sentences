@@ -134,7 +134,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 func (r AuthHandler) Profile(ctx *gin.Context) {
 	userUUID := claim.GetUserUUIDFromGinContext(ctx)
 
-	user, err := r.userService.GetUser(ctx.Request.Context(), userUUID)
+	user, err := r.userService.GetByUUID(ctx.Request.Context(), userUUID)
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return

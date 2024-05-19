@@ -27,6 +27,6 @@ func NewHealthHandler(trans *translation.Translation) *HealthHandler {
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @ID get_v1_health_check
 // @Router /v1/health/check [get]
-func (r *HealthHandler) Check(ctx *gin.Context) {
+func (r HealthHandler) Check(ctx *gin.Context) {
 	presenter.NewResponse(ctx, r.trans).Message("iAmWorking").Echo(http.StatusOK)
 }

@@ -27,7 +27,7 @@ func (r UserService) RegisterUser(ctx context.Context, user domain.User) service
 	return r.userRepo.Save(ctx, &user)
 }
 
-func (r UserService) GetUser(ctx context.Context, uuid uuid.UUID) (user *domain.User, err serviceerror.Error) {
+func (r UserService) GetByUUID(ctx context.Context, uuid uuid.UUID) (user *domain.User, err serviceerror.Error) {
 	return r.userRepo.GetByUUID(ctx, uuid)
 }
 

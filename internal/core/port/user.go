@@ -19,6 +19,6 @@ type UserRepository interface {
 type UserService interface {
 	IsEmailUnique(ctx context.Context, email string) serviceerror.Error
 	RegisterUser(ctx context.Context, user domain.User) serviceerror.Error
-	GetUser(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error)
+	GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error)
 }

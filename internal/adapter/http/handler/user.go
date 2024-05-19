@@ -36,14 +36,14 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID get_v1_users_userID
 // @Router /v1/users/{userID} [get]
-func (r *UserHandler) Get(ctx *gin.Context) {
+func (r UserHandler) Get(ctx *gin.Context) {
 	var req requests.GetUserRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
-	user, err := r.userService.GetUser(ctx.Request.Context(), uuid.MustParse(req.UserID))
+	user, err := r.userService.GetByUUID(ctx.Request.Context(), uuid.MustParse(req.UserID))
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
