@@ -1,0 +1,18 @@
+{
+  "validation": {
+    "min": "The {{.attribute}} must be at least {{.min}}.",
+    "max": "The {{.attribute}} must not be greater than {{.max}}.",
+    "required": "Field {{.attribute}} is required.",
+    "email": "The {{.attribute}} must be a valid email address.",
+    "unique": "The {{.attribute}} has already been taken.",
+    "numeric": "The {{.attribute}} must be a number.",
+    "alpha": "The {{.attribute}} must be only contain letters.",
+    "regex_alpha": "The {{.attribute}} must not contain number and special characters.",
+    "dive": "The {{.attribute}} must be a valid {{.index}}.",
+    "uuid": "The {{.attribute}} must be a valid.",
+    "date": "The {{.attribute}} must be a valid date format (YYYY-MM-DD).",
+    "timeHourMinute": "The {{.attribute}} must be a valid time format (HH:MM).",
+    "password_complexity": "The {{.attribute}} must contain at least one uppercase letter, one lowercase letter, one number and one special character.",
+    "eqfield": "The {{.attribute}} must be equal to {{.eqfield}}."
+  }
+}

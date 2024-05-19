@@ -1,0 +1,41 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "${DB_FORWARD_PORT:-5432}:5432"
+    restart: always
+    networks:
+      - default
+      - app_network
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-polyglot_sentences}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-polyglot_sentences}
+      - POSTGRES_DB=${DB_NAME:-polyglot_sentences}
+
+  redis:
+    image: redis
+    container_name: redis
+    volumes:
+      - redis:/etc/redis
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+    restart: always
+    networks:
+      - default
+      - app_network
+
+volumes:
+  postgres:
+  redis:
+
+networks:
+  default:
+    driver: bridge
+  app_network:
+    driver: bridge
+    external: true

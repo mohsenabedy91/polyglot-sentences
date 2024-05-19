@@ -1,0 +1,1 @@
+DROP TYPE IF EXISTS sentence_level_type;
