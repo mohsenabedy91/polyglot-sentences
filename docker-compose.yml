@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   postgres:
-    image: postgres
+    image: postgres:16.3
     container_name: postgres
     volumes:
       - postgres:/data/postgres
@@ -18,7 +18,7 @@ services:
       - POSTGRES_DB=${DB_NAME:-polyglot_sentences}
 
   redis:
-    image: redis
+    image: redis:7.2.4
     container_name: redis
     volumes:
       - redis:/etc/redis
