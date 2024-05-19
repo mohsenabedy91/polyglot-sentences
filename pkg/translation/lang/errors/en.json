@@ -1,0 +1,22 @@
+{
+  "errors": {
+    "somethingIsWrong": "We're sorry, but something went wrong.",
+    "permissionDenied": "You don't have permission to do that.",
+    "recordNotFound": "Record not found. The requested resource could not be located.",
+    "unauthorized": "You are not authorized to do that.",
+
+    "userIsBanned": "Your account has been banned. If you believe this is a mistake, please contact support.",
+    "userInActive": "Your account is currently inactive. Please contact support for assistance.",
+    "userUnVerified": "Your account is not yet verified. Please check your email for the verification link or contact support if you need help.",
+    "emailRegistered": "This is already an account with {{.email}} email registered. What would you like to do?",
+    "credentialInvalid": "Invalid credential. Please double-check and try again.",
+
+    "invalidOTP": "The One-Time Password (OTP) you entered is invalid. Please try again or request a new OTP.",
+    "OTPExpired": "The One-Time Password (OTP) has expired. Please request a new OTP to continue.",
+
+    "invalidToken": "Invalid token. Please provide a valid authentication token.",
+    "tokenExpired": "Token has expired. Please obtain a new authentication token.",
+
+    "invalidRequestBody": "Oops! It seems like there's an issue with the information you provided. Please check your request and try again."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "somethingIsWrong": "Nous sommes désolés, mais quelque chose s'est mal passé.",
+    "permissionDenied": "Vous n'avez pas la permission de faire cela.",
+    "recordNotFound": "Enregistrement non trouvé. La ressource demandée n'a pas pu être localisée.",
+    "unauthorized": "Vous n'êtes pas autorisé à faire cela.",
+
+    "userIsBanned": "Votre compte est actuellement inactif. Veuillez contacter le support pour obtenir de l'aide.",
+    "userInActive": "Votre compte a été banni. Si vous pensez que c'est une erreur, veuillez contacter le support.",
+    "userUnVerified": "Votre compte n'est pas encore vérifié. Veuillez vérifier votre e-mail pour le lien de vérification ou contacter le support si vous avez besoin d'aide.",
+    "emailRegistered": "Il y a déjà un compte enregistré avec l'email {{.email}}. Que souhaitez-vous faire ?",
+
+    "invalidOTP": "Le mot de passe à usage unique (OTP) que vous avez entré est invalide. Veuillez réessayer ou demander un nouvel OTP.",
+    "OTPExpired": "Le mot de passe à usage unique (OTP) a expiré. Veuillez demander un nouvel OTP pour continuer.",
+
+    "invalidRequestBody": "Oups ! Il semble y avoir un problème avec les informations que vous avez fournies. Veuillez vérifier votre demande et réessayer."
+  }
+}
