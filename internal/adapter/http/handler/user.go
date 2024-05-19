@@ -21,7 +21,7 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 	}
 }
 
-// GetUser godoc
+// Get godoc
 // @Security AuthBearer
 // @Summary Get User
 // @Description Get User By UUID
@@ -34,9 +34,9 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_user_userID
-// @Router /v1/user/{userID} [get]
-func (r *UserHandler) GetUser(ctx *gin.Context) {
+// @ID get_v1_users_userID
+// @Router /v1/users/{userID} [get]
+func (r *UserHandler) Get(ctx *gin.Context) {
 	var req requests.GetUserRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)

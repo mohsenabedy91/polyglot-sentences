@@ -53,13 +53,13 @@ func NewRouter(
 			auth.POST("login", authHandler.Login)
 			auth.GET("profile", middlewares.Authentication(config.Jwt), authHandler.Profile)
 		}
-		user := v1.Group("user", middlewares.Authentication(config.Jwt))
+		user := v1.Group("users", middlewares.Authentication(config.Jwt), middlewares.ACL(
+			accessControlService,
+			domain.PermissionKeyCreateUser,
+			domain.PermissionKeyReadUser,
+		))
 		{
-			user.GET(":userID", middlewares.ACL(
-				accessControlService,
-				domain.PermissionKeyCreateUser,
-				domain.PermissionKeyReadUser,
-			), userHandler.GetUser)
+			user.GET(":userID", userHandler.Get)
 		}
 	}
 
