@@ -26,7 +26,7 @@ func NewUserRepository(log logger.Logger, db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, serviceerror.Error) {
+func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
 	email = strings.ToLower(email)
 	var count int
 	err := r.db.QueryRowContext(
@@ -45,7 +45,7 @@ func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool,
 	return count == 0, nil
 }
 
-func (r *UserRepository) Save(ctx context.Context, user *domain.User) serviceerror.Error {
+func (r *UserRepository) Save(ctx context.Context, user *domain.User) error {
 	res, err := r.db.ExecContext(
 		ctx,
 		"INSERT INTO users (first_name, last_name, email, password, status) VALUES ($1, $2, $3, $4, $5)",
@@ -75,7 +75,7 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) serviceerr
 	return nil
 }
 
-func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, serviceerror.Error) {
+func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, error) {
 	row := r.db.QueryRowContext(
 		ctx,
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND uuid = $1",
@@ -100,7 +100,7 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 	return &user, nil
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user := &domain.User{}
 	err := r.db.QueryRowContext(
 		ctx,
@@ -119,7 +119,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	return user, nil
 }
 
-func (r *UserRepository) List(ctx context.Context) ([]domain.User, serviceerror.Error) {
+func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL",

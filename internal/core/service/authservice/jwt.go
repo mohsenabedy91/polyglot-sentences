@@ -20,7 +20,7 @@ func New(log logger.Logger, cfg config.Jwt) *JWTService {
 	}
 }
 
-func (r JWTService) GenerateToken(userUUID string) (*string, serviceerror.Error) {
+func (r JWTService) GenerateToken(userUUID string) (*string, error) {
 	mapClaims := jwt.MapClaims{}
 	mapClaims[config.AuthUserUUIDKey] = userUUID
 

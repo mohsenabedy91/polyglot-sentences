@@ -81,10 +81,15 @@ func (r *Response) Meta(data interface{}) *Response {
 	return r
 }
 
-func (r *Response) Error(err serviceerror.Error) *Response {
-	r.error = err
+func (r *Response) Error(err error) *Response {
+	serviceErr, ok := err.(serviceerror.Error)
+	if !ok {
+		serviceErr = serviceerror.NewServiceError(serviceerror.ServerError)
+	}
+	r.error = serviceErr
+
 	var errorResponse = Error{
-		Error: r.translation.Lang(string(err.GetMessage()), err.GetAttributes(), nil),
+		Error: r.translation.Lang(string(serviceErr.GetMessage()), serviceErr.GetAttributes(), nil),
 	}
 	r.response["error"] = errorResponse.Error
 	return r

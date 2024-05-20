@@ -6,7 +6,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
 
 type AccessControlService struct {
@@ -31,17 +30,17 @@ func (r AccessControlService) CheckAccess(
 	ctx context.Context,
 	userUUID uuid.UUID,
 	permissions ...domain.PermissionKeyType,
-) (bool, serviceerror.Error) {
+) (bool, error) {
 
 	user, err := r.userRepo.GetByUUID(ctx, userUUID)
 	if err != nil {
-		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.String(), nil)
+		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, err
 	}
 
 	permissionKeys, err := r.permissionRepo.GetUserPermissionKeys(ctx, user.ID)
 	if err != nil {
-		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.String(), nil)
+		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, err
 	}
 
