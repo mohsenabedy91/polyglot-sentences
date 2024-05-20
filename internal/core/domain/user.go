@@ -1,5 +1,23 @@
 package domain
 
+type UserStatusType string
+
+const (
+	UserStatusUnknownStr    = "unknown"
+	UserStatusActiveStr     = "ACTIVE"
+	UserStatusInactiveStr   = "INACTIVE"
+	UserStatusUnverifiedStr = "UNVERIFIED"
+	UserStatusBannedStr     = "BANNED"
+)
+
+const (
+	UserStatusUnknown    UserStatusType = UserStatusUnknownStr
+	UserStatusActive     UserStatusType = UserStatusActiveStr
+	UserStatusInActive   UserStatusType = UserStatusInactiveStr
+	UserStatusUnVerified UserStatusType = UserStatusUnverifiedStr
+	UserStatusBanned     UserStatusType = UserStatusBannedStr
+)
+
 type User struct {
 	Base
 	Modifier
@@ -27,7 +45,27 @@ func (r UserStatusType) String() *string {
 		str = UserStatusUnverifiedStr
 	case UserStatusBanned:
 		str = UserStatusBannedStr
+	default:
+		str = UserStatusUnknownStr
 	}
 
 	return &str
+}
+
+func ToUserStatus(status string) UserStatusType {
+	var userStatus UserStatusType
+	switch status {
+	case UserStatusActiveStr:
+		userStatus = UserStatusActive
+	case UserStatusInactiveStr:
+		userStatus = UserStatusInActive
+	case UserStatusUnverifiedStr:
+		userStatus = UserStatusUnVerified
+	case UserStatusBannedStr:
+		userStatus = UserStatusBanned
+	default:
+		userStatus = UserStatusUnknown
+	}
+
+	return userStatus
 }

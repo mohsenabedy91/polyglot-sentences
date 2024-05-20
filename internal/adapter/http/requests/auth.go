@@ -5,8 +5,8 @@ import (
 )
 
 type AuthRegister struct {
-	FirstName         string `json:"firstName" binding:"required,regex_alpha" example:"john"`
-	LastName          string `json:"lastName" binding:"required,regex_alpha" example:"doe"`
+	FirstName         string `json:"firstName" binding:"required,regex_alpha,min=2,max=64" example:"john"`
+	LastName          string `json:"lastName" binding:"required,regex_alpha,min=2,max=64" example:"doe"`
 	Email             string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	Password          string `json:"password" binding:"required,min=8,max=64,password_complexity" example:"QWer123!@#"`
 	ConfirmedPassword string `json:"confirmedPassword" binding:"required,eqfield=Password" example:"QWer123!@#"`

@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
@@ -19,6 +20,37 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userSvc,
 	}
+}
+
+// Create godoc
+// @Security AuthBearer
+// @Summary Create user
+// @Description Create user
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.CreateUserRequest true "Create user request"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_v1_users
+// @Router /v1/users [post]
+func (r UserHandler) Create(ctx *gin.Context) {
+	var req requests.CreateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	err := r.userService.Create(ctx.Request.Context(), req.ToDomain())
+	if err != nil {
+		presenter.NewResponse(ctx, nil).Error(err).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, nil).Message(constant.UserSuccessCreate).Echo(http.StatusCreated)
 }
 
 // List godoc
@@ -63,7 +95,7 @@ func (r UserHandler) List(ctx *gin.Context) {
 // @ID get_v1_users_userID
 // @Router /v1/users/{userID} [get]
 func (r UserHandler) Get(ctx *gin.Context) {
-	var req requests.GetUserRequest
+	var req requests.UserUUIDUri
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return

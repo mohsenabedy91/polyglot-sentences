@@ -49,19 +49,3 @@ func (r StatusType) String() *string {
 
 	return &str
 }
-
-type UserStatusType string
-
-const (
-	UserStatusActiveStr     = "ACTIVE"
-	UserStatusInactiveStr   = "INACTIVE"
-	UserStatusUnverifiedStr = "UNVERIFIED"
-	UserStatusBannedStr     = "BANNED"
-)
-
-const (
-	UserStatusActive     UserStatusType = UserStatusActiveStr
-	UserStatusInActive   UserStatusType = UserStatusInactiveStr
-	UserStatusUnVerified UserStatusType = UserStatusUnverifiedStr
-	UserStatusBanned     UserStatusType = UserStatusBannedStr
-)

@@ -63,6 +63,7 @@ func NewRouter(
 			domain.PermissionKeyReadUser,
 		))
 		{
+			user.POST("", userHandler.Create)
 			user.GET("", userHandler.List)
 			user.GET(":userID", userHandler.Get)
 		}

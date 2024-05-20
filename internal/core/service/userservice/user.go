@@ -57,3 +57,7 @@ func (r UserService) GetByEmail(ctx context.Context, email string) (*domain.User
 func (r UserService) List(ctx context.Context) ([]domain.User, error) {
 	return r.userRepo.List(ctx)
 }
+
+func (r UserService) Create(ctx context.Context, user domain.User) error {
+	return r.userRepo.Save(ctx, &user)
+}
