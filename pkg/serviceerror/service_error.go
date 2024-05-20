@@ -36,3 +36,7 @@ func (r ServiceError) GetAttributes() map[string]interface{} {
 func (r ServiceError) String() string {
 	return string(r.message)
 }
+
+func (r ServiceError) Error() string {
+	return string(r.message)
+}

@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
@@ -10,11 +12,13 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"net/http"
 )
 
 // Router is a wrapper for HTTP router
 type Router struct {
 	*gin.Engine
+	log logger.Logger
 }
 
 // NewRouter creates a new HTTP router
@@ -53,22 +57,28 @@ func NewRouter(
 			auth.POST("login", authHandler.Login)
 			auth.GET("profile", middlewares.Authentication(config.Jwt), authHandler.Profile)
 		}
-		user := v1.Group("user", middlewares.Authentication(config.Jwt))
+		user := v1.Group("users", middlewares.Authentication(config.Jwt), middlewares.ACL(
+			accessControlService,
+			domain.PermissionKeyCreateUser,
+			domain.PermissionKeyReadUser,
+		))
 		{
-			user.GET(":userID", middlewares.ACL(
-				accessControlService,
-				domain.PermissionKeyCreateUser,
-				domain.PermissionKeyReadUser,
-			), userHandler.GetUser)
+			user.GET("", userHandler.List)
+			user.GET(":userID", userHandler.Get)
 		}
 	}
 
 	return &Router{
-		router,
+		router, log,
 	}, nil
 }
 
 // Serve starts the HTTP server
-func (r *Router) Serve(listenAddr string) error {
-	return r.Run(listenAddr)
+func (r *Router) Serve(server *http.Server) {
+	go func() {
+		// service connections
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Error starting the HTTP server: %v", err), nil)
+		}
+	}()
 }

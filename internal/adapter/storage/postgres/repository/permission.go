@@ -21,10 +21,7 @@ func NewPermissionRepository(log logger.Logger, db *sql.DB) *PermissionRepositor
 	}
 }
 
-func (r PermissionRepository) GetUserPermissionKeys(
-	ctx context.Context,
-	userID uint,
-) ([]domain.PermissionKeyType, serviceerror.Error) {
+func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID uint) ([]domain.PermissionKeyType, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT DISTINCT p.key

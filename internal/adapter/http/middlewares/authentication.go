@@ -56,7 +56,7 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 	}
 }
 
-func validationToken(accessTokenSecret string, token string) (*jwt.Token, serviceerror.Error) {
+func validationToken(accessTokenSecret string, token string) (*jwt.Token, error) {
 	validToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
@@ -72,7 +72,7 @@ func validationToken(accessTokenSecret string, token string) (*jwt.Token, servic
 	return validToken, nil
 }
 
-func getClaims(validToken *jwt.Token) (map[string]interface{}, serviceerror.Error) {
+func getClaims(validToken *jwt.Token) (map[string]interface{}, error) {
 	claimsMaps := map[string]interface{}{}
 
 	if claims, ok := validToken.Claims.(jwt.MapClaims); ok {

@@ -9,6 +9,17 @@ type User struct {
 	FirstName *string `json:"firstName,omitempty" example:"john"`
 	LastName  *string `json:"lastName,omitempty" example:"doe"`
 	Email     *string `json:"email,omitempty" example:"john.doe@gmail.com"`
+	Status    *string `json:"status,omitempty" example:"ACTIVE"`
+}
+
+func prepareUser(user domain.User) User {
+	return User{
+		ID:        user.UUID.String(),
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Status:    user.Status.String(),
+	}
 }
 
 func ToUserResource(user *domain.User) *User {
@@ -16,10 +27,15 @@ func ToUserResource(user *domain.User) *User {
 		return nil
 	}
 
-	return &User{
-		ID:        user.UUID.String(),
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
+	res := prepareUser(*user)
+	return &res
+}
+
+func ToUserCollection(users []domain.User) []User {
+	var result []User
+	for _, user := range users {
+		result = append(result, prepareUser(user))
 	}
+
+	return result
 }

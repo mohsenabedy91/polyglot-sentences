@@ -23,18 +23,18 @@ func New(log logger.Logger, userRepo port.UserRepository) *UserService {
 	}
 }
 
-func (r UserService) RegisterUser(ctx context.Context, user domain.User) serviceerror.Error {
+func (r UserService) RegisterUser(ctx context.Context, user domain.User) error {
 	return r.userRepo.Save(ctx, &user)
 }
 
-func (r UserService) GetUser(ctx context.Context, uuid uuid.UUID) (user *domain.User, err serviceerror.Error) {
+func (r UserService) GetByUUID(ctx context.Context, uuid uuid.UUID) (user *domain.User, err error) {
 	return r.userRepo.GetByUUID(ctx, uuid)
 }
 
-func (r UserService) IsEmailUnique(ctx context.Context, email string) serviceerror.Error {
+func (r UserService) IsEmailUnique(ctx context.Context, email string) error {
 	isUniqueEmail, err := r.userRepo.IsEmailUnique(ctx, email)
 	if err != nil {
-		r.log.Error(logger.Database, logger.DatabaseSelect, err.String(), nil)
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		return err
 	}
 
@@ -50,6 +50,10 @@ func (r UserService) IsEmailUnique(ctx context.Context, email string) serviceerr
 	return nil
 }
 
-func (r UserService) GetByEmail(ctx context.Context, email string) (*domain.User, serviceerror.Error) {
+func (r UserService) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	return r.userRepo.GetByEmail(ctx, email)
+}
+
+func (r UserService) List(ctx context.Context) ([]domain.User, error) {
+	return r.userRepo.List(ctx)
 }
