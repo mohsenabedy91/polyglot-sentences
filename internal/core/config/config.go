@@ -35,6 +35,10 @@ type App struct {
 	GracefullyShutdown time.Duration
 }
 
+type Profile struct {
+	Port string
+}
+
 type Log struct {
 	FilePath   string
 	Level      string
@@ -99,6 +103,7 @@ type Jwt struct {
 // Config represents the application configuration.
 type Config struct {
 	App     App
+	Profile Profile
 	Log     Log
 	Swagger Swagger
 	DB      DB
@@ -125,6 +130,9 @@ func LoadConfig() (Config, error) {
 	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
+
+	var profile Profile
+	profile.Port = os.Getenv("PROFILE_PORT")
 
 	var log Log
 	log.FilePath = os.Getenv("LOG_FILE_PATH")
@@ -176,6 +184,7 @@ func LoadConfig() (Config, error) {
 
 	return Config{
 		App:     app,
+		Profile: profile,
 		Log:     log,
 		Swagger: swagger,
 		DB:      db,

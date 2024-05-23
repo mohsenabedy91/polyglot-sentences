@@ -19,6 +19,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "net/http/pprof"
 )
 
 // @securityDefinitions.apikey AuthBearer
@@ -30,6 +32,15 @@ func main() {
 	cfg := config.GetConfig()
 
 	log := logger.NewLogger(cfg)
+
+	go func() {
+		addr := fmt.Sprintf(":%s", cfg.Profile.Port)
+		err := http.ListenAndServe(addr, nil)
+		if err != nil {
+			log.Warn(logger.Profile, logger.Startup, err.Error(), nil)
+			return
+		}
+	}()
 
 	defer func() {
 		err := postgres.Close()

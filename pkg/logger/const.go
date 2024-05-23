@@ -14,6 +14,7 @@ type ExtraKey string
 
 const (
 	General         Category = "General"
+	Profile         Category = "Profile"
 	Internal        Category = "Internal"
 	Database        Category = "Database"
 	Redis           Category = "Redis"
