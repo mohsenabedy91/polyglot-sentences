@@ -36,7 +36,8 @@ type App struct {
 }
 
 type Profile struct {
-	Port string
+	Debug bool
+	Port  string
 }
 
 type Log struct {
@@ -132,14 +133,15 @@ func LoadConfig() (Config, error) {
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
 
 	var profile Profile
+	profile.Debug = getBoolEnv("PROFILE_DEBUG")
 	profile.Port = os.Getenv("PROFILE_PORT")
 
 	var log Log
 	log.FilePath = os.Getenv("LOG_FILE_PATH")
 	log.Level = os.Getenv("LOG_LEVEL")
-	log.MaxSize = getIntEnv(os.Getenv("LOG_MAX_SIZE"), 1)
-	log.MaxAge = getIntEnv(os.Getenv("LOG_MAX_AGE"), 5)
-	log.MaxBackups = getIntEnv(os.Getenv("LOG_MAX_BACKUPS"), 10)
+	log.MaxSize = getIntEnv("LOG_MAX_SIZE", 1)
+	log.MaxAge = getIntEnv("LOG_MAX_AGE", 5)
+	log.MaxBackups = getIntEnv("LOG_MAX_BACKUPS", 10)
 
 	var swagger Swagger
 	swagger.Host = os.Getenv("SWAGGER_HOST")

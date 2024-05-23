@@ -93,6 +93,19 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 └── 📄docker-compose.yml
 ```
 
+# Profiling
+We use pprof tool for get CPU, go routine and memory leak
+
+- [pprof](http://localhost:2526/debug/pprof/)
+- [goroutine](http://localhost:2526/debug/pprof/goroutine?debug=1)
+
+```bash
+curl http://localhost:2526/debug/pprof/goroutine --output goroutine.o
+
+go tool pprof -http=:2020 goroutine.o
+```
+if debug mode was true its work
+
 # Requirements
 #### Authentication/Authorization 
 #### User Management

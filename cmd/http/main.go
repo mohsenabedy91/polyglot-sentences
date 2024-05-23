@@ -33,14 +33,7 @@ func main() {
 
 	log := logger.NewLogger(cfg)
 
-	go func() {
-		addr := fmt.Sprintf(":%s", cfg.Profile.Port)
-		err := http.ListenAndServe(addr, nil)
-		if err != nil {
-			log.Warn(logger.Profile, logger.Startup, err.Error(), nil)
-			return
-		}
-	}()
+	profiling(cfg.Profile)
 
 	defer func() {
 		err := postgres.Close()
@@ -120,4 +113,16 @@ func main() {
 		log.Info(logger.Internal, logger.Shutdown, "timeout of 5 seconds.", nil)
 	}
 	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
+}
+
+func profiling(cfg config.Profile) {
+	if cfg.Debug {
+		go func() {
+			addr := fmt.Sprintf(":%s", cfg.Port)
+			err := http.ListenAndServe(addr, nil)
+			if err != nil {
+				return
+			}
+		}()
+	}
 }
