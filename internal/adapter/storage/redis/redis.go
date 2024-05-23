@@ -55,7 +55,6 @@ func NewRedisCacheDriver[T any](config config.Config, log logger.Logger) (*Cache
 func (r *CacheDriver[T]) Get(key string) (destination T, err error) {
 	key = fmt.Sprintf("%s:%s", r.config.Redis.Prefix, key)
 	v, err := r.client.Get(key).Result()
-
 	if err != nil {
 		return destination, err
 	}
@@ -72,7 +71,6 @@ func (r *CacheDriver[T]) Set(key string, value interface{}, expiration time.Dura
 	key = fmt.Sprintf("%s:%s", r.config.Redis.Prefix, key)
 
 	data, err := json.Marshal(value)
-
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,7 @@ func (r AccessControlService) CheckAccess(
 	permissions ...domain.PermissionKeyType,
 ) (bool, error) {
 
-	user, err := r.userRepo.GetByUUID(ctx, userUUID)
+	user, err := r.userRepo.GetByUUID(ctx, userUUID.String())
 	if err != nil {
 		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, err

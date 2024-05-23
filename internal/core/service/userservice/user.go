@@ -27,8 +27,8 @@ func (r UserService) RegisterUser(ctx context.Context, user domain.User) error {
 	return r.userRepo.Save(ctx, &user)
 }
 
-func (r UserService) GetByUUID(ctx context.Context, uuid uuid.UUID) (user *domain.User, err error) {
-	return r.userRepo.GetByUUID(ctx, uuid)
+func (r UserService) GetByUUID(ctx context.Context, uuidStr string) (user *domain.User, err error) {
+	return r.userRepo.GetByUUID(ctx, uuid.MustParse(uuidStr))
 }
 
 func (r UserService) IsEmailUnique(ctx context.Context, email string) error {

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
@@ -95,13 +94,13 @@ func (r UserHandler) List(ctx *gin.Context) {
 // @ID get_v1_users_userID
 // @Router /v1/users/{userID} [get]
 func (r UserHandler) Get(ctx *gin.Context) {
-	var req requests.UserUUIDUri
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	var userReq requests.UserUUIDUri
+	if err := ctx.ShouldBindUri(&userReq); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
-	user, err := r.userService.GetByUUID(ctx.Request.Context(), uuid.MustParse(req.UserID))
+	user, err := r.userService.GetByUUID(ctx.Request.Context(), userReq.UUIDStr)
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return

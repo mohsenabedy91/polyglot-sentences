@@ -1,8 +1,6 @@
 package requests
 
-import (
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
-)
+import "github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 
 type AuthRegister struct {
 	FirstName         string `json:"firstName" binding:"required,regex_alpha,min=2,max=64" example:"john"`

@@ -1,5 +1,5 @@
 package port
 
 type AuthService interface {
-	GenerateToken(userUUID string) (*string, error)
+	GenerateToken(userUUIDStr string) (*string, error)
 }
