@@ -11,7 +11,10 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 )
 
@@ -40,6 +43,7 @@ func NewRouter(
 	router := gin.New()
 	RegisterPrometheus(log)
 
+	router.Use(middlewares.Prometheus())
 	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
@@ -49,6 +53,7 @@ func NewRouter(
 		return nil, err
 	}
 
+	router.GET("metrics", gin.WrapH(promhttp.Handler()))
 	v1 := router.Group(":language/v1", middlewares.LocaleMiddleware(trans))
 	{
 		v1.GET("health/check", healthHandler.Check)

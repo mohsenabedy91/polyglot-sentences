@@ -8,6 +8,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"strings"
 )
@@ -83,6 +84,8 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 	)
 	user, err := scanUser(row)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "GetById", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
@@ -97,6 +100,7 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 		return nil, serviceerror.NewServiceError(serviceerror.UserInActive)
 	}
 
+	metrics.DbCall.WithLabelValues("users", "GetById", "Success").Inc()
 	return &user, nil
 }
 
@@ -109,12 +113,16 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		strings.ToLower(email),
 	).Scan(&user.UUID, &user.Password)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "GetByEmail", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
 		}
 		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
 	}
+
+	metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
 
 	return user, nil
 }
