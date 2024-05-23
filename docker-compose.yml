@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 services:
   postgres:
@@ -29,9 +29,174 @@ services:
       - default
       - app_network
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    restart: always
+    deploy:
+      mode: global
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    restart: always
+    volumes:
+      - ./docker/prometheus:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    links:
+      - cadvisor:cadvisor
+      - alertmanager:alertmanager
+    depends_on:
+      - cadvisor
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.0
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - '^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)'
+    ports:
+      - "9100:9100"
+    restart: always
+    deploy:
+      mode: global
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: always
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./docker/alertmanager/:/etc/alertmanager/
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+
+  grafana:
+    image: grafana/grafana:10.1.10
+    user: '472'
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_INSTALL_PLUGINS: 'grafana-clock-panel,grafana-simple-json-datasource'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./docker/grafana/config.monitoring
+    depends_on:
+      - prometheus
+    restart: always
+
+  ####################### SETUP #######################
+  setup:
+    build:
+      context: docker/elk/setup/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    init: true
+    volumes:
+      - ./docker/elk/setup/entrypoint.sh:/entrypoint.sh:ro,Z
+      - ./docker/elk/setup/helpers.sh:/helpers.sh:ro,Z
+      - ./docker/elk/setup/roles:/roles:ro,Z
+      - setup:/state:Z
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+    networks:
+      - app_network
+    depends_on:
+      - elasticsearch
+
+  ####################### ELK #######################
+  elasticsearch:
+    build:
+      context: docker/elk/elasticsearch/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: elasticsearch
+    volumes:
+      - ./docker/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      discovery.type: single-node
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  kibana:
+    build:
+      context: docker/elk/kibana/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./docker/elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+      - elasticsearch:/usr/share/kibana/data:Z
+    ports:
+      - "5601:5601"
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+    networks:
+      - app_network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  filebeat:
+    build:
+      context: docker/elk/filebeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    user: root
+    command:
+      - -e
+      - --strict.perms=false
+    volumes:
+      - ./docker/elk/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./logs:/var/log/filebeat/service:ro
+      - logs:/var/log/filebeat
+      - logs:/app:ro
+    environment:
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+    networks:
+      - app_network
+    depends_on:
+      - elasticsearch
+
 volumes:
   postgres:
   redis:
+  grafana_data:
+  prometheus_data:
+  setup:
+  elasticsearch:
+  logs:
 
 networks:
   default:

@@ -38,6 +38,7 @@ func NewRouter(
 	}
 
 	router := gin.New()
+	RegisterPrometheus(log)
 
 	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
 	router.Use(middlewares.DefaultStructuredLogger(log))
@@ -82,4 +83,16 @@ func (r *Router) Serve(server *http.Server) {
 			r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Error starting the HTTP server: %v", err), nil)
 		}
 	}()
+}
+
+func RegisterPrometheus(log logger.Logger) {
+	err := prometheus.Register(metrics.DbCall)
+	if err != nil {
+		log.Error(logger.Prometheus, logger.Startup, err.Error(), nil)
+	}
+
+	err = prometheus.Register(metrics.HttpDuration)
+	if err != nil {
+		log.Error(logger.Prometheus, logger.Startup, err.Error(), nil)
+	}
 }
