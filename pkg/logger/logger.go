@@ -1,11 +1,14 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"sync"
+	"time"
 )
 
 var once sync.Once
@@ -26,16 +29,37 @@ type Logger interface {
 }
 
 type zapLogger struct {
-	config config.App
+	config config.Config
 	logger *zap.SugaredLogger
 }
 
 func (r *zapLogger) Init() {
 	once.Do(func() {
+		fileName := fmt.Sprintf(
+			"%s%s.%s",
+			r.config.Log.FilePath,
+			time.Now().Format("2006-01-02"),
+			"log",
+		)
+		fileWriter := zapcore.AddSync(&lumberjack.Logger{
+			Filename:   fileName,
+			MaxSize:    r.config.Log.MaxSize,
+			MaxAge:     r.config.Log.MaxAge,
+			LocalTime:  true,
+			MaxBackups: r.config.Log.MaxBackups,
+			Compress:   true,
+		})
+
 		stdoutWriter := zapcore.Lock(os.Stdout)
 
 		encoderConfig := zap.NewProductionEncoderConfig()
 		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+		fileCore := zapcore.NewCore(
+			zapcore.NewJSONEncoder(encoderConfig),
+			fileWriter,
+			r.getLogLevel(),
+		)
 
 		stdoutCore := zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderConfig),
@@ -43,14 +67,20 @@ func (r *zapLogger) Init() {
 			r.getLogLevel(),
 		)
 
-		logger := zap.New(stdoutCore, zap.AddCaller(), zap.AddCallerSkip(1), zap.AddStacktrace(zapcore.ErrorLevel)).Sugar()
-		zapSinLogger = logger.With("AppName", "MyApp").With("LoggerName", "ZapLog")
-	})
+		teeCore := zapcore.NewTee(fileCore, stdoutCore)
 
+		logger := zap.New(
+			teeCore,
+			zap.AddCaller(),
+			zap.AddCallerSkip(1),
+			zap.AddStacktrace(zapcore.ErrorLevel),
+		).Sugar()
+		zapSinLogger = logger.With("AppName", r.config.App.Name).With("LoggerName", "ZapLog")
+	})
 	r.logger = zapSinLogger
 }
 
-func NewLogger(config config.App) Logger {
+func NewLogger(config config.Config) Logger {
 	logger := &zapLogger{config: config}
 	logger.Init()
 	return logger
@@ -65,7 +95,7 @@ var zapLogLevelMapping = map[string]zapcore.Level{
 }
 
 func (r *zapLogger) getLogLevel() zapcore.Level {
-	level, exists := zapLogLevelMapping[r.config.LogLevel]
+	level, exists := zapLogLevelMapping[r.config.Log.Level]
 	if !exists {
 		return zapcore.DebugLevel
 	}
@@ -78,7 +108,7 @@ func prepareLogKeys(cat Category, sub SubCategory, extra map[ExtraKey]interface{
 	}
 	extra["category"] = cat
 	extra["subCategory"] = sub
-	return MapToZapParams(extra)
+	return mapToZapParams(extra)
 }
 
 func (r *zapLogger) Debug(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {

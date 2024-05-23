@@ -69,6 +69,8 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │       └── 📁service/
 │           └── 📁userservice/
 │               └── 📄user.go
+├── 📁logs/
+│   └── 📄logs-2024-05-21.log
 ├── 📁pkg/
 │   ├── 📁claim/
 │   │   └── 📄gin.go

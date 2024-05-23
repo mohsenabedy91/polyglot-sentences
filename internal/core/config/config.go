@@ -28,12 +28,19 @@ type App struct {
 	URL                string
 	Port               string
 	Debug              bool
-	LogLevel           string
 	Timezone           string
 	Locale             string
 	FallbackLocale     string
 	PathLocale         string
 	GracefullyShutdown time.Duration
+}
+
+type Log struct {
+	FilePath   string
+	Level      string
+	MaxSize    int
+	MaxAge     int
+	MaxBackups int
 }
 
 type SwaggerInfo struct {
@@ -92,6 +99,7 @@ type Jwt struct {
 // Config represents the application configuration.
 type Config struct {
 	App     App
+	Log     Log
 	Swagger Swagger
 	DB      DB
 	Redis   Redis
@@ -112,12 +120,18 @@ func LoadConfig() (Config, error) {
 	app.URL = os.Getenv("APP_URL")
 	app.Port = os.Getenv("APP_PORT")
 	app.Debug = getBoolEnv("APP_DEBUG")
-	app.LogLevel = os.Getenv("APP_LOG_LEVEL")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
 	app.Locale = os.Getenv("APP_LOCALE")
 	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
+
+	var log Log
+	log.FilePath = os.Getenv("LOG_FILE_PATH")
+	log.Level = os.Getenv("LOG_LEVEL")
+	log.MaxSize = getIntEnv(os.Getenv("LOG_MAX_SIZE"), 1)
+	log.MaxAge = getIntEnv(os.Getenv("LOG_MAX_AGE"), 5)
+	log.MaxBackups = getIntEnv(os.Getenv("LOG_MAX_BACKUPS"), 10)
 
 	var swagger Swagger
 	swagger.Host = os.Getenv("SWAGGER_HOST")
@@ -162,6 +176,7 @@ func LoadConfig() (Config, error) {
 
 	return Config{
 		App:     app,
+		Log:     log,
 		Swagger: swagger,
 		DB:      db,
 		Redis:   redis,

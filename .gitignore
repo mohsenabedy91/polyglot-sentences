@@ -28,3 +28,6 @@ go.work
 docs/swagger.yaml
 docs/swagger.json
 docs/docs.go
+
+*.log
+*.log.gz

@@ -29,13 +29,12 @@ func main() {
 	// Load environment variables
 	cfg := config.GetConfig()
 
-	log := logger.NewLogger(cfg.App)
+	log := logger.NewLogger(cfg)
 
 	defer func() {
 		err := postgres.Close()
 		if err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
-			return
 		}
 	}()
 	if err := postgres.InitClient(cfg, log); err != nil {
@@ -75,7 +74,7 @@ func main() {
 		*userHandler,
 	)
 	if err != nil {
-		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is when run http: %v", err), nil)
+		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
 		os.Exit(1)
 	}
 
@@ -86,7 +85,7 @@ func main() {
 		Handler: router.Handler(),
 	}
 	log.Info(logger.Internal, logger.Startup, "Starting the HTTP server", map[logger.ExtraKey]interface{}{
-		logger.ListeningAddress: server,
+		logger.ListeningAddress: server.Addr,
 	})
 
 	router.Serve(server)
