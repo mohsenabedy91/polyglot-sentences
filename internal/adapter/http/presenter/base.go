@@ -53,7 +53,7 @@ func (r *Response) InvalidRequest(err error) *Response {
 		serviceErr := serviceerror.NewServiceError(serviceerror.InvalidRequestBody)
 		r.error = serviceErr
 		var errorResponse = Error{
-			Error: r.translation.Lang(string(serviceErr.GetMessage()), nil, nil),
+			Error: r.translation.Lang(serviceErr.String(), nil, nil),
 		}
 		r.response["error"] = errorResponse.Error
 	}
@@ -89,15 +89,19 @@ func (r *Response) Error(err error) *Response {
 	r.error = serviceErr
 
 	var errorResponse = Error{
-		Error: r.translation.Lang(string(serviceErr.GetMessage()), serviceErr.GetAttributes(), nil),
+		Error: r.translation.Lang(serviceErr.String(), serviceErr.GetAttributes(), nil),
 	}
 	r.response["error"] = errorResponse.Error
 	return r
 }
 
-func (r *Response) ErrorMsg(err serviceerror.ErrorMessage) *Response {
+func (r *Response) ErrorMsg(err error) *Response {
+	serviceErr, ok := err.(serviceerror.Error)
+	if !ok {
+		serviceErr = serviceerror.NewServiceError(serviceerror.ServerError)
+	}
 	var errorResponse = Error{
-		Error: r.translation.Lang(string(err), nil, nil),
+		Error: r.translation.Lang(serviceErr.String(), serviceErr.GetAttributes(), nil),
 	}
 	r.response["error"] = errorResponse.Error
 	return r
