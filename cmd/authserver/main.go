@@ -31,7 +31,7 @@ func main() {
 	// Load environment variables
 	cfg := config.GetConfig()
 
-	log := logger.NewLogger(cfg)
+	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
 	profiling(cfg.Profile)
 
