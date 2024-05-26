@@ -103,6 +103,10 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │           ├── 📄ar.json
 │           ├── 📄en.json
 │           └── 📄fa.json
+├── 📁proto/
+│   └── 📁common/
+│       ├── 📄error_details.pb.go
+│       └── 📄error_details.proto
 ├── 📄go.mod
 ├── 📄.env
 └── 📄docker-compose.yml
