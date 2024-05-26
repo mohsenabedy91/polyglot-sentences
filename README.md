@@ -13,23 +13,38 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 📁polyglot-sentences/
 ├── 📁.github/
 ├── 📁cmd/
-│   ├── 📁http/
-│   │   └── 📄main.go
+│   ├── 📁authserver/
+│   │   └── 📄http.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
-│   └── 📁worker/
-│       └── 📄main.go
+│   └── 📁userserver/
+│       ├── 📄grpc.go
+│       └── 📄http.go
+├── 📁deploy/
+│   ├── 📄Deployment.yml
+│   └── 📄Service.yml
+├── 📁docker/
+│   ├── 📁alertmanager/
+│   ├── 📁elk/
+│   ├── 📁grafana/
+│   └── 📁prometheus/
 ├── 📁docs/
 │   ├── 📄docs.go
 │   ├── 📄swagger.json
 │   └── 📄swagger.yaml
 ├── 📁internal/
 │   ├── 📁adapter/
-│   │   ├── 📁messagebroker/
-│   │   │   └── 📁rabbitmq/
-│   │   │       ├── 📄connection.go
-│   │   │       ├── 📄producer.go
-│   │   │       └── 📄consumer.go
+│   │   ├── 📁constant/
+│   │   │   └── 📄messages.go
+│   │   ├── 📁grpc/
+│   │   │   ├── 📁client/
+│   │   │   │   └── 📄user_client.go
+│   │   │   ├── 📁proto/
+│   │   │   │   ├── 📄user.pb.go
+│   │   │   │   ├── 📄user.proto
+│   │   │   │   └── 📄user_grpc.pb.go
+│   │   │   └── 📁server/
+│   │   │       └── 📄user_server.go
 │   │   ├── 📁http/
 │   │   │   ├── 📁handler/
 │   │   │   │   ├── 📄health.go
@@ -37,10 +52,10 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   │   │   └── 📄user.go
 │   │   │   ├── 📁middleware/
 │   │   │   │   └── 📄custom_recovery.go
-│   │   │   ├── 📁request/
-│   │   │   │   └── 📄user.go
 │   │   │   ├── 📁presenter/
 │   │   │   │   ├── 📄base.go
+│   │   │   │   └── 📄user.go
+│   │   │   ├── 📁request/
 │   │   │   │   └── 📄user.go
 │   │   │   ├── 📁routes/
 │   │   │   │   ├── 📄router.go
@@ -56,7 +71,7 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │       │   │   └── 📄user.go
 │   │       │   └── 📄db.go
 │   │       └── 📁redis/
-│   │           └── 📄redis.go
+│   │           └── 📄db.go
 │   └── 📁core/
 │       ├── 📁config/
 │       │   └── 📄config.go
@@ -69,6 +84,8 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │       └── 📁service/
 │           └── 📁userservice/
 │               └── 📄user.go
+├── 📁logs/
+│   └── 📄logs-2024-05-21.log
 ├── 📁pkg/
 │   ├── 📁claim/
 │   │   └── 📄gin.go
@@ -91,9 +108,35 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 └── 📄docker-compose.yml
 ```
 
+# Profiling
+We use pprof tool for get CPU, go routine and memory leak
+
+- [pprof](http://localhost:2526/debug/pprof/)
+- [goroutine](http://localhost:2526/debug/pprof/goroutine?debug=1)
+
+```bash
+curl http://localhost:2526/debug/pprof/goroutine --output goroutine.o
+
+go tool pprof -http=:2020 goroutine.o
+```
+if debug mode was true its work
+
+
 # Requirements
-#### Authentication/Authorization 
-#### User Management
-#### Questions Management
-#### Questions Planner
-#### Telegram Integration
+## Authentication/Authorization:
+- Proto buffer:
+There we need to get user details for this matters you should run protoc command for user management service
+```bash
+protoc --go_out=. --go_opt=paths=source_relative \
+--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+proto/common/error_details.proto
+```
+```bash
+protoc --go_out=. --go_opt=paths=source_relative \
+--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+internal/adapter/grpc/proto/user/user.proto
+```
+## User Management
+## Questions Management
+## Questions Planner
+## Telegram Integration

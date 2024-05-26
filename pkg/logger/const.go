@@ -1,6 +1,6 @@
 package logger
 
-func MapToZapParams(keys map[ExtraKey]interface{}) []interface{} {
+func mapToZapParams(keys map[ExtraKey]interface{}) []interface{} {
 	params := make([]interface{}, 0, len(keys))
 	for k, v := range keys {
 		params = append(params, string(k), v)
@@ -14,6 +14,7 @@ type ExtraKey string
 
 const (
 	General         Category = "General"
+	Profile         Category = "Profile"
 	Internal        Category = "Internal"
 	Database        Category = "Database"
 	Redis           Category = "Redis"
@@ -23,6 +24,7 @@ const (
 	JWT             Category = "JWT"
 	Authorization   Category = "Authorization"
 	Notification    Category = "Notification"
+	UserManagement  Category = "UserManagement"
 	Twilio          Category = "Twilio"
 	Vonage          Category = "Vonage"
 	Email           Category = "Email"

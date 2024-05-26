@@ -10,19 +10,19 @@ import (
 
 type AccessControlService struct {
 	log            logger.Logger
-	userRepo       port.UserRepository
 	permissionRepo port.PermissionRepository
+	userClient     port.UserClient
 }
 
 func New(
 	log logger.Logger,
-	userRepo port.UserRepository,
 	permissionRepo port.PermissionRepository,
+	userClient port.UserClient,
 ) *AccessControlService {
 	return &AccessControlService{
 		log:            log,
-		userRepo:       userRepo,
 		permissionRepo: permissionRepo,
+		userClient:     userClient,
 	}
 }
 
@@ -32,7 +32,7 @@ func (r AccessControlService) CheckAccess(
 	permissions ...domain.PermissionKeyType,
 ) (bool, error) {
 
-	user, err := r.userRepo.GetByUUID(ctx, userUUID)
+	user, err := r.userClient.GetByUUID(ctx, userUUID.String())
 	if err != nil {
 		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, err

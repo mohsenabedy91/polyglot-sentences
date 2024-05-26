@@ -8,28 +8,28 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/validations"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 )
 
 // Router is a wrapper for HTTP router
 type Router struct {
 	*gin.Engine
-	log logger.Logger
+	log    logger.Logger
+	config config.Config
+	trans  *translation.Translation
 }
 
 // NewRouter creates a new HTTP router
 func NewRouter(
-	config *config.Config,
+	config config.Config,
 	log logger.Logger,
 	trans *translation.Translation,
-	accessControlService port.AccessControlService,
 	healthHandler handler.HealthHandler,
-	authHandler handler.AuthHandler,
-	userHandler handler.UserHandler,
 ) (*Router, error) {
 
 	// Disable debug mode in production
@@ -38,7 +38,9 @@ func NewRouter(
 	}
 
 	router := gin.New()
+	RegisterPrometheus(log)
 
+	router.Use(middlewares.Prometheus())
 	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
@@ -48,28 +50,14 @@ func NewRouter(
 		return nil, err
 	}
 
+	router.GET("metrics", gin.WrapH(promhttp.Handler()))
 	v1 := router.Group(":language/v1", middlewares.LocaleMiddleware(trans))
 	{
 		v1.GET("health/check", healthHandler.Check)
-		auth := v1.Group("auth")
-		{
-			auth.POST("register", authHandler.Register)
-			auth.POST("login", authHandler.Login)
-			auth.GET("profile", middlewares.Authentication(config.Jwt), authHandler.Profile)
-		}
-		user := v1.Group("users", middlewares.Authentication(config.Jwt), middlewares.ACL(
-			accessControlService,
-			domain.PermissionKeyCreateUser,
-			domain.PermissionKeyReadUser,
-		))
-		{
-			user.GET("", userHandler.List)
-			user.GET(":userID", userHandler.Get)
-		}
 	}
 
 	return &Router{
-		router, log,
+		router, log, config, trans,
 	}, nil
 }
 
@@ -81,4 +69,16 @@ func (r *Router) Serve(server *http.Server) {
 			r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Error starting the HTTP server: %v", err), nil)
 		}
 	}()
+}
+
+func RegisterPrometheus(log logger.Logger) {
+	err := prometheus.Register(metrics.DbCall)
+	if err != nil {
+		log.Error(logger.Prometheus, logger.Startup, err.Error(), nil)
+	}
+
+	err = prometheus.Register(metrics.HttpDuration)
+	if err != nil {
+		log.Error(logger.Prometheus, logger.Startup, err.Error(), nil)
+	}
 }

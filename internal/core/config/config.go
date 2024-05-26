@@ -22,18 +22,43 @@ var (
 )
 
 type App struct {
-	Name               string
 	Env                string
-	Version            string
-	URL                string
-	Port               string
 	Debug              bool
-	LogLevel           string
 	Timezone           string
 	Locale             string
 	FallbackLocale     string
 	PathLocale         string
 	GracefullyShutdown time.Duration
+}
+
+type Auth struct {
+	Name    string
+	Version string
+	URL     string
+	Port    string
+	Debug   bool
+}
+
+type UserManagement struct {
+	Name     string
+	Version  string
+	URL      string
+	HTTPPort string
+	GRPCPort string
+	Debug    bool
+}
+
+type Profile struct {
+	Debug bool
+	Port  string
+}
+
+type Log struct {
+	FilePath   string
+	Level      string
+	MaxSize    int
+	MaxAge     int
+	MaxBackups int
 }
 
 type SwaggerInfo struct {
@@ -91,11 +116,15 @@ type Jwt struct {
 
 // Config represents the application configuration.
 type Config struct {
-	App     App
-	Swagger Swagger
-	DB      DB
-	Redis   Redis
-	Jwt     Jwt
+	App            App
+	Auth           Auth
+	UserManagement UserManagement
+	Profile        Profile
+	Log            Log
+	Swagger        Swagger
+	DB             DB
+	Redis          Redis
+	Jwt            Jwt
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -106,18 +135,39 @@ func LoadConfig() (Config, error) {
 	}
 
 	var app App
-	app.Name = os.Getenv("APP_NAME")
 	app.Env = os.Getenv("APP_ENV")
-	app.Version = os.Getenv("APP_VERSION")
-	app.URL = os.Getenv("APP_URL")
-	app.Port = os.Getenv("APP_PORT")
 	app.Debug = getBoolEnv("APP_DEBUG")
-	app.LogLevel = os.Getenv("APP_LOG_LEVEL")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
 	app.Locale = os.Getenv("APP_LOCALE")
 	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
+
+	var auth Auth
+	auth.Name = os.Getenv("AUTH_NAME")
+	auth.Version = os.Getenv("AUTH_VERSION")
+	auth.URL = os.Getenv("AUTH_URL")
+	auth.Port = os.Getenv("AUTH_PORT")
+	auth.Debug = getBoolEnv("AUTH_DEBUG")
+
+	var userManagement UserManagement
+	userManagement.Name = os.Getenv("USER_MANAGEMENT_NAME")
+	userManagement.Version = os.Getenv("USER_MANAGEMENT_VERSION")
+	userManagement.URL = os.Getenv("USER_MANAGEMENT_URL")
+	userManagement.HTTPPort = os.Getenv("USER_MANAGEMENT_HTTP_PORT")
+	userManagement.GRPCPort = os.Getenv("USER_MANAGEMENT_GRPC_PORT")
+	userManagement.Debug = getBoolEnv("USER_MANAGEMENT_DEBUG")
+
+	var profile Profile
+	profile.Debug = getBoolEnv("PROFILE_DEBUG")
+	profile.Port = os.Getenv("PROFILE_PORT")
+
+	var log Log
+	log.FilePath = os.Getenv("LOG_FILE_PATH")
+	log.Level = os.Getenv("LOG_LEVEL")
+	log.MaxSize = getIntEnv("LOG_MAX_SIZE", 1)
+	log.MaxAge = getIntEnv("LOG_MAX_AGE", 5)
+	log.MaxBackups = getIntEnv("LOG_MAX_BACKUPS", 10)
 
 	var swagger Swagger
 	swagger.Host = os.Getenv("SWAGGER_HOST")
@@ -161,11 +211,15 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
 	return Config{
-		App:     app,
-		Swagger: swagger,
-		DB:      db,
-		Redis:   redis,
-		Jwt:     jwt,
+		App:            app,
+		Auth:           auth,
+		Profile:        profile,
+		Log:            log,
+		Swagger:        swagger,
+		DB:             db,
+		Redis:          redis,
+		Jwt:            jwt,
+		UserManagement: userManagement,
 	}, nil
 }
 

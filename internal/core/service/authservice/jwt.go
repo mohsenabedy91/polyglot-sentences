@@ -20,9 +20,9 @@ func New(log logger.Logger, cfg config.Jwt) *JWTService {
 	}
 }
 
-func (r JWTService) GenerateToken(userUUID string) (*string, error) {
+func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 	mapClaims := jwt.MapClaims{}
-	mapClaims[config.AuthUserUUIDKey] = userUUID
+	mapClaims[config.AuthUserUUIDKey] = userUUIDStr
 
 	// please never change "exp" key
 	mapClaims["exp"] = int(time.Now().Add(r.cfg.AccessTokenExpireDay * (24 * time.Hour)).Unix())

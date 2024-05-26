@@ -1,14 +1,19 @@
 package serviceerror
 
+import (
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+)
+
 type Error interface {
-	GetMessage() ErrorMessage
+	GetErrorMessage() ErrorMessage
 	GetAttributes() map[string]interface{}
-	String() string
+	Error() string
 }
 
 type ServiceError struct {
 	message    ErrorMessage
 	attributes map[string]interface{}
+	trans      *translation.Translation
 }
 
 func NewServiceError(msg ErrorMessage, attrs ...map[string]interface{}) *ServiceError {
@@ -25,16 +30,12 @@ func NewServiceError(msg ErrorMessage, attrs ...map[string]interface{}) *Service
 	}
 }
 
-func (r ServiceError) GetMessage() ErrorMessage {
+func (r ServiceError) GetErrorMessage() ErrorMessage {
 	return r.message
 }
 
 func (r ServiceError) GetAttributes() map[string]interface{} {
 	return r.attributes
-}
-
-func (r ServiceError) String() string {
-	return string(r.message)
 }
 
 func (r ServiceError) Error() string {

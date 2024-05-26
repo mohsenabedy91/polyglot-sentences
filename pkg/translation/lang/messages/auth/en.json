@@ -3,5 +3,10 @@
     "success": {
       "registeredUser": "The User was successfully registered."
     }
+  },
+  "user": {
+    "success": {
+      "create": "The User was successfully created."
+    }
   }
 }

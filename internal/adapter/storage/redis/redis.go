@@ -1,8 +1,10 @@
 package redis
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudwego/base64x"
 	"github.com/go-redis/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -55,7 +57,6 @@ func NewRedisCacheDriver[T any](config config.Config, log logger.Logger) (*Cache
 func (r *CacheDriver[T]) Get(key string) (destination T, err error) {
 	key = fmt.Sprintf("%s:%s", r.config.Redis.Prefix, key)
 	v, err := r.client.Get(key).Result()
-
 	if err != nil {
 		return destination, err
 	}
@@ -72,7 +73,6 @@ func (r *CacheDriver[T]) Set(key string, value interface{}, expiration time.Dura
 	key = fmt.Sprintf("%s:%s", r.config.Redis.Prefix, key)
 
 	data, err := json.Marshal(value)
-
 	if err != nil {
 		return err
 	}
@@ -105,4 +105,29 @@ func (r *CacheDriver[T]) Remember(key string, expiration time.Duration, callback
 		}
 	}
 	return destination, nil
+}
+
+func (r *CacheDriver[T]) Subscribe(ctx context.Context, key string) (destination T, err error) {
+	subscriber := r.client.WithContext(ctx).Subscribe(key)
+
+	for {
+		message, err := subscriber.ReceiveMessage()
+		if err != nil {
+			return destination, err
+		}
+
+		payloadStr, _ := base64x.StdEncoding.DecodeString(message.Payload)
+
+		err = json.Unmarshal(payloadStr, &destination)
+		if err != nil {
+			return destination, err
+		}
+
+		return destination, nil
+	}
+}
+
+func (r *CacheDriver[T]) Publish(ctx context.Context, key string, value []byte) (err error) {
+	payloadStr := base64x.StdEncoding.EncodeToString(value)
+	return r.client.WithContext(ctx).Publish(key, payloadStr).Err()
 }

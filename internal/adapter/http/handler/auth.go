@@ -14,14 +14,14 @@ import (
 
 // AuthHandler represents the HTTP handler for auth-related requests
 type AuthHandler struct {
-	userService  port.UserService
+	userClient   port.UserClient
 	tokenService port.AuthService
 }
 
 // NewAuthHandler creates a new AuthHandler instance
-func NewAuthHandler(userService port.UserService, tokenService port.AuthService) *AuthHandler {
+func NewAuthHandler(userService port.UserClient, tokenService port.AuthService) *AuthHandler {
 	return &AuthHandler{
-		userService:  userService,
+		userClient:   userService,
 		tokenService: tokenService,
 	}
 }
@@ -58,13 +58,13 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		}
 	}()
 
-	if err := r.userService.IsEmailUnique(ctx.Request.Context(), req.Email); err != nil {
+	if err := r.userClient.IsEmailUnique(ctx.Request.Context(), req.Email); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	req.Password = <-hashedPass
 
-	if err := r.userService.RegisterUser(ctx.Request.Context(), req.ToDomain()); err != nil {
+	if err := r.userClient.Create(ctx.Request.Context(), req.ToDomain()); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -93,13 +93,13 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := r.userService.GetByEmail(ctx.Request.Context(), req.Email)
+	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	if ok := password.CheckPasswordHash(req.Password, *user.Password); !ok {
+	if ok := password.CheckPasswordHash(req.Password, user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.NewServiceError(serviceerror.CredentialInvalid),
 		).Echo()
@@ -134,9 +134,9 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 func (r AuthHandler) Profile(ctx *gin.Context) {
 	userUUID := claim.GetUserUUIDFromGinContext(ctx)
 
-	user, err := r.userService.GetByUUID(ctx.Request.Context(), userUUID)
+	user, err := r.userClient.GetByUUID(ctx.Request.Context(), userUUID.String())
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).ErrorMsg(err).Echo()
 		return
 	}
 
