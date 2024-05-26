@@ -12,10 +12,10 @@ type AuthRegister struct {
 
 func (r AuthRegister) ToDomain() domain.User {
 	return domain.User{
-		FirstName: &r.FirstName,
-		LastName:  &r.FirstName,
-		Email:     &r.Email,
-		Password:  &r.Password,
+		FirstName: r.FirstName,
+		LastName:  r.FirstName,
+		Email:     r.Email,
+		Password:  r.Password,
 	}
 }
 

@@ -22,11 +22,11 @@ type User struct {
 	Base
 	Modifier
 
-	FirstName *string
-	LastName  *string
-	Email     *string
-	Password  *string
-	Avatar    *string
+	FirstName string
+	LastName  string
+	Email     string
+	Password  string
+	Avatar    string
 	Status    UserStatusType
 }
 
@@ -34,7 +34,7 @@ func (r User) IsActive() bool {
 	return r.Status == UserStatusActive
 }
 
-func (r UserStatusType) String() *string {
+func (r UserStatusType) String() string {
 	var str string
 	switch r {
 	case UserStatusActive:
@@ -49,7 +49,7 @@ func (r UserStatusType) String() *string {
 		str = UserStatusUnknownStr
 	}
 
-	return &str
+	return str
 }
 
 func ToUserStatus(status string) UserStatusType {

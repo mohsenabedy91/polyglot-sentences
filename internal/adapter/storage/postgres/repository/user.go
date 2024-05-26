@@ -27,7 +27,7 @@ func NewUserRepository(log logger.Logger, db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
+func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, serviceerror.Error) {
 	email = strings.ToLower(email)
 	var count int
 	err := r.db.QueryRowContext(

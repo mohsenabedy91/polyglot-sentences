@@ -23,10 +23,6 @@ func New(log logger.Logger, userRepo port.UserRepository) *UserService {
 	}
 }
 
-func (r UserService) RegisterUser(ctx context.Context, user domain.User) error {
-	return r.userRepo.Save(ctx, &user)
-}
-
 func (r UserService) GetByUUID(ctx context.Context, uuidStr string) (user *domain.User, err error) {
 	return r.userRepo.GetByUUID(ctx, uuid.MustParse(uuidStr))
 }

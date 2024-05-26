@@ -24,6 +24,7 @@ const (
 	JWT             Category = "JWT"
 	Authorization   Category = "Authorization"
 	Notification    Category = "Notification"
+	UserManagement  Category = "UserManagement"
 	Twilio          Category = "Twilio"
 	Vonage          Category = "Vonage"
 	Email           Category = "Email"

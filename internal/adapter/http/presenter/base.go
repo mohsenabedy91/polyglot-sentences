@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
+	"google.golang.org/grpc/status"
 	"io"
 	"net/http"
 )
@@ -16,7 +17,7 @@ type Response struct {
 	response          map[string]interface{}
 	statusCodeMapping map[serviceerror.ErrorMessage]int
 	translation       *translation.Translation
-	error             serviceerror.Error
+	serviceError      serviceerror.Error
 }
 
 type Error struct {
@@ -51,9 +52,9 @@ func NewResponse(
 func (r *Response) InvalidRequest(err error) *Response {
 	if err.Error() == io.EOF.Error() {
 		serviceErr := serviceerror.NewServiceError(serviceerror.InvalidRequestBody)
-		r.error = serviceErr
+		r.serviceError = serviceErr
 		var errorResponse = Error{
-			Error: r.translation.Lang(serviceErr.String(), nil, nil),
+			Error: r.translation.Lang(serviceErr.Error(), nil, nil),
 		}
 		r.response["error"] = errorResponse.Error
 	}
@@ -63,7 +64,7 @@ func (r *Response) InvalidRequest(err error) *Response {
 
 func (r *Response) Validation(err error) *Response {
 	r.InvalidRequest(err)
-	if r.error != nil {
+	if r.serviceError != nil {
 		return r
 	}
 
@@ -82,28 +83,23 @@ func (r *Response) Meta(data interface{}) *Response {
 }
 
 func (r *Response) Error(err error) *Response {
-	serviceErr, ok := err.(serviceerror.Error)
-	if !ok {
-		serviceErr = serviceerror.NewServiceError(serviceerror.ServerError)
+	var serviceErr serviceerror.Error
+	if ok := errors.As(err, &serviceErr); !ok {
+		statusErr := status.Convert(err)
+		msg, _ := statusErr.WithDetails()
+		serviceErr = serviceerror.NewServiceError(serviceerror.ErrorMessage(msg.Message()))
 	}
-	r.error = serviceErr
+	r.serviceError = serviceErr
 
 	var errorResponse = Error{
-		Error: r.translation.Lang(serviceErr.String(), serviceErr.GetAttributes(), nil),
+		Error: r.translation.Lang(serviceErr.Error(), serviceErr.GetAttributes(), nil),
 	}
 	r.response["error"] = errorResponse.Error
 	return r
 }
 
 func (r *Response) ErrorMsg(err error) *Response {
-	serviceErr, ok := err.(serviceerror.Error)
-	if !ok {
-		serviceErr = serviceerror.NewServiceError(serviceerror.ServerError)
-	}
-	var errorResponse = Error{
-		Error: r.translation.Lang(serviceErr.String(), serviceErr.GetAttributes(), nil),
-	}
-	r.response["error"] = errorResponse.Error
+	r.response["error"] = err.Error()
 	return r
 }
 
@@ -119,8 +115,8 @@ func (r *Response) Echo(overrideStatusCodes ...int) {
 	if len(overrideStatusCodes) > 0 {
 		statusCode = overrideStatusCodes[0]
 	} else {
-		if r.error != nil {
-			if val, ok := r.statusCodeMapping[r.error.GetMessage()]; !ok {
+		if r.serviceError != nil {
+			if val, ok := r.statusCodeMapping[r.serviceError.GetErrorMessage()]; !ok {
 				statusCode = http.StatusInternalServerError
 			} else {
 				statusCode = val

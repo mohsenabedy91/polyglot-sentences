@@ -7,10 +7,8 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -19,8 +17,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	_ "net/http/pprof"
 )
 
 // @securityDefinitions.apikey AuthBearer
@@ -28,12 +24,9 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	// Load environment variables
 	cfg := config.GetConfig()
 
-	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
-
-	profiling(cfg.Profile)
+	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
 		err := postgres.Close()
@@ -46,44 +39,29 @@ func main() {
 	}
 	postgresDB := postgres.Get()
 
-	_, err := redis.NewRedisCacheDriver[any](cfg, log)
-	if err != nil {
-		return
-	}
-
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
 	healthHandler := handler.NewHealthHandler(trans)
 
-	userRepo := repository.NewUserRepository(log, postgresDB)
-	userService := userservice.New(log, userRepo)
-	userHandler := handler.NewUserHandler(userService)
-
-	tokenService := authservice.New(log, cfg.Jwt)
-
-	authHandler := handler.NewAuthHandler(userService, tokenService)
-
-	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
-	accessControlService := authorizationservice.New(log, userRepo, permissionRepo)
-
 	// Init router
-	router, err := routes.NewRouter(
-		&cfg,
-		log,
-		trans,
-		accessControlService,
-		*healthHandler,
-		*authHandler,
-		*userHandler,
-	)
+	router, err := routes.NewRouter(cfg, log, trans, *healthHandler)
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
 		os.Exit(1)
 	}
 
+	userRepo := repository.NewUserRepository(log, postgresDB)
+	userService := userservice.New(log, userRepo)
+	userHandler := handler.NewUserHandler(userService)
+
+	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
+	accessControlService := authorizationservice.New(log, permissionRepo, userService)
+
+	router = router.NewUserRouter(accessControlService, *userHandler)
+
 	// Start server
-	listenAddr := fmt.Sprintf("%s:%s", cfg.App.URL, cfg.App.Port)
+	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{
 		Addr:    listenAddr,
 		Handler: router.Handler(),
@@ -113,16 +91,4 @@ func main() {
 		log.Info(logger.Internal, logger.Shutdown, "timeout of 5 seconds.", nil)
 	}
 	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
-}
-
-func profiling(cfg config.Profile) {
-	if cfg.Debug {
-		go func() {
-			addr := fmt.Sprintf(":%s", cfg.Port)
-			err := http.ListenAndServe(addr, nil)
-			if err != nil {
-				return
-			}
-		}()
-	}
 }

@@ -1,8 +1,6 @@
 package requests
 
-import (
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
-)
+import "github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 
 type CreateUserRequest struct {
 	FirstName string `json:"firstName" binding:"required,regex_alpha,min=2,max=64" example:"John"`
@@ -12,9 +10,9 @@ type CreateUserRequest struct {
 
 func (r CreateUserRequest) ToDomain() domain.User {
 	return domain.User{
-		FirstName: &r.FirstName,
-		LastName:  &r.LastName,
-		Email:     &r.Email,
+		FirstName: r.FirstName,
+		LastName:  r.LastName,
+		Email:     r.Email,
 	}
 }
 
