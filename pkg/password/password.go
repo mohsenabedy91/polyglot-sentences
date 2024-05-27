@@ -2,12 +2,9 @@ package password
 
 import "golang.org/x/crypto/bcrypt"
 
-func HashPassword(password string, hashedPass chan<- string) error {
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 11)
-
-	hashedPass <- string(bytes)
-
-	return err
+	return string(bytes), err
 }
 
 func CheckPasswordHash(password, hash string) bool {
