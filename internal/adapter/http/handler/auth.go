@@ -20,9 +20,9 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler creates a new AuthHandler instance
-func NewAuthHandler(userService port.UserClient, tokenService port.AuthService) *AuthHandler {
+func NewAuthHandler(userClient port.UserClient, tokenService port.AuthService, oauthService oauth.Google) *AuthHandler {
 	return &AuthHandler{
-		userClient:   userService,
+		userClient:   userClient,
 		tokenService: tokenService,
 	}
 }
