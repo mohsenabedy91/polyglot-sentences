@@ -10,6 +10,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/password"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"net/http"
+	"sync"
 )
 
 // AuthHandler represents the HTTP handler for auth-related requests
@@ -47,22 +48,30 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	hashedPass := make(chan string)
+	var hashedPass string
+	var hashErr error
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		err := password.HashPassword(req.Password, hashedPass)
-		if err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.ServerError),
-			).Echo()
-			return
-		}
+		defer wg.Done()
+		hashedPass, hashErr = password.HashPassword(req.Password)
 	}()
 
 	if err := r.userClient.IsEmailUnique(ctx.Request.Context(), req.Email); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
-	req.Password = <-hashedPass
+	wg.Wait()
+
+	if hashErr != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.NewServiceError(serviceerror.ServerError),
+		).Echo()
+		return
+	}
+
+	req.Password = hashedPass
 
 	if err := r.userClient.Create(ctx.Request.Context(), req.ToDomain()); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
