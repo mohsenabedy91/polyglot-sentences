@@ -23,12 +23,18 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
+	// Retrieves user information by UUID.
 	GetByUUID(ctx context.Context, in *GetByUUIDRequest, opts ...grpc.CallOption) (*UserResponse, error)
+	// Retrieves user information by email.
 	GetByEmail(ctx context.Context, in *GetByEmailRequest, opts ...grpc.CallOption) (*UserResponse, error)
+	// Checks if an email is unique.
 	IsEmailUnique(ctx context.Context, in *IsEmailUniqueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Creates a new user.
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Marks the user's email as verified.
 	VerifiedEmail(ctx context.Context, in *VerifiedEmailRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	UpdateWelcomeMessageToSentFlag(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Updates the flag indicating whether the welcome message was sent.
+	MarkWelcomeMessageSent(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type userServiceClient struct {
@@ -84,9 +90,9 @@ func (c *userServiceClient) VerifiedEmail(ctx context.Context, in *VerifiedEmail
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateWelcomeMessageToSentFlag(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *userServiceClient) MarkWelcomeMessageSent(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/user.UserService/UpdateWelcomeMessageToSentFlag", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/user.UserService/MarkWelcomeMessageSent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +103,18 @@ func (c *userServiceClient) UpdateWelcomeMessageToSentFlag(ctx context.Context, 
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {
+	// Retrieves user information by UUID.
 	GetByUUID(context.Context, *GetByUUIDRequest) (*UserResponse, error)
+	// Retrieves user information by email.
 	GetByEmail(context.Context, *GetByEmailRequest) (*UserResponse, error)
+	// Checks if an email is unique.
 	IsEmailUnique(context.Context, *IsEmailUniqueRequest) (*empty.Empty, error)
+	// Creates a new user.
 	Create(context.Context, *CreateRequest) (*empty.Empty, error)
+	// Marks the user's email as verified.
 	VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error)
-	UpdateWelcomeMessageToSentFlag(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error)
+	// Updates the flag indicating whether the welcome message was sent.
+	MarkWelcomeMessageSent(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -125,8 +137,8 @@ func (UnimplementedUserServiceServer) Create(context.Context, *CreateRequest) (*
 func (UnimplementedUserServiceServer) VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifiedEmail not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateWelcomeMessageToSentFlag(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWelcomeMessageToSentFlag not implemented")
+func (UnimplementedUserServiceServer) MarkWelcomeMessageSent(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkWelcomeMessageSent not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -231,20 +243,20 @@ func _UserService_VerifiedEmail_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_UpdateWelcomeMessageToSentFlag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_MarkWelcomeMessageSent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateWelcomeMessageToSentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).UpdateWelcomeMessageToSentFlag(ctx, in)
+		return srv.(UserServiceServer).MarkWelcomeMessageSent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/user.UserService/UpdateWelcomeMessageToSentFlag",
+		FullMethod: "/user.UserService/MarkWelcomeMessageSent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).UpdateWelcomeMessageToSentFlag(ctx, req.(*UpdateWelcomeMessageToSentRequest))
+		return srv.(UserServiceServer).MarkWelcomeMessageSent(ctx, req.(*UpdateWelcomeMessageToSentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -277,8 +289,8 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_VerifiedEmail_Handler,
 		},
 		{
-			MethodName: "UpdateWelcomeMessageToSentFlag",
-			Handler:    _UserService_UpdateWelcomeMessageToSentFlag_Handler,
+			MethodName: "MarkWelcomeMessageSent",
+			Handler:    _UserService_MarkWelcomeMessageSent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

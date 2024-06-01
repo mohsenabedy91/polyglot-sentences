@@ -73,8 +73,7 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) error {
 		return serviceerror.NewServerError()
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil || affected <= 0 {
+	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
@@ -200,8 +199,7 @@ func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error 
 		return serviceerror.NewServerError()
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil || affected <= 0 {
+	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
@@ -212,23 +210,22 @@ func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error 
 	return nil
 }
 
-func (r *UserRepository) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
+func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
 	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true WHERE id = $1", id)
 	if err != nil {
-		metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
 		return serviceerror.NewServerError()
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil || affected <= 0 {
-		metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Failed").Inc()
+	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
 		return serviceerror.NewServerError()
 	}
-	metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Success").Inc()
+	metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Success").Inc()
 
 	return nil
 }

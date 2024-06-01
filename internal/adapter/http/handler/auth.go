@@ -217,7 +217,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 			}
 			authservice.SendWelcomeEvent(r.queue).Publish(message)
 
-			if err = r.userClient.UpdateWelcomeMessageToSentFlag(ctxWithTimeout, user.ID); err != nil {
+			if err = r.userClient.MarkWelcomeMessageSent(ctxWithTimeout, user.ID); err != nil {
 				return
 			}
 		}

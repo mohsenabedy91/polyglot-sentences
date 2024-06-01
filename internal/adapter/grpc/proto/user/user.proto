@@ -5,49 +5,85 @@ option go_package = "github.com/mohsenabedy91/polyglot-sentences/internal/adapte
 
 import "google/protobuf/empty.proto";
 
+// UserService defines the gRPC service for managing users.
 service UserService {
+  // Retrieves user information by UUID.
   rpc GetByUUID(GetByUUIDRequest) returns (UserResponse);
+
+  // Retrieves user information by email.
   rpc GetByEmail(GetByEmailRequest) returns (UserResponse);
+
+  // Checks if an email is unique.
   rpc IsEmailUnique(IsEmailUniqueRequest) returns (google.protobuf.Empty);
+
+  // Creates a new user.
   rpc Create(CreateRequest) returns (google.protobuf.Empty);
-  rpc VerifiedEmail(VerifiedEmailRequest) returns(google.protobuf.Empty);
-  rpc UpdateWelcomeMessageToSentFlag(UpdateWelcomeMessageToSentRequest) returns(google.protobuf.Empty);
+
+  // Marks the user's email as verified.
+  rpc VerifiedEmail(VerifiedEmailRequest) returns (google.protobuf.Empty);
+
+  // Updates the flag indicating whether the welcome message was sent.
+  rpc MarkWelcomeMessageSent(UpdateWelcomeMessageToSentRequest) returns (google.protobuf.Empty);
 }
 
+// Request message for GetByUUID.
 message GetByUUIDRequest {
-  string user_uuid = 1;
+  // The unique UUID of the user.
+  string userUUID = 1;
 }
 
+// Request message for GetByEmail.
 message GetByEmailRequest {
+  // The email of the user.
   string email = 1;
 }
 
+// Request message for IsEmailUnique.
 message IsEmailUniqueRequest {
+  // The email to check for uniqueness.
   string email = 1;
 }
 
+// Request message for Create.
 message CreateRequest {
-  string first_name = 1;
-  string last_name = 2;
+  // The first name of the user.
+  string firstName = 1;
+  // The last name of the user.
+  string lastName = 2;
+  // The email of the user.
   string email = 3;
+  // The hashed password of the user, there is a secure value.
   string password = 4;
 }
 
+// Request message for VerifiedEmail.
 message VerifiedEmailRequest {
+  // The email to mark as verified.
   string email = 1;
 }
 
+// Request message for MarkWelcomeMessageSent.
 message UpdateWelcomeMessageToSentRequest {
-  uint64 user_id = 1;
+  // The user ID for whom to update the welcome message sent flag.
+  uint64 userId = 1;
 }
 
+// Response message containing user details.
 message UserResponse {
+  // The unique ID of the user.
   uint64 id = 1;
-  string uuid = 2;
-  string first_name = 3;
-  string last_name = 4;
+  // The unique UUID of the user.
+  string UUID = 2;
+  // The first name of the user.
+  string firstName = 3;
+  // The last name of the user.
+  string lastName = 4;
+  // The email of the user.
   string email = 5;
+  // The status of the user.
   string status = 6;
+  // The hashed password of the user, there is a secure value.
   string password = 7;
-  bool welcome_message_sent = 8;
+  // Whether the welcome message has been sent.
+  bool welcomeMessageSent = 8;
 }

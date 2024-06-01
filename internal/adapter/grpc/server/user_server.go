@@ -52,7 +52,7 @@ func (r Server) StartUserGRPCServer() (*grpc.Server, error) {
 }
 
 func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*userpb.UserResponse, error) {
-	resp, err := r.userService.GetByUUID(ctx, req.GetUserUuid())
+	resp, err := r.userService.GetByUUID(ctx, req.GetUserUUID())
 	if err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
@@ -63,7 +63,7 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 
 	return &userpb.UserResponse{
 		Id:        resp.ID,
-		Uuid:      resp.UUID.String(),
+		UUID:      resp.UUID.String(),
 		FirstName: resp.FirstName,
 		LastName:  resp.LastName,
 		Email:     resp.Email,
@@ -83,7 +83,7 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 
 	return &userpb.UserResponse{
 		Id:                 resp.ID,
-		Uuid:               resp.UUID.String(),
+		UUID:               resp.UUID.String(),
 		FirstName:          resp.FirstName,
 		LastName:           resp.LastName,
 		Email:              resp.Email,
@@ -137,8 +137,8 @@ func (r Server) VerifiedEmail(ctx context.Context, req *userpb.VerifiedEmailRequ
 	return nil, nil
 }
 
-func (r Server) UpdateWelcomeMessageToSentFlag(ctx context.Context, req *userpb.UpdateWelcomeMessageToSentRequest) (*emptypb.Empty, error) {
-	err := r.userService.UpdateWelcomeMessageToSentFlag(ctx, req.GetUserId())
+func (r Server) MarkWelcomeMessageSent(ctx context.Context, req *userpb.UpdateWelcomeMessageToSentRequest) (*emptypb.Empty, error) {
+	err := r.userService.MarkWelcomeMessageSent(ctx, req.GetUserId())
 	if err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {

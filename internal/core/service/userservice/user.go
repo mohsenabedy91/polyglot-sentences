@@ -62,6 +62,6 @@ func (r UserService) VerifiedEmail(ctx context.Context, email string) error {
 	return r.userRepo.VerifiedEmail(ctx, email)
 }
 
-func (r UserService) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
-	return r.userRepo.UpdateWelcomeMessageToSentFlag(ctx, id)
+func (r UserService) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
+	return r.userRepo.MarkWelcomeMessageSent(ctx, id)
 }

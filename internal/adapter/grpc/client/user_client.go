@@ -40,7 +40,7 @@ func (r UserClient) Close() error {
 }
 
 func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
-	req := userpb.GetByUUIDRequest{UserUuid: UserUUID}
+	req := userpb.GetByUUIDRequest{UserUUID: UserUUID}
 	resp, err := r.userServiceClient.GetByUUID(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
@@ -52,7 +52,7 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 	return &domain.User{
 		Base: domain.Base{
 			ID:   resp.GetId(),
-			UUID: uuid.MustParse(resp.GetUuid()),
+			UUID: uuid.MustParse(resp.GetUUID()),
 		},
 		FirstName: resp.GetFirstName(),
 		LastName:  resp.GetLastName(),
@@ -74,7 +74,7 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 	return &domain.User{
 		Base: domain.Base{
 			ID:   resp.GetId(),
-			UUID: uuid.MustParse(resp.GetUuid()),
+			UUID: uuid.MustParse(resp.GetUUID()),
 		},
 		FirstName:          resp.GetFirstName(),
 		LastName:           resp.GetLastName(),
@@ -126,9 +126,9 @@ func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
 	return nil
 }
 
-func (r UserClient) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
+func (r UserClient) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
 	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: id}
-	_, err := r.userServiceClient.UpdateWelcomeMessageToSentFlag(ctx, &req)
+	_, err := r.userServiceClient.MarkWelcomeMessageSent(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
