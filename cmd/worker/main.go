@@ -29,8 +29,9 @@ func main() {
 		// ...
 	)
 
-	// Handle graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	<-signalCh
+
+	log.Info(logger.Internal, logger.Shutdown, "Shutdown Server ...", nil)
 }

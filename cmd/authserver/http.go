@@ -89,7 +89,7 @@ func main() {
 	defer cancel()
 
 	if err = server.Shutdown(ctx); err != nil {
-		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("server Shutdown: %v", err), nil)
+		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("Shutdown Server: %v", err), nil)
 	}
 
 	select {
