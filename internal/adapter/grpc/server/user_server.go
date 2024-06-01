@@ -80,13 +80,14 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 	}
 
 	return &userpb.UserResponse{
-		Id:        uint64(resp.ID),
-		Uuid:      resp.UUID.String(),
-		FirstName: resp.FirstName,
-		LastName:  resp.LastName,
-		Email:     resp.Email,
-		Password:  resp.Password,
-		Status:    resp.Status.String(),
+		Id:                 resp.ID,
+		Uuid:               resp.UUID.String(),
+		FirstName:          resp.FirstName,
+		LastName:           resp.LastName,
+		Email:              resp.Email,
+		Password:           resp.Password,
+		Status:             resp.Status.String(),
+		WelcomeMessageSent: resp.WelcomeMessageSent,
 	}, nil
 }
 

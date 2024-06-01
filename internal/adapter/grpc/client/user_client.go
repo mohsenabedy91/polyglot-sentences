@@ -51,7 +51,7 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 
 	return &domain.User{
 		Base: domain.Base{
-			ID:   uint(resp.GetId()),
+			ID:   resp.GetId(),
 			UUID: uuid.MustParse(resp.GetUuid()),
 		},
 		FirstName: resp.GetFirstName(),
@@ -76,11 +76,12 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 			ID:   resp.GetId(),
 			UUID: uuid.MustParse(resp.GetUuid()),
 		},
-		FirstName: resp.GetFirstName(),
-		LastName:  resp.GetLastName(),
-		Email:     resp.GetEmail(),
-		Password:  resp.GetPassword(),
-		Status:    domain.ToUserStatus(resp.Status),
+		FirstName:          resp.GetFirstName(),
+		LastName:           resp.GetLastName(),
+		Email:              resp.GetEmail(),
+		Password:           resp.GetPassword(),
+		Status:             domain.ToUserStatus(resp.Status),
+		WelcomeMessageSent: resp.GetWelcomeMessageSent(),
 	}, nil
 }
 

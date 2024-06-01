@@ -7,7 +7,7 @@ import (
 )
 
 type PermissionRepository interface {
-	GetUserPermissionKeys(ctx context.Context, userID uint) ([]domain.PermissionKeyType, error)
+	GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error)
 }
 
 type AccessControlService interface {
