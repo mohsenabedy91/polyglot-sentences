@@ -31,6 +31,7 @@ services:
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
+    container_name: cadvisor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -44,6 +45,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.52.0
+    container_name: prometheus
     restart: always
     volumes:
       - ./docker/prometheus:/etc/prometheus/
@@ -63,6 +65,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:v1.8.0
+    container_name: node-exporter
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -80,6 +83,7 @@ services:
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
     restart: always
     ports:
       - "9093:9093"
@@ -112,6 +116,7 @@ services:
       context: docker/elk/setup/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: setup
     init: true
     volumes:
       - ./docker/elk/setup/entrypoint.sh:/entrypoint.sh:ro,Z
@@ -154,6 +159,7 @@ services:
       context: docker/elk/kibana/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: kibana
     volumes:
       - ./docker/elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
       - elasticsearch:/usr/share/kibana/data:Z
@@ -172,6 +178,7 @@ services:
       context: docker/elk/filebeat/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
+    container_name: filebeat
     user: root
     command:
       - -e
@@ -189,6 +196,22 @@ services:
     depends_on:
       - elasticsearch
 
+  rabbitmq:
+    image: rabbitmq-3-12-management
+    build:
+      context: .
+      dockerfile: Dockerfile-rabbitmq
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
 volumes:
   postgres:
   redis:
@@ -197,6 +220,7 @@ volumes:
   setup:
   elasticsearch:
   logs:
+  rabbitmq_data:
 
 networks:
   default:
