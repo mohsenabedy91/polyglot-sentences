@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudwego/base64x"
 	"github.com/go-redis/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -124,36 +123,4 @@ func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration ti
 		}
 	}
 	return destination, nil
-}
-
-func (r *CacheDriver[T]) Subscribe(ctx context.Context, key string) (T, error) {
-	var destination T
-
-	subscriber := r.client.WithContext(ctx).Subscribe(key)
-	for {
-		message, err := subscriber.ReceiveMessage()
-		if err != nil {
-			return destination, serviceerror.NewServerError()
-		}
-
-		payloadStr, err := base64x.StdEncoding.DecodeString(message.Payload)
-		if err != nil {
-			return destination, serviceerror.NewServerError()
-		}
-
-		if err = json.Unmarshal(payloadStr, &destination); err != nil {
-			return destination, serviceerror.NewServerError()
-		}
-
-		return destination, nil
-	}
-}
-
-func (r *CacheDriver[T]) Publish(ctx context.Context, key string, value []byte) error {
-	payloadStr := base64x.StdEncoding.EncodeToString(value)
-	if err := r.client.WithContext(ctx).Publish(key, payloadStr).Err(); err != nil {
-		return serviceerror.NewServerError()
-	}
-
-	return nil
 }
