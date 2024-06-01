@@ -6,8 +6,11 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
@@ -29,6 +32,11 @@ func main() {
 
 	profiling(cfg.Profile)
 
+	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
+	if err != nil {
+		return
+	}
+
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
@@ -49,7 +57,8 @@ func main() {
 		}
 	}()
 	tokenService := authservice.New(log, cfg.Jwt)
-	authHandler := handler.NewAuthHandler(userClient, tokenService)
+	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
+	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue)
 
 	router = router.NewAuthRouter(*authHandler)
 	if err != nil {

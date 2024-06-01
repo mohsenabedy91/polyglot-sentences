@@ -71,3 +71,7 @@ func ToUserStatus(status string) UserStatusType {
 
 	return userStatus
 }
+
+func (r User) GetFullName() string {
+	return r.FirstName + " " + r.LastName
+}

@@ -1,7 +1,8 @@
 {
   "auth": {
     "success": {
-      "registeredUser": "Vous vous êtes inscrit avec succès."
+      "registeredUser": "Vous vous êtes inscrit avec succès.",
+      "emailOTPSent": "Un OTP a été envoyé à votre adresse e-mail. Veuillez vérifier votre boîte de réception."
     }
   }
 }

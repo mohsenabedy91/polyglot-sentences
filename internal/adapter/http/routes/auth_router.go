@@ -12,6 +12,8 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 		auth := v1.Group("auth")
 		{
 			auth.POST("register", authHandler.Register)
+			auth.POST("email-otp/resend", authHandler.EmailOTPResend)
+			auth.POST("email-otp/verify", authHandler.EmailOTPVerify)
 			auth.POST("login", authHandler.Login)
 			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt), authHandler.Profile)
 		}

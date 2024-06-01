@@ -116,6 +116,10 @@ type Jwt struct {
 	AccessTokenExpireDay time.Duration
 }
 
+type OTP struct {
+	ExpireSecond time.Duration
+	Digits       int8
+}
 type RabbitMQ struct {
 	URL string
 }
@@ -137,6 +141,7 @@ type Config struct {
 	DB             DB
 	Redis          Redis
 	Jwt            Jwt
+	OTP            OTP
 	RabbitMQ       RabbitMQ
 	SendGrid       SendGrid
 }
@@ -226,6 +231,10 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
+	var otp OTP
+	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
+	otp.Digits = int8(getIntEnv("OTP_DIGITS", 6))
+
 	var rabbitMQ RabbitMQ
 	rabbitMQ.URL = os.Getenv("RABBITMQ_URL")
 
@@ -244,6 +253,7 @@ func LoadConfig() (Config, error) {
 		Redis:          redis,
 		Jwt:            jwt,
 		UserManagement: userManagement,
+		OTP:            otp,
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,
 	}, nil
