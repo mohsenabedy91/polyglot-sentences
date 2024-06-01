@@ -33,6 +33,7 @@ func (r OtpService) Set(ctx context.Context, key string, otp string) error {
 	otpState, err := r.otpCache.Get(ctx, key)
 	if err == nil && !otpState.Used && otpState.Value != "" {
 
+		otpState.Value = otp
 		otpState.RequestCount++
 		otpState.LastRequest = time.Now().Unix()
 	} else {
