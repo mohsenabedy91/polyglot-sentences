@@ -61,14 +61,18 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
-	return &userpb.UserResponse{
-		Id:        resp.ID,
-		UUID:      resp.UUID.String(),
-		FirstName: resp.FirstName,
-		LastName:  resp.LastName,
-		Email:     resp.Email,
-		Status:    resp.Status.String(),
-	}, nil
+	if resp != nil {
+		return &userpb.UserResponse{
+			Id:        resp.ID,
+			UUID:      resp.UUID.String(),
+			FirstName: resp.FirstName,
+			LastName:  resp.LastName,
+			Email:     resp.Email,
+			Status:    resp.Status.String(),
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (*userpb.UserResponse, error) {
@@ -81,16 +85,21 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
-	return &userpb.UserResponse{
-		Id:                 resp.ID,
-		UUID:               resp.UUID.String(),
-		FirstName:          resp.FirstName,
-		LastName:           resp.LastName,
-		Email:              resp.Email,
-		Password:           resp.Password,
-		Status:             resp.Status.String(),
-		WelcomeMessageSent: resp.WelcomeMessageSent,
-	}, nil
+	if resp != nil {
+		return &userpb.UserResponse{
+			Id:                 resp.ID,
+			UUID:               resp.UUID.String(),
+			FirstName:          resp.FirstName,
+			LastName:           resp.LastName,
+			Email:              resp.Email,
+			Password:           resp.Password,
+			Status:             resp.Status.String(),
+			WelcomeMessageSent: resp.WelcomeMessageSent,
+			GoogleId:           resp.GoogleID,
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequest) (*emptypb.Empty, error) {

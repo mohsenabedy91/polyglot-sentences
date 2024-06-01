@@ -128,7 +128,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, serviceerror.New(serviceerror.RecordNotFound)
+			return nil, nil
 		}
 		return nil, serviceerror.NewServerError()
 	}

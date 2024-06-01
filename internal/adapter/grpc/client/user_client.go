@@ -49,16 +49,20 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
-	return &domain.User{
-		Base: domain.Base{
-			ID:   resp.GetId(),
-			UUID: uuid.MustParse(resp.GetUUID()),
-		},
-		FirstName: resp.GetFirstName(),
-		LastName:  resp.GetLastName(),
-		Email:     resp.GetEmail(),
-		Status:    domain.ToUserStatus(resp.Status),
-	}, nil
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName: resp.GetFirstName(),
+			LastName:  resp.GetLastName(),
+			Email:     resp.GetEmail(),
+			Status:    domain.ToUserStatus(resp.Status),
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -71,18 +75,23 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
-	return &domain.User{
-		Base: domain.Base{
-			ID:   resp.GetId(),
-			UUID: uuid.MustParse(resp.GetUUID()),
-		},
-		FirstName:          resp.GetFirstName(),
-		LastName:           resp.GetLastName(),
-		Email:              resp.GetEmail(),
-		Password:           resp.GetPassword(),
-		Status:             domain.ToUserStatus(resp.Status),
-		WelcomeMessageSent: resp.GetWelcomeMessageSent(),
-	}, nil
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName:          resp.GetFirstName(),
+			LastName:           resp.GetLastName(),
+			Email:              resp.GetEmail(),
+			Password:           resp.GetPassword(),
+			Status:             domain.ToUserStatus(resp.Status),
+			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
+			GoogleID:           resp.GetGoogleId(),
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
@@ -126,8 +135,8 @@ func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
 	return nil
 }
 
-func (r UserClient) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
-	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: id}
+func (r UserClient) MarkWelcomeMessageSent(ctx context.Context, ID uint64) error {
+	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: ID}
 	_, err := r.userServiceClient.MarkWelcomeMessageSent(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{

@@ -141,6 +141,12 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
+	if user == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.RecordNotFound),
+		).Echo()
+		return
+	}
 
 	otp := helper.GenerateOTP(r.otpConfig.Digits)
 
@@ -197,6 +203,12 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
+	if user == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.RecordNotFound),
+		).Echo()
+		return
+	}
 
 	token, err := r.tokenService.GenerateToken(user.UUID.String())
 	if err != nil {
@@ -205,7 +217,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	}
 
 	go func() {
-		ctxWithTimeout, cancel := context.WithTimeout(ctx, 6*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 		_ = r.otpService.Used(ctxWithTimeout, req.Email)
 
@@ -252,6 +264,12 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+	if user == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.RecordNotFound),
+		).Echo()
 		return
 	}
 

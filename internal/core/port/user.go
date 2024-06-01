@@ -14,7 +14,7 @@ type UserRepository interface {
 	List(ctx context.Context) ([]domain.User, error)
 	Save(ctx context.Context, user *domain.User) error
 	VerifiedEmail(ctx context.Context, email string) error
-	MarkWelcomeMessageSent(ctx context.Context, id uint64) error
+	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -25,5 +25,5 @@ type UserService interface {
 	List(ctx context.Context) ([]domain.User, error)
 	Create(ctx context.Context, user domain.User) error
 	VerifiedEmail(ctx context.Context, email string) error
-	MarkWelcomeMessageSent(ctx context.Context, id uint64) error
+	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 }

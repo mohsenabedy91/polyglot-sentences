@@ -19,5 +19,5 @@ type UserClient interface {
 
 	VerifiedEmail(ctx context.Context, email string) error
 
-	MarkWelcomeMessageSent(ctx context.Context, id uint64) error
+	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 }
