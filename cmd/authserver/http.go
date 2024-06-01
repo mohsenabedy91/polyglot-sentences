@@ -32,6 +32,11 @@ func main() {
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
+	queue := messagebroker.NewQueue(log, cfg)
+	if err = queue.SetupRabbitMQ(cfg.RabbitMQ.URL, log); err != nil {
+		log.Fatal(logger.Queue, logger.Startup, fmt.Sprintf("Failed to setup queue, error: %v", err), nil)
+	}
+
 	healthHandler := handler.NewHealthHandler(trans)
 
 	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)

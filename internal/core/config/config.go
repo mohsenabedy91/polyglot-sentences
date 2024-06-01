@@ -114,6 +114,16 @@ type Jwt struct {
 	AccessTokenExpireDay time.Duration
 }
 
+type RabbitMQ struct {
+	URL string
+}
+
+type SendGrid struct {
+	Key     string
+	Name    string
+	Address string
+}
+
 // Config represents the application configuration.
 type Config struct {
 	App            App
@@ -125,6 +135,8 @@ type Config struct {
 	DB             DB
 	Redis          Redis
 	Jwt            Jwt
+	RabbitMQ       RabbitMQ
+	SendGrid       SendGrid
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -210,6 +222,14 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
+	var rabbitMQ RabbitMQ
+	rabbitMQ.URL = os.Getenv("RABBITMQ_URL")
+
+	var sendGrid SendGrid
+	sendGrid.Key = os.Getenv("SEND_GRID_KEY")
+	sendGrid.Name = os.Getenv("SEND_GRID_NAME")
+	sendGrid.Address = os.Getenv("SEND_GRID_ADDRESS")
+
 	return Config{
 		App:            app,
 		Auth:           auth,
@@ -220,6 +240,8 @@ func LoadConfig() (Config, error) {
 		Redis:          redis,
 		Jwt:            jwt,
 		UserManagement: userManagement,
+		RabbitMQ:       rabbitMQ,
+		SendGrid:       sendGrid,
 	}, nil
 }
 

@@ -27,6 +27,7 @@ const (
 	UserManagement  Category = "UserManagement"
 	Twilio          Category = "Twilio"
 	Vonage          Category = "Vonage"
+	SendGrid        Category = "SendGrid"
 	Email           Category = "Email"
 	Slack           Category = "Slack"
 	Google          Category = "Google"
@@ -75,23 +76,29 @@ const (
 
 	SlackSendMessage SubCategory = "SlackSendMessage"
 
-	TwilioWebhook   SubCategory = "TwilioWebhook"
-	TwilioSendSMS   SubCategory = "TwilioSendSMS"
-	TwilioCheck     SubCategory = "TwilioCheck"
-	TwilioRetrySMS  SubCategory = "TwilioRetrySMS"
-	TwilioUpdateSMS SubCategory = "TwilioUpdateSMS"
-	VonageWebhook   SubCategory = "VonageWebhook"
-	VonageSendSMS   SubCategory = "VonageSendSMS"
-	VonageCheck     SubCategory = "VonageCheck"
-	VonageRetrySMS  SubCategory = "VonageRetrySMS"
-	VonageUpdateSMS SubCategory = "VonageUpdateSMS"
-	EmailSend       SubCategory = "EmailSend"
+	TwilioWebhook     SubCategory = "TwilioWebhook"
+	TwilioSendSMS     SubCategory = "TwilioSendSMS"
+	TwilioCheck       SubCategory = "TwilioCheck"
+	TwilioRetrySMS    SubCategory = "TwilioRetrySMS"
+	TwilioUpdateSMS   SubCategory = "TwilioUpdateSMS"
+	VonageWebhook     SubCategory = "VonageWebhook"
+	VonageSendSMS     SubCategory = "VonageSendSMS"
+	VonageCheck       SubCategory = "VonageCheck"
+	VonageRetrySMS    SubCategory = "VonageRetrySMS"
+	VonageUpdateSMS   SubCategory = "VonageUpdateSMS"
+	SendGridSendEmail SubCategory = "SendGridSendEmail"
+	SendEmail         SubCategory = "SendEmail"
 
 	GoogleLogin   SubCategory = "GoogleLogin"
 	FacebookLogin SubCategory = "FacebookLogin"
 	AppleLogin    SubCategory = "AppleLogin"
 
 	DataConversion SubCategory = "DataConversion"
+
+	RabbitMQProduce          SubCategory = "RabbitMQProduce"
+	RabbitMQPublish          SubCategory = "RabbitMQPublish"
+	RabbitMQConsume          SubCategory = "RabbitMQConsume"
+	RabbitMQRegisterConsumer SubCategory = "RabbitMQRegisterConsumer"
 )
 
 const (
@@ -111,4 +118,9 @@ const (
 
 	SelectDBArg ExtraKey = "SelectDBArg"
 	InsertDBArg ExtraKey = "InsertDBArg"
+
+	CacheKey    ExtraKey = "CacheKey"
+	CacheSetArg ExtraKey = "CacheSetArg"
+
+	QueueName ExtraKey = "QueueName"
 )
