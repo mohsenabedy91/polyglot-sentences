@@ -124,12 +124,16 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		strings.ToLower(email),
 	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent)
 	if err != nil {
+
+		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, nil
+		}
 		metrics.DbCall.WithLabelValues("users", "GetByEmail", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, serviceerror.NewServerError()
 	}
 

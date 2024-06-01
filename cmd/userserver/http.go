@@ -25,7 +25,6 @@ import (
 // @description "Bearer <your-jwt-token>"
 func main() {
 	cfg := config.GetConfig()
-
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
