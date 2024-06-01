@@ -35,7 +35,7 @@ func (r UserService) IsEmailUnique(ctx context.Context, email string) error {
 	}
 
 	if !isUniqueEmail {
-		return serviceerror.NewServiceError(
+		return serviceerror.New(
 			serviceerror.EmailRegistered,
 			map[string]interface{}{
 				"email": email,

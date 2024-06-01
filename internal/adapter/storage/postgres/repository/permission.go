@@ -34,7 +34,7 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 	)
 	if err != nil {
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 	defer func(rows *sql.Rows) {
 		if err = rows.Close(); err != nil {
@@ -50,16 +50,16 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 		if err := rows.Scan(&key); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
-			return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+			return nil, serviceerror.NewServerError()
 		}
 		permissionKeys = append(permissionKeys, key)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
 	return permissionKeys, nil

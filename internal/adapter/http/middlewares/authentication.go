@@ -16,7 +16,7 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.Unauthorized),
+				serviceerror.New(serviceerror.Unauthorized),
 			).Echo()
 			return
 		}
@@ -32,7 +32,7 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 
 		if !validatedToken.Valid {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.InvalidToken),
+				serviceerror.New(serviceerror.InvalidToken),
 			).Echo()
 			return
 		}
@@ -45,7 +45,7 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 
 		if claims == nil {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.ServerError),
+				serviceerror.NewServerError(),
 			).Echo()
 			return
 		}
@@ -66,7 +66,7 @@ func validationToken(accessTokenSecret string, token string) (*jwt.Token, error)
 	})
 
 	if err != nil {
-		return nil, serviceerror.NewServiceError(serviceerror.InvalidToken)
+		return nil, serviceerror.New(serviceerror.InvalidToken)
 	}
 
 	return validToken, nil
@@ -83,5 +83,5 @@ func getClaims(validToken *jwt.Token) (map[string]interface{}, error) {
 		return claimsMaps, nil
 	}
 
-	return nil, serviceerror.NewServiceError(serviceerror.TokenExpired)
+	return nil, serviceerror.New(serviceerror.TokenExpired)
 }

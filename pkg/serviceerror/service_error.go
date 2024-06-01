@@ -16,7 +16,7 @@ type ServiceError struct {
 	trans      *translation.Translation
 }
 
-func NewServiceError(msg ErrorMessage, attrs ...map[string]interface{}) *ServiceError {
+func New(msg ErrorMessage, attrs ...map[string]interface{}) *ServiceError {
 
 	var attributes map[string]interface{}
 
@@ -40,4 +40,8 @@ func (r ServiceError) GetAttributes() map[string]interface{} {
 
 func (r ServiceError) Error() string {
 	return string(r.message)
+}
+
+func NewServerError() *ServiceError {
+	return New(ServerError)
 }

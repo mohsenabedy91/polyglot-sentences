@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -36,12 +37,19 @@ func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool,
 		email,
 	).Scan(&count)
 	if err != nil {
-		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return true, nil
 		}
-		return false, serviceerror.NewServiceError(serviceerror.ServerError)
+		metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return false, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
 
 	return count == 0, nil
 }
@@ -57,21 +65,23 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) error {
 		domain.UserStatusUnVerified,
 	)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseInsert, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.InsertDBArg: user,
 		})
-		return serviceerror.NewServiceError(serviceerror.ServerError)
+		return serviceerror.NewServerError()
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil || affected <= 0 {
-		if err != nil {
-			r.log.Error(logger.Database, logger.DatabaseInsert, err.Error(), nil)
-			return serviceerror.NewServiceError(serviceerror.ServerError)
-		}
-		r.log.Error(logger.Database, logger.DatabaseInsert, "There is any effected row in DB.", nil)
-		return serviceerror.NewServiceError(serviceerror.ServerError)
+		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "Save", "Success").Inc()
 
 	return nil
 }
@@ -84,23 +94,24 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 	)
 	user, err := scanUser(row)
 	if err != nil {
-		metrics.DbCall.WithLabelValues("users", "GetById", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("users", "GetByUUID", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "GetByUUID", "Success").Inc()
 
 	if !user.IsActive() {
 		r.log.Warn(logger.Database, logger.DatabaseSelect, "The User is inactive", map[logger.ExtraKey]interface{}{
 			logger.SelectDBArg: user,
 		})
-		return nil, serviceerror.NewServiceError(serviceerror.UserInActive)
+		return nil, serviceerror.New(serviceerror.UserInActive)
 	}
 
-	metrics.DbCall.WithLabelValues("users", "GetById", "Success").Inc()
 	return &user, nil
 }
 
@@ -108,18 +119,18 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	user := &domain.User{}
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT uuid, password FROM users WHERE deleted_at IS NULL AND status = $1 AND LOWER(email) = $2",
+		"SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent FROM users WHERE deleted_at IS NULL AND status = $1 AND LOWER(email) = $2",
 		domain.UserStatusActive,
 		strings.ToLower(email),
-	).Scan(&user.UUID, &user.Password)
+	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "GetByEmail", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
 	metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
@@ -133,8 +144,10 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL",
 	)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
 	defer func(rows *sql.Rows) {
@@ -149,20 +162,26 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	for rows.Next() {
 		user, err := scanUser(rows)
 		if err != nil {
+			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
-			return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+			return nil, serviceerror.NewServerError()
 		}
 
 		users = append(users, user)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
 
 	return users, nil
 }

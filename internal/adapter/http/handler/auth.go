@@ -68,7 +68,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	if hashErr != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
-			serviceerror.NewServiceError(serviceerror.ServerError),
+			serviceerror.NewServerError(),
 		).Echo()
 		return
 	}
@@ -112,7 +112,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 
 	if ok := helper.CheckPasswordHash(req.Password, user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
-			serviceerror.NewServiceError(serviceerror.CredentialInvalid),
+			serviceerror.New(serviceerror.CredentialInvalid),
 		).Echo()
 		return
 	}
