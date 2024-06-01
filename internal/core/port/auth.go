@@ -16,4 +16,8 @@ type UserClient interface {
 
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	GetByUUID(ctx context.Context, uuidStr string) (*domain.User, error)
+
+	VerifiedEmail(ctx context.Context, email string) error
+
+	UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error
 }

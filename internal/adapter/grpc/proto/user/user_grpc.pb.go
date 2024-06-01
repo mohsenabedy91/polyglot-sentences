@@ -27,6 +27,8 @@ type UserServiceClient interface {
 	GetByEmail(ctx context.Context, in *GetByEmailRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	IsEmailUnique(ctx context.Context, in *IsEmailUniqueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	VerifiedEmail(ctx context.Context, in *VerifiedEmailRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateWelcomeMessageToSentFlag(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type userServiceClient struct {
@@ -73,6 +75,24 @@ func (c *userServiceClient) Create(ctx context.Context, in *CreateRequest, opts 
 	return out, nil
 }
 
+func (c *userServiceClient) VerifiedEmail(ctx context.Context, in *VerifiedEmailRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/user.UserService/VerifiedEmail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UpdateWelcomeMessageToSentFlag(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/user.UserService/UpdateWelcomeMessageToSentFlag", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -81,6 +101,8 @@ type UserServiceServer interface {
 	GetByEmail(context.Context, *GetByEmailRequest) (*UserResponse, error)
 	IsEmailUnique(context.Context, *IsEmailUniqueRequest) (*empty.Empty, error)
 	Create(context.Context, *CreateRequest) (*empty.Empty, error)
+	VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error)
+	UpdateWelcomeMessageToSentFlag(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -99,6 +121,12 @@ func (UnimplementedUserServiceServer) IsEmailUnique(context.Context, *IsEmailUni
 }
 func (UnimplementedUserServiceServer) Create(context.Context, *CreateRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedUserServiceServer) VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifiedEmail not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateWelcomeMessageToSentFlag(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWelcomeMessageToSentFlag not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -185,6 +213,42 @@ func _UserService_Create_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_VerifiedEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifiedEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).VerifiedEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/VerifiedEmail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).VerifiedEmail(ctx, req.(*VerifiedEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UpdateWelcomeMessageToSentFlag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWelcomeMessageToSentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateWelcomeMessageToSentFlag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/UpdateWelcomeMessageToSentFlag",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateWelcomeMessageToSentFlag(ctx, req.(*UpdateWelcomeMessageToSentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -207,6 +271,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _UserService_Create_Handler,
+		},
+		{
+			MethodName: "VerifiedEmail",
+			Handler:    _UserService_VerifiedEmail_Handler,
+		},
+		{
+			MethodName: "UpdateWelcomeMessageToSentFlag",
+			Handler:    _UserService_UpdateWelcomeMessageToSentFlag_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

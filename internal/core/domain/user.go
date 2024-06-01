@@ -28,6 +28,8 @@ type User struct {
 	Password  string
 	Avatar    string
 	Status    UserStatusType
+
+	WelcomeMessageSent bool
 }
 
 func (r User) IsActive() bool {

@@ -121,3 +121,29 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*emptypb
 
 	return nil, nil
 }
+
+func (r Server) VerifiedEmail(ctx context.Context, req *userpb.VerifiedEmailRequest) (*emptypb.Empty, error) {
+	err := r.userService.VerifiedEmail(ctx, req.GetEmail())
+	if err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil, nil
+}
+
+func (r Server) UpdateWelcomeMessageToSentFlag(ctx context.Context, req *userpb.UpdateWelcomeMessageToSentRequest) (*emptypb.Empty, error) {
+	err := r.userService.UpdateWelcomeMessageToSentFlag(ctx, req.GetUserId())
+	if err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil, nil
+}

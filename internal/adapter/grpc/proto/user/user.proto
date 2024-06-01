@@ -10,6 +10,8 @@ service UserService {
   rpc GetByEmail(GetByEmailRequest) returns (UserResponse);
   rpc IsEmailUnique(IsEmailUniqueRequest) returns (google.protobuf.Empty);
   rpc Create(CreateRequest) returns (google.protobuf.Empty);
+  rpc VerifiedEmail(VerifiedEmailRequest) returns(google.protobuf.Empty);
+  rpc UpdateWelcomeMessageToSentFlag(UpdateWelcomeMessageToSentRequest) returns(google.protobuf.Empty);
 }
 
 message GetByUUIDRequest {
@@ -31,6 +33,14 @@ message CreateRequest {
   string password = 4;
 }
 
+message VerifiedEmailRequest {
+  string email = 1;
+}
+
+message UpdateWelcomeMessageToSentRequest {
+  uint64 user_id = 1;
+}
+
 message UserResponse {
   uint64 id = 1;
   string uuid = 2;
@@ -39,4 +49,5 @@ message UserResponse {
   string email = 5;
   string status = 6;
   string password = 7;
+  bool welcome_message_sent = 8;
 }

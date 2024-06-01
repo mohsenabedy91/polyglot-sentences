@@ -186,6 +186,53 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
+func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error {
+	res, err := r.db.ExecContext(
+		ctx,
+		"UPDATE users SET email_verified_at = now(), status = $1 WHERE deleted_at IS NULL AND email = $2",
+		domain.UserStatusActive,
+		email,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Success").Inc()
+
+	return nil
+}
+
+func (r *UserRepository) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true WHERE id = $1", id)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdateWelcomeMessageToSentFlag", "Success").Inc()
+
+	return nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
 

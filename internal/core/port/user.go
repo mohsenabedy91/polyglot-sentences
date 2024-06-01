@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
 
 // UserRepository is an interface for interacting with user-related data
@@ -14,6 +13,8 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 	Save(ctx context.Context, user *domain.User) error
+	VerifiedEmail(ctx context.Context, email string) error
+	UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -23,4 +24,6 @@ type UserService interface {
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 	Create(ctx context.Context, user domain.User) error
+	VerifiedEmail(ctx context.Context, email string) error
+	UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error
 }

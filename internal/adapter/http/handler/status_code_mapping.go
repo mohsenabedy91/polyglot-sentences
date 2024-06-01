@@ -8,10 +8,11 @@ import (
 // StatusCodeMapping maps error to http status code
 var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	// General
-	serviceerror.ServerError:      http.StatusInternalServerError,
-	serviceerror.RecordNotFound:   http.StatusNotFound,
-	serviceerror.PermissionDenied: http.StatusForbidden,
-	serviceerror.Unauthorized:     http.StatusUnauthorized,
+	serviceerror.ServerError:        http.StatusInternalServerError,
+	serviceerror.ServiceUnavailable: http.StatusServiceUnavailable,
+	serviceerror.RecordNotFound:     http.StatusNotFound,
+	serviceerror.PermissionDenied:   http.StatusForbidden,
+	serviceerror.Unauthorized:       http.StatusUnauthorized,
 	// User
 	serviceerror.UserIsBanned:      http.StatusForbidden,
 	serviceerror.UserInActive:      http.StatusForbidden,

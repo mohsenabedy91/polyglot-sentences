@@ -113,3 +113,27 @@ func (r UserClient) Create(ctx context.Context, userParam domain.User) error {
 	}
 	return nil
 }
+
+func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
+	req := userpb.VerifiedEmailRequest{Email: email}
+	_, err := r.userServiceClient.VerifiedEmail(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
+	return nil
+}
+
+func (r UserClient) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
+	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: id}
+	_, err := r.userServiceClient.UpdateWelcomeMessageToSentFlag(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
+	return nil
+}

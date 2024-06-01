@@ -57,3 +57,11 @@ func (r UserService) List(ctx context.Context) ([]domain.User, error) {
 func (r UserService) Create(ctx context.Context, user domain.User) error {
 	return r.userRepo.Save(ctx, &user)
 }
+
+func (r UserService) VerifiedEmail(ctx context.Context, email string) error {
+	return r.userRepo.VerifiedEmail(ctx, email)
+}
+
+func (r UserService) UpdateWelcomeMessageToSentFlag(ctx context.Context, id uint64) error {
+	return r.userRepo.UpdateWelcomeMessageToSentFlag(ctx, id)
+}

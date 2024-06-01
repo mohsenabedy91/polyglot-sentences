@@ -4,10 +4,11 @@ type ErrorMessage string
 
 var (
 	// General
-	ServerError      ErrorMessage = "errors.somethingIsWrong"
-	PermissionDenied ErrorMessage = "errors.permissionDenied"
-	RecordNotFound   ErrorMessage = "errors.recordNotFound"
-	Unauthorized     ErrorMessage = "errors.unauthorized"
+	ServerError        ErrorMessage = "errors.serverError"
+	ServiceUnavailable ErrorMessage = "errors.serviceIsUnavailable"
+	PermissionDenied   ErrorMessage = "errors.permissionDenied"
+	RecordNotFound     ErrorMessage = "errors.recordNotFound"
+	Unauthorized       ErrorMessage = "errors.unauthorized"
 
 	// User
 	UserIsBanned      ErrorMessage = "errors.userIsBanned"
