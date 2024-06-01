@@ -17,9 +17,11 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   └── 📄http.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
-│   └── 📁userserver/
-│       ├── 📄grpc.go
-│       └── 📄http.go
+│   ├── 📁userserver/
+│   │   ├── 📄grpc.go
+│   │   └── 📄http.go
+│   └── 📁worker/
+│       └── 📄main.go
 ├── 📁deploy/
 │   ├── 📄Deployment.yml
 │   └── 📄Service.yml
@@ -36,13 +38,17 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   ├── 📁adapter/
 │   │   ├── 📁constant/
 │   │   │   └── 📄messages.go
+│   │   ├── 📁email/
+│   │   │   ├── 📄sender.go
+│   │   │   └── 📄sendgrid.go
 │   │   ├── 📁grpc/
 │   │   │   ├── 📁client/
 │   │   │   │   └── 📄user_client.go
 │   │   │   ├── 📁proto/
-│   │   │   │   ├── 📄user.pb.go
-│   │   │   │   ├── 📄user.proto
-│   │   │   │   └── 📄user_grpc.pb.go
+│   │   │   │   ├── 📁user/
+│   │   │   │   │   ├── 📄user.pb.go
+│   │   │   │   │   ├── 📄user.proto
+│   │   │   │   │   └── 📄user_grpc.pb.go
 │   │   │   └── 📁server/
 │   │   │       └── 📄user_server.go
 │   │   ├── 📁http/
@@ -62,6 +68,9 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   │   │   └── 📄swagger.go
 │   │   │   └── 📁validations/
 │   │   │       └── 📄validator.go
+│   │   ├── 📁messagebroker/
+│   │   │   ├── 📄queue.go
+│   │   │   └── 📄rabbitmq.go
 │   │   └── 📁storage/
 │   │       ├── 📁postgres/
 │   │       │   ├── 📁migrations/
@@ -75,27 +84,37 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   └── 📁core/
 │       ├── 📁config/
 │       │   └── 📄config.go
+│       ├── 📁constant/
+│       │   └── 📄cache.go
 │       ├── 📁domain/
 │       │   ├── 📄base.go
 │       │   └── 📄user.go
 │       ├── 📁port/
 │       │   ├── 📄message_broker.go
 │       │   └── 📄user.go
-│       └── 📁service/
-│           └── 📁userservice/
-│               └── 📄user.go
+│       ├── 📁service/
+│       │   └── 📁userservice/
+│       │       └── 📄user.go
+│       └── 📁views/
+│           └── 📁email/
+│               ├── 📁auth
+│               │   ├── 📄verify_email.html
+│               │   └── 📄welcome.html
+│               └── 📄base.html
 ├── 📁logs/
 │   └── 📄logs-2024-05-21.log
 ├── 📁pkg/
 │   ├── 📁claim/
 │   │   └── 📄gin.go
+│   ├── 📁helper/
+│   │   ├── 📄authenticate.go
+│   │   └── 📄authenticate_bench_test.go
 │   ├── 📁logger/
 │   │   ├── 📄const.go
 │   │   └── 📄logger.go
-│   ├── 📁password/
-│   │   └── 📄password.go
 │   ├── 📁serviceerror/
 │   │   ├── 📄error_message.go
+│   │   ├── 📄grpc.go
 │   │   └── 📄service_error.go
 │   └── 📁translation/
 │       ├── 📄trans.go
