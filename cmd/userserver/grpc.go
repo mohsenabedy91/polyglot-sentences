@@ -21,7 +21,7 @@ func main() {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(cfg, log); err != nil {
+	if err := postgres.InitClient(log, cfg); err != nil {
 		return
 	}
 	postgresDB := postgres.Get()

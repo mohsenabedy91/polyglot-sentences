@@ -18,8 +18,8 @@ func LocaleMiddleware(trans *translation.Translation) gin.HandlerFunc {
 			serviceErr := serviceerror.NewServiceError(serviceerror.ServerError)
 			presenter.NewResponse(ctx, trans).Error(serviceErr).Echo()
 		}
-		localizer := trans.GetLocalizer(langUri.Language)
-		ctx.Set("localizer", localizer)
+		_ = trans.GetLocalizer(langUri.Language)
+
 		ctx.Next()
 	}
 }

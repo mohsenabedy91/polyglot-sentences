@@ -19,21 +19,21 @@ import (
 // Router is a wrapper for HTTP router
 type Router struct {
 	*gin.Engine
-	log    logger.Logger
-	config config.Config
-	trans  *translation.Translation
+	log   logger.Logger
+	cfg   config.Config
+	trans *translation.Translation
 }
 
 // NewRouter creates a new HTTP router
 func NewRouter(
-	config config.Config,
 	log logger.Logger,
+	cfg config.Config,
 	trans *translation.Translation,
 	healthHandler handler.HealthHandler,
 ) (*Router, error) {
 
 	// Disable debug mode in production
-	if config.App.Env == "production" {
+	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -44,9 +44,9 @@ func NewRouter(
 	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
-	setSwaggerRoutes(router.Group(""), config.Swagger)
+	setSwaggerRoutes(router.Group(""), cfg.Swagger)
 
-	if err := validations.RegisterValidator(); err != nil {
+	if err := validations.RegisterValidator(cfg); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +57,7 @@ func NewRouter(
 	}
 
 	return &Router{
-		router, log, config, trans,
+		router, log, cfg, trans,
 	}, nil
 }
 

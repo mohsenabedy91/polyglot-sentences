@@ -24,9 +24,7 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	// Load environment variables
 	cfg := config.GetConfig()
-
 	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
 	profiling(cfg.Profile)
@@ -36,7 +34,7 @@ func main() {
 
 	healthHandler := handler.NewHealthHandler(trans)
 
-	router, err := routes.NewRouter(cfg, log, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
 	defer func() {
@@ -54,7 +52,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start server
 	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
 	server := &http.Server{
 		Addr:    listenAddr,
@@ -64,6 +61,7 @@ func main() {
 		logger.ListeningAddress: server.Addr,
 	})
 
+	// Start server
 	router.Serve(server)
 
 	signalCh := make(chan os.Signal, 1)
@@ -76,7 +74,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err = server.Shutdown(ctx); err != nil {
 		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("server Shutdown: %v", err), nil)
 	}
 

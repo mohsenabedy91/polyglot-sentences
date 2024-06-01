@@ -34,7 +34,7 @@ func main() {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(cfg, log); err != nil {
+	if err := postgres.InitClient(log, cfg); err != nil {
 		return
 	}
 	postgresDB := postgres.Get()
@@ -45,7 +45,7 @@ func main() {
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(cfg, log, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
 		os.Exit(1)
@@ -60,7 +60,6 @@ func main() {
 
 	router = router.NewUserRouter(accessControlService, *userHandler)
 
-	// Start server
 	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{
 		Addr:    listenAddr,
@@ -70,6 +69,7 @@ func main() {
 		logger.ListeningAddress: server.Addr,
 	})
 
+	// Start server
 	router.Serve(server)
 
 	signalCh := make(chan os.Signal, 1)

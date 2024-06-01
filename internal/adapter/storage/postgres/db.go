@@ -14,11 +14,11 @@ import (
 
 var dbClient *sql.DB
 
-func InitClient(config config.Config, log logger.Logger) error {
+func InitClient(log logger.Logger, cfg config.Config) error {
 	var err error
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
-		config.DB.Host, config.DB.Port, config.DB.Username, config.DB.Password,
-		config.DB.Name, config.DB.Postgres.SSLMode, config.DB.Postgres.Timezone)
+		cfg.DB.Host, cfg.DB.Port, cfg.DB.Username, cfg.DB.Password,
+		cfg.DB.Name, cfg.DB.Postgres.SSLMode, cfg.DB.Postgres.Timezone)
 
 	if dbClient, err = sql.Open("postgres", dsn); err != nil {
 		log.Error(logger.Database, logger.Startup, fmt.Sprintf("There is an Error in Open DB : %v", err), nil)
@@ -30,9 +30,9 @@ func InitClient(config config.Config, log logger.Logger) error {
 		return err
 	}
 
-	dbClient.SetMaxOpenConns(config.DB.Postgres.MaxOpenConnections)
-	dbClient.SetMaxIdleConns(config.DB.Postgres.MaxIdleConnections)
-	dbClient.SetConnMaxLifetime(config.DB.Postgres.MaxLifetime * time.Minute)
+	dbClient.SetMaxOpenConns(cfg.DB.Postgres.MaxOpenConnections)
+	dbClient.SetMaxIdleConns(cfg.DB.Postgres.MaxIdleConnections)
+	dbClient.SetConnMaxLifetime(cfg.DB.Postgres.MaxLifetime * time.Minute)
 
 	log.Info(logger.Database, logger.Startup, "Database client initialized", nil)
 
@@ -56,7 +56,7 @@ func getMigrateInstance(log logger.Logger) (*migrate.Migrate, error) {
 	cfg := config.GetConfig()
 
 	// Initialize the database client
-	if err := InitClient(cfg, log); err != nil {
+	if err := InitClient(log, cfg); err != nil {
 		return nil, err
 	}
 

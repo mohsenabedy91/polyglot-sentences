@@ -37,8 +37,7 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
 	}
 	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
+		if err = rows.Close(); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return
 		}

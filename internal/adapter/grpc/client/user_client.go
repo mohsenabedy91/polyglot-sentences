@@ -38,11 +38,11 @@ func NewUserClient(log logger.Logger, cfg config.UserManagement) *UserClient {
 	}
 }
 
-func (r *UserClient) Close() error {
+func (r UserClient) Close() error {
 	return r.conn.Close()
 }
 
-func (r *UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
+func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
 	req := userpb.GetByUUIDRequest{UserUuid: UserUUID}
 	resp, err := r.userServiceClient.GetByUUID(ctx, &req)
 	if err != nil {
@@ -64,7 +64,7 @@ func (r *UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Us
 	}, nil
 }
 
-func (r *UserClient) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	req := userpb.GetByEmailRequest{Email: email}
 	resp, err := r.userServiceClient.GetByEmail(ctx, &req)
 	if err != nil {
@@ -87,7 +87,7 @@ func (r *UserClient) GetByEmail(ctx context.Context, email string) (*domain.User
 	}, nil
 }
 
-func (r *UserClient) IsEmailUnique(ctx context.Context, email string) error {
+func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
 	req := userpb.IsEmailUniqueRequest{Email: email}
 	_, err := r.userServiceClient.IsEmailUnique(ctx, &req)
 	if err != nil {
@@ -99,7 +99,7 @@ func (r *UserClient) IsEmailUnique(ctx context.Context, email string) error {
 	return nil
 }
 
-func (r *UserClient) Create(ctx context.Context, userParam domain.User) error {
+func (r UserClient) Create(ctx context.Context, userParam domain.User) error {
 	req := userpb.CreateRequest{
 		FirstName: userParam.FirstName,
 		LastName:  userParam.LastName,

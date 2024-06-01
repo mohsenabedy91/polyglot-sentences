@@ -95,8 +95,6 @@ const (
 )
 
 const (
-	AppName          ExtraKey = "AppName"
-	LoggerName       ExtraKey = "LoggerName"
 	ClientIp         ExtraKey = "ClientIp"
 	ListeningAddress ExtraKey = "ListeningAddress"
 	Method           ExtraKey = "Method"

@@ -10,7 +10,7 @@ import (
 // UserRepository is an interface for interacting with user-related data
 type UserRepository interface {
 	GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, error)
-	IsEmailUnique(ctx context.Context, email string) (bool, serviceerror.Error)
+	IsEmailUnique(ctx context.Context, email string) (bool, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 	Save(ctx context.Context, user *domain.User) error

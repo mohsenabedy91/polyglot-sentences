@@ -48,14 +48,16 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	var hashedPass string
-	var hashErr error
-	var wg sync.WaitGroup
+	var (
+		hashedPass string
+		hashErr    error
+		wg         sync.WaitGroup
+	)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hashedPass, hashErr = password.HashPassword(req.Password)
+		hashedPass, hashErr = helper.HashPassword(req.Password)
 	}()
 
 	if err := r.userClient.IsEmailUnique(ctx.Request.Context(), req.Email); err != nil {
@@ -89,7 +91,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Param request body requests.AuthLogin true "Login request"
-// @Success 200 {object} presenter.Response{data=presenter.User} "Successful response"
+// @Success 200 {object} presenter.Response{data=presenter.Token} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
@@ -108,7 +110,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	if ok := password.CheckPasswordHash(req.Password, user.Password); !ok {
+	if ok := helper.CheckPasswordHash(req.Password, user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.NewServiceError(serviceerror.CredentialInvalid),
 		).Echo()

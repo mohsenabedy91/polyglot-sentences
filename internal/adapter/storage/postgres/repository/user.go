@@ -27,7 +27,7 @@ func NewUserRepository(log logger.Logger, db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, serviceerror.Error) {
+func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
 	email = strings.ToLower(email)
 	var count int
 	err := r.db.QueryRowContext(
@@ -138,8 +138,7 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	}
 
 	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
+		if err = rows.Close(); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return
 		}
