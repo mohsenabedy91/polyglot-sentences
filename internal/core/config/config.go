@@ -22,6 +22,8 @@ var (
 )
 
 type App struct {
+	VerificationURL    string
+	SupportEmail       string
 	Env                string
 	Debug              bool
 	Timezone           string
@@ -147,6 +149,8 @@ func LoadConfig() (Config, error) {
 	}
 
 	var app App
+	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
+	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
 	app.Env = os.Getenv("APP_ENV")
 	app.Debug = getBoolEnv("APP_DEBUG")
 	app.Timezone = os.Getenv("APP_TIMEZONE")

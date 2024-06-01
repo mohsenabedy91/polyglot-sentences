@@ -1,0 +1,12 @@
+{
+  "email": {
+    "welcome": {
+      "subject": "Bienvenue sur l'application {{.app}}!",
+      "body": "Cher {{.username}},<br><br>Nous sommes ravis de vous accueillir sur l'application {{.app}}! Merci de choisir notre plateforme pour améliorer votre parcours d'apprentissage des langues.<br><br>{{.app}} est conçu pour vous offrir une expérience immersive et interactive dans l'apprentissage de plusieurs langues. Voici quelques conseils pour commencer :<br><br>1. Explorez les packs de langues : Plongez dans notre large gamme de packs de langues et choisissez ceux qui vous intéressent le plus.<br>2. Pratique quotidienne : La clé est la constance. Utilisez notre fonctionnalité de pratique quotidienne pour atteindre vos objectifs d'apprentissage.<br>3. Exercices interactifs : Engagez-vous avec des exercices interactifs pour renforcer votre apprentissage et améliorer votre fluidité.<br>4. Support communautaire : Rejoignez nos forums communautaires pour vous connecter avec d'autres apprenants, partager des astuces et chercher du soutien.<br><br>Nous sommes là pour vous soutenir à chaque étape. Si vous avez des questions ou besoin d'assistance, n'hésitez pas à contacter notre équipe de support à [{{.supportEmail}}].<br><br>Bon apprentissage !<br><br>Cordialement,<br><br>L'équipe {{.app}}"
+    },
+    "verifyEmail": {
+      "subject": "Vérifiez votre e-mail pour {{.app}}",
+      "body": "Cher(e) {{.username}},<br><br>Pour finaliser votre inscription avec {{.app}}, veuillez vérifier votre adresse e-mail en saisissant le code de confirmation suivant ou en cliquant sur le lien de vérification ci-dessous :<br><br>Code de confirmation : <p>Code de confirmation : <b style='font-size:20px;'>{{.otp}}</b></p><a href='{{.verificationUrl}}' style='text-decoration:none;'>[Lien pour confirmer l'adresse e-mail]</a><br><br>Si vous n'avez pas demandé cela, veuillez ignorer cet e-mail.<br><br>Cordialement,<br><br>L'équipe {{.app}}"
+    }
+  }
+}
