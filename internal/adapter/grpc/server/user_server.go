@@ -10,11 +10,9 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
-	"github.com/mohsenabedy91/polyglot-sentences/proto/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 )
@@ -54,11 +52,15 @@ func (r Server) StartUserGRPCServer() {
 func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*userpb.UserResponse, error) {
 	resp, err := r.userService.GetByUUID(ctx, req.GetUserUuid())
 	if err != nil {
-		return nil, fmt.Errorf(err.Error())
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
 	return &userpb.UserResponse{
-		Id:        uint64(resp.ID),
+		Id:        resp.ID,
 		Uuid:      resp.UUID.String(),
 		FirstName: resp.FirstName,
 		LastName:  resp.LastName,
@@ -70,7 +72,11 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (*userpb.UserResponse, error) {
 	resp, err := r.userService.GetByEmail(ctx, req.GetEmail())
 	if err != nil {
-		return nil, fmt.Errorf(err.Error())
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
 	return &userpb.UserResponse{
@@ -84,12 +90,12 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 	}, nil
 }
 
-func (r Server) IsEmailUnique(ctx context.Context, email *userpb.IsEmailUniqueRequest) (*emptypb.Empty, error) {
-	err := r.userService.IsEmailUnique(ctx, email.GetEmail())
+func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequest) (*emptypb.Empty, error) {
+	err := r.userService.IsEmailUnique(ctx, req.GetEmail())
 	if err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
-			return nil, ConvertServiceErrorToGrpcError(se)
+			return nil, serviceerror.ConvertToGrpcError(se)
 		}
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
@@ -105,34 +111,12 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*emptypb
 		Password:  req.GetPassword(),
 	})
 	if err != nil {
-		return nil, fmt.Errorf(err.Error())
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
 	return nil, nil
-}
-
-func ConvertServiceErrorToGrpcError(serviceErr *serviceerror.ServiceError) error {
-	st := status.New(codes.Unknown, serviceErr.Error())
-
-	attrs := serviceErr.GetAttributes()
-	strAttrs := make(map[string]string)
-	for k, v := range attrs {
-		strAttrs[k] = fmt.Sprintf("%v", v)
-	}
-
-	customErrorDetail := &common.CustomErrorDetail{
-		Message:    serviceErr.Error(),
-		Attributes: strAttrs,
-	}
-
-	detail, err := anypb.New(customErrorDetail)
-	if err != nil {
-		return st.Err()
-	}
-
-	if st, err = st.WithDetails(detail); err != nil {
-		return st.Err()
-	}
-
-	return st.Err()
 }

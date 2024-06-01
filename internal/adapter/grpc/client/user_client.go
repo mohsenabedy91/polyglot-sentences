@@ -9,11 +9,8 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
-	"github.com/mohsenabedy91/polyglot-sentences/proto/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type UserClient struct {
@@ -49,7 +46,7 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return nil, ExtractServiceErrorFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
 	return &domain.User{
@@ -71,12 +68,12 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return nil, ExtractServiceErrorFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
 	return &domain.User{
 		Base: domain.Base{
-			ID:   uint(resp.GetId()),
+			ID:   resp.GetId(),
 			UUID: uuid.MustParse(resp.GetUuid()),
 		},
 		FirstName: resp.GetFirstName(),
@@ -94,7 +91,7 @@ func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return ExtractServiceErrorFromGrpcError(err)
+		return serviceerror.ExtractFromGrpcError(err)
 	}
 	return nil
 }
@@ -111,36 +108,7 @@ func (r UserClient) Create(ctx context.Context, userParam domain.User) error {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return ExtractServiceErrorFromGrpcError(err)
+		return serviceerror.ExtractFromGrpcError(err)
 	}
-
 	return nil
-}
-
-func ExtractServiceErrorFromGrpcError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	for _, detail := range st.Details() {
-		anyDetail, ok := detail.(*anypb.Any)
-		if !ok {
-			continue
-		}
-
-		var customErrorDetail common.CustomErrorDetail
-		if err = anyDetail.UnmarshalTo(&customErrorDetail); err != nil {
-			continue
-		}
-
-		attrs := make(map[string]interface{})
-		for k, v := range customErrorDetail.Attributes {
-			attrs[k] = v
-		}
-
-		return serviceerror.NewServiceError(serviceerror.ErrorMessage(customErrorDetail.Message), attrs)
-	}
-
-	return err
 }
