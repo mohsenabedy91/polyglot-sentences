@@ -3,17 +3,23 @@ package validations
 import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"log"
 	"regexp"
 	"unicode"
 )
 
-func RegisterValidator() error {
+func RegisterValidator(cfg config.Config) error {
 	if val, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		if err := val.RegisterValidation("regex_alpha", RegexAlpha, true); err != nil {
 			return err
 		}
 		if err := val.RegisterValidation("password_complexity", PasswordComplexity, true); err != nil {
+			return err
+		}
+		if err := val.RegisterValidation("token_length", func(fl validator.FieldLevel) bool {
+			return TokenLength(fl, cfg.OTP.Digits)
+		}, true); err != nil {
 			return err
 		}
 	}
@@ -64,4 +70,12 @@ func PasswordComplexity(field validator.FieldLevel) bool {
 	}
 
 	return hasUpper && hasLower && hasDigit && hasSpecial
+}
+
+func TokenLength(field validator.FieldLevel, length int8) bool {
+	if value, ok := field.Field().Interface().(string); !ok {
+		return false
+	} else {
+		return len(value) == int(length)
+	}
 }
