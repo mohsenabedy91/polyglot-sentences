@@ -118,7 +118,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	user := &domain.User{}
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent FROM users WHERE deleted_at IS NULL AND status = $1 AND LOWER(email) = $2",
+		"SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent FROM users WHERE deleted_at IS NULL AND status IN ($1, $2) AND LOWER(email) = $3",
+		domain.UserStatusUnverifiedStr,
 		domain.UserStatusActive,
 		strings.ToLower(email),
 	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent)
