@@ -33,5 +33,13 @@ func main() {
 	userService := userservice.New(log, userRepo)
 
 	s := server.NewUserGRPCServer(cfg.UserManagement, userService, trans)
-	s.StartUserGRPCServer()
+	grpcServer, err := s.StartUserGRPCServer()
+	if err != nil {
+		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
+		return
+	}
+
+	log.Info(logger.Internal, logger.Shutdown, "Shutdown Server ...", nil)
+
+	grpcServer.GracefulStop()
 }

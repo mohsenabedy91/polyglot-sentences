@@ -33,11 +33,11 @@ func NewUserGRPCServer(cfg config.UserManagement, userService port.UserService, 
 	}
 }
 
-func (r Server) StartUserGRPCServer() {
+func (r Server) StartUserGRPCServer() (*grpc.Server, error) {
 	address := fmt.Sprintf("%s:%s", r.cfg.URL, r.cfg.GRPCPort)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	grpcServer := grpc.NewServer()
@@ -45,8 +45,10 @@ func (r Server) StartUserGRPCServer() {
 	userpb.RegisterUserServiceServer(grpcServer, r)
 
 	if err = grpcServer.Serve(listener); err != nil {
-		return
+		return nil, err
 	}
+
+	return grpcServer, nil
 }
 
 func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*userpb.UserResponse, error) {
