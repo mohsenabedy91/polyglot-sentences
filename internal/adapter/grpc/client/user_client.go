@@ -58,7 +58,7 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 			FirstName: resp.GetFirstName(),
 			LastName:  resp.GetLastName(),
 			Email:     resp.GetEmail(),
-			Status:    domain.ToUserStatus(resp.Status),
+			Status:    domain.ToUserStatus(resp.GetStatus()),
 		}, nil
 	}
 

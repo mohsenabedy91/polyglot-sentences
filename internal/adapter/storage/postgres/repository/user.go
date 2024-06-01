@@ -233,8 +233,12 @@ func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) 
 
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
+	var firstName sql.NullString
+	var lastName sql.NullString
 
-	err := scanner.Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Status)
+	err := scanner.Scan(&user.ID, &user.UUID, &firstName, &lastName, &user.Email, &user.Status)
+
+	user.SetFirstName(firstName).SetLastName(lastName)
 
 	return user, err
 }
