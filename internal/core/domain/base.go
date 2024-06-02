@@ -11,7 +11,7 @@ type Modifier struct {
 }
 
 type Base struct {
-	ID   uint
+	ID   uint64
 	UUID uuid.UUID
 
 	CreatedAt time.Time

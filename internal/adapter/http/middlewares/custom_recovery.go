@@ -7,7 +7,7 @@ import (
 )
 
 func ErrorHandler(ctx *gin.Context, err any) {
-	serviceErr := serviceerror.NewServiceError(serviceerror.ServerError)
+	serviceErr := serviceerror.NewServerError()
 	presenter.NewResponse(ctx, nil).Error(serviceErr).Echo()
 	return
 }

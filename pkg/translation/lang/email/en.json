@@ -1,0 +1,12 @@
+{
+  "email": {
+    "welcome": {
+      "subject": "Welcome to {{.app}} App!",
+      "body": "Dear {{.username}},<p>We are thrilled to welcome you to the {{.app}} app! Thank you for choosing our platform to enhance your language learning journey.</p><p>{{.app}} is designed to provide you with an immersive and interactive experience in learning multiple languages. Here are a few tips to get you started:</p><p>1. Explore Language Packs: Dive into our wide range of language packs and choose the ones that interest you the most.<br>2. Daily Practice: Consistency is key. Make use of our daily practice feature to keep up with your learning goals.<br>3. Interactive Exercises: Engage with interactive exercises to reinforce your learning and improve your fluency.<br>4. Community Support: Join our community forums to connect with fellow learners, share tips, and seek support.</p><p>We are here to support you every step of the way. If you have any questions or need assistance, please do not hesitate to reach out to our support team at [{{.supportEmail}}].</p><p>Happy learning!</p><p>Best regards,</p><p>{{.app}} Team</p>"
+    },
+    "verifyEmail": {
+      "subject": "Verify Your Email for {{.app}}",
+      "body": "Dear {{.username}},<p>To complete your registration with {{.app}}, please verify your email address by entering the following OTP or clicking on the verification link below:</p><p>Confirmation code: <b style='font-size:20px;'>{{.otp}}</b></p><a href='{{.verificationUrl}}' style='text-decoration:none;'>[Link to confirm email address]</a></p><p>If you did not request this, please ignore this email.</p><p>Best regards,</p><p>{{.app}} Team</p>"
+    }
+  }
+}

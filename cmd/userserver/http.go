@@ -25,7 +25,6 @@ import (
 // @description "Bearer <your-jwt-token>"
 func main() {
 	cfg := config.GetConfig()
-
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
@@ -34,7 +33,7 @@ func main() {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(cfg, log); err != nil {
+	if err := postgres.InitClient(log, cfg); err != nil {
 		return
 	}
 	postgresDB := postgres.Get()
@@ -45,7 +44,7 @@ func main() {
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(cfg, log, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
 		os.Exit(1)
@@ -56,11 +55,12 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
-	accessControlService := authorizationservice.New(log, permissionRepo, userService)
+	roleRepo := repository.NewRoleRepository(log, postgresDB)
+	aclRepo := repository.NewACLRepository(log, postgresDB)
+	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
 
-	router = router.NewUserRouter(accessControlService, *userHandler)
+	router = router.NewUserRouter(aclService, *userHandler)
 
-	// Start server
 	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{
 		Addr:    listenAddr,
@@ -70,6 +70,7 @@ func main() {
 		logger.ListeningAddress: server.Addr,
 	})
 
+	// Start server
 	router.Serve(server)
 
 	signalCh := make(chan os.Signal, 1)
@@ -83,7 +84,7 @@ func main() {
 	defer cancel()
 
 	if err = server.Shutdown(ctx); err != nil {
-		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("server Shutdown: %v", err), nil)
+		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("Shutdown Server: %v", err), nil)
 	}
 
 	select {

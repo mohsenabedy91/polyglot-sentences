@@ -11,13 +11,13 @@ import (
 )
 
 func ACL(
-	service port.AccessControlService,
+	service port.ACLService,
 	permissions ...domain.PermissionKeyType,
 ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if len(ctx.Keys) == 0 {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.Unauthorized),
+				serviceerror.New(serviceerror.Unauthorized),
 			).Echo()
 			return
 		}
@@ -32,7 +32,7 @@ func ACL(
 
 		if !isAllowed {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
-				serviceerror.NewServiceError(serviceerror.PermissionDenied),
+				serviceerror.New(serviceerror.PermissionDenied),
 			).Echo()
 			return
 		}

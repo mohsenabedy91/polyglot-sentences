@@ -34,7 +34,7 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 
 	if err != nil {
 		r.log.Error(logger.JWT, logger.JWTGenerate, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
 	return &jwtString, nil

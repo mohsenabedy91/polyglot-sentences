@@ -22,6 +22,8 @@ var (
 )
 
 type App struct {
+	VerificationURL    string
+	SupportEmail       string
 	Env                string
 	Debug              bool
 	Timezone           string
@@ -114,6 +116,30 @@ type Jwt struct {
 	AccessTokenExpireDay time.Duration
 }
 
+type OTP struct {
+	ExpireSecond time.Duration
+	Digits       int8
+}
+type RabbitMQ struct {
+	URL string
+}
+
+type SendGrid struct {
+	Key     string
+	Name    string
+	Address string
+}
+
+type Oauth struct {
+	Google
+}
+
+type Google struct {
+	ClientId     string
+	ClientSecret string
+	CallbackURL  string
+}
+
 // Config represents the application configuration.
 type Config struct {
 	App            App
@@ -125,6 +151,10 @@ type Config struct {
 	DB             DB
 	Redis          Redis
 	Jwt            Jwt
+	OTP            OTP
+	RabbitMQ       RabbitMQ
+	SendGrid       SendGrid
+	Oauth          Oauth
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -135,6 +165,8 @@ func LoadConfig() (Config, error) {
 	}
 
 	var app App
+	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
+	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
 	app.Env = os.Getenv("APP_ENV")
 	app.Debug = getBoolEnv("APP_DEBUG")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
@@ -210,6 +242,23 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
+	var otp OTP
+	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
+	otp.Digits = int8(getIntEnv("OTP_DIGITS", 6))
+
+	var rabbitMQ RabbitMQ
+	rabbitMQ.URL = os.Getenv("RABBITMQ_URL")
+
+	var sendGrid SendGrid
+	sendGrid.Key = os.Getenv("SEND_GRID_KEY")
+	sendGrid.Name = os.Getenv("SEND_GRID_NAME")
+	sendGrid.Address = os.Getenv("SEND_GRID_ADDRESS")
+
+	var oauth Oauth
+	oauth.Google.ClientId = os.Getenv("OAUTH_GOOGLE_CLIENT_ID")
+	oauth.Google.ClientSecret = os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET")
+	oauth.Google.CallbackURL = os.Getenv("OAUTH_GOOGLE_CALLBACK_URL")
+
 	return Config{
 		App:            app,
 		Auth:           auth,
@@ -220,6 +269,10 @@ func LoadConfig() (Config, error) {
 		Redis:          redis,
 		Jwt:            jwt,
 		UserManagement: userManagement,
+		OTP:            otp,
+		RabbitMQ:       rabbitMQ,
+		SendGrid:       sendGrid,
+		Oauth:          oauth,
 	}, nil
 }
 

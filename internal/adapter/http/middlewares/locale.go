@@ -15,11 +15,11 @@ func LocaleMiddleware(trans *translation.Translation) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var langUri LanguageUri
 		if err := ctx.ShouldBindUri(&langUri); err != nil {
-			serviceErr := serviceerror.NewServiceError(serviceerror.ServerError)
+			serviceErr := serviceerror.NewServerError()
 			presenter.NewResponse(ctx, trans).Error(serviceErr).Echo()
 		}
-		localizer := trans.GetLocalizer(langUri.Language)
-		ctx.Set("localizer", localizer)
+		_ = trans.GetLocalizer(langUri.Language)
+
 		ctx.Next()
 	}
 }

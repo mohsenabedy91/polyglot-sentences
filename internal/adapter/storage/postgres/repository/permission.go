@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
 
@@ -21,7 +22,7 @@ func NewPermissionRepository(log logger.Logger, db *sql.DB) *PermissionRepositor
 	}
 }
 
-func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID uint) ([]domain.PermissionKeyType, error) {
+func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT DISTINCT p.key
@@ -33,14 +34,14 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 		userID,
 	)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
+		if err = rows.Close(); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return
 		}
 	}(rows)
 
@@ -48,20 +49,29 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 	var key domain.PermissionKeyType
 
 	for rows.Next() {
-		if err := rows.Scan(&key); err != nil {
-			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		if err = rows.Scan(&key); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+				metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Success").Inc()
+
+				r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
-			return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+			metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
 		}
 		permissionKeys = append(permissionKeys, key)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Success").Inc()
 
 	return permissionKeys, nil
 }

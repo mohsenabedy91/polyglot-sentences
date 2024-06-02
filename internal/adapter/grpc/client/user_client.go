@@ -9,11 +9,8 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
-	"github.com/mohsenabedy91/polyglot-sentences/proto/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type UserClient struct {
@@ -38,109 +35,147 @@ func NewUserClient(log logger.Logger, cfg config.UserManagement) *UserClient {
 	}
 }
 
-func (r *UserClient) Close() error {
+func (r UserClient) Close() error {
 	return r.conn.Close()
 }
 
-func (r *UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
-	req := userpb.GetByUUIDRequest{UserUuid: UserUUID}
+func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
+	req := userpb.GetByUUIDRequest{UserUUID: UserUUID}
 	resp, err := r.userServiceClient.GetByUUID(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return nil, ExtractServiceErrorFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
-	return &domain.User{
-		Base: domain.Base{
-			ID:   uint(resp.GetId()),
-			UUID: uuid.MustParse(resp.GetUuid()),
-		},
-		FirstName: resp.GetFirstName(),
-		LastName:  resp.GetLastName(),
-		Email:     resp.GetEmail(),
-		Status:    domain.ToUserStatus(resp.Status),
-	}, nil
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName: resp.GetFirstName(),
+			LastName:  resp.GetLastName(),
+			Email:     resp.GetEmail(),
+			Status:    domain.ToUserStatus(resp.GetStatus()),
+		}, nil
+	}
+
+	return nil, nil
 }
 
-func (r *UserClient) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	req := userpb.GetByEmailRequest{Email: email}
 	resp, err := r.userServiceClient.GetByEmail(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return nil, ExtractServiceErrorFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
-	return &domain.User{
-		Base: domain.Base{
-			ID:   uint(resp.GetId()),
-			UUID: uuid.MustParse(resp.GetUuid()),
-		},
-		FirstName: resp.GetFirstName(),
-		LastName:  resp.GetLastName(),
-		Email:     resp.GetEmail(),
-		Password:  resp.GetPassword(),
-		Status:    domain.ToUserStatus(resp.Status),
-	}, nil
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName:          resp.GetFirstName(),
+			LastName:           resp.GetLastName(),
+			Email:              resp.GetEmail(),
+			Password:           resp.GetPassword(),
+			Status:             domain.ToUserStatus(resp.Status),
+			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
+			GoogleID:           resp.GetGoogleId(),
+		}, nil
+	}
+
+	return nil, nil
 }
 
-func (r *UserClient) IsEmailUnique(ctx context.Context, email string) error {
+func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
 	req := userpb.IsEmailUniqueRequest{Email: email}
 	_, err := r.userServiceClient.IsEmailUnique(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return ExtractServiceErrorFromGrpcError(err)
+		return serviceerror.ExtractFromGrpcError(err)
 	}
 	return nil
 }
 
-func (r *UserClient) Create(ctx context.Context, userParam domain.User) error {
+func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.User, error) {
 	req := userpb.CreateRequest{
+		UUID:      userParam.UUID.String(),
 		FirstName: userParam.FirstName,
 		LastName:  userParam.LastName,
 		Email:     userParam.Email,
 		Password:  userParam.Password,
+		Avatar:    userParam.Avatar,
+		GoogleId:  userParam.GoogleID,
+		Status:    userParam.Status.String(),
 	}
-	_, err := r.userServiceClient.Create(ctx, &req)
+	resp, err := r.userServiceClient.Create(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return ExtractServiceErrorFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
 
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName:          resp.GetFirstName(),
+			LastName:           resp.GetLastName(),
+			Email:              resp.GetEmail(),
+			Password:           resp.GetPassword(),
+			Status:             domain.ToUserStatus(resp.Status),
+			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
+			GoogleID:           resp.GetGoogleId(),
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
+	req := userpb.VerifiedEmailRequest{Email: email}
+	_, err := r.userServiceClient.VerifiedEmail(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
 	return nil
 }
 
-func ExtractServiceErrorFromGrpcError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
+func (r UserClient) MarkWelcomeMessageSent(ctx context.Context, ID uint64) error {
+	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: ID}
+	_, err := r.userServiceClient.MarkWelcomeMessageSent(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
 	}
+	return nil
+}
 
-	for _, detail := range st.Details() {
-		anyDetail, ok := detail.(*anypb.Any)
-		if !ok {
-			continue
-		}
-
-		var customErrorDetail common.CustomErrorDetail
-		if err = anyDetail.UnmarshalTo(&customErrorDetail); err != nil {
-			continue
-		}
-
-		attrs := make(map[string]interface{})
-		for k, v := range customErrorDetail.Attributes {
-			attrs[k] = v
-		}
-
-		return serviceerror.NewServiceError(serviceerror.ErrorMessage(customErrorDetail.Message), attrs)
+func (r UserClient) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
+	req := userpb.UpdateGoogleIDRequest{UserId: ID, GoogleId: googleID}
+	_, err := r.userServiceClient.UpdateGoogleID(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
 	}
-
-	return err
+	return nil
 }

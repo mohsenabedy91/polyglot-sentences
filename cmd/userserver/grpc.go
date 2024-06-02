@@ -12,7 +12,6 @@ import (
 
 func main() {
 	cfg := config.GetConfig()
-
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
@@ -21,7 +20,7 @@ func main() {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(cfg, log); err != nil {
+	if err := postgres.InitClient(log, cfg); err != nil {
 		return
 	}
 	postgresDB := postgres.Get()
@@ -33,5 +32,13 @@ func main() {
 	userService := userservice.New(log, userRepo)
 
 	s := server.NewUserGRPCServer(cfg.UserManagement, userService, trans)
-	s.StartUserGRPCServer()
+	grpcServer, err := s.StartUserGRPCServer()
+	if err != nil {
+		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
+		return
+	}
+
+	log.Info(logger.Internal, logger.Shutdown, "Shutdown Server ...", nil)
+
+	grpcServer.GracefulStop()
 }

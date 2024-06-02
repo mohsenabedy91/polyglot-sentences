@@ -6,9 +6,16 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
 	"os"
@@ -24,19 +31,38 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	// Load environment variables
 	cfg := config.GetConfig()
-
 	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
 	profiling(cfg.Profile)
 
+	defer func() {
+		err := postgres.Close()
+		if err != nil {
+			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
+		}
+	}()
+	if err := postgres.InitClient(log, cfg); err != nil {
+		return
+	}
+	postgresDB := postgres.Get()
+
+	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
+	if err != nil {
+		return
+	}
+
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
+	queue := messagebroker.NewQueue(log, cfg)
+	if err = queue.SetupRabbitMQ(cfg.RabbitMQ.URL, log); err != nil {
+		log.Fatal(logger.Queue, logger.Startup, fmt.Sprintf("Failed to setup queue, error: %v", err), nil)
+	}
+
 	healthHandler := handler.NewHealthHandler(trans)
 
-	router, err := routes.NewRouter(cfg, log, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
 	defer func() {
@@ -46,7 +72,15 @@ func main() {
 		}
 	}()
 	tokenService := authservice.New(log, cfg.Jwt)
-	authHandler := handler.NewAuthHandler(userClient, tokenService)
+	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
+	oauthService := oauth.New(cfg.Oauth)
+
+	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
+	roleRepo := repository.NewRoleRepository(log, postgresDB)
+	aclRepo := repository.NewACLRepository(log, postgresDB)
+	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
+
+	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue, oauthService, aclService)
 
 	router = router.NewAuthRouter(*authHandler)
 	if err != nil {
@@ -54,7 +88,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start server
 	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
 	server := &http.Server{
 		Addr:    listenAddr,
@@ -64,6 +97,7 @@ func main() {
 		logger.ListeningAddress: server.Addr,
 	})
 
+	// Start server
 	router.Serve(server)
 
 	signalCh := make(chan os.Signal, 1)
@@ -76,8 +110,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("server Shutdown: %v", err), nil)
+	if err = server.Shutdown(ctx); err != nil {
+		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("Shutdown Server: %v", err), nil)
 	}
 
 	select {

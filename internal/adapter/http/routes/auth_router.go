@@ -12,12 +12,15 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 		auth := v1.Group("auth")
 		{
 			auth.POST("register", authHandler.Register)
+			auth.POST("email-otp/resend", authHandler.EmailOTPResend)
+			auth.POST("email-otp/verify", authHandler.EmailOTPVerify)
 			auth.POST("login", authHandler.Login)
-			auth.GET("profile", middlewares.Authentication(r.config.Jwt), authHandler.Profile)
+			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt), authHandler.Profile)
+			auth.POST("google", authHandler.Google)
 		}
 	}
 
 	return &Router{
-		r.Engine, r.log, r.config, r.trans,
+		r.Engine, r.log, r.cfg, r.trans,
 	}
 }

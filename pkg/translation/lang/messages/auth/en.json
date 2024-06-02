@@ -1,7 +1,8 @@
 {
   "auth": {
     "success": {
-      "registeredUser": "The User was successfully registered."
+      "registeredUser": "The User was successfully registered.",
+      "emailOTPSent": "An OTP has been sent to your email. Please check your inbox."
     }
   },
   "user": {

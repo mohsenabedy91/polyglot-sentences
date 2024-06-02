@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -27,7 +28,7 @@ func NewUserRepository(log logger.Logger, db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, serviceerror.Error) {
+func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
 	email = strings.ToLower(email)
 	var count int
 	err := r.db.QueryRowContext(
@@ -36,44 +37,47 @@ func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool,
 		email,
 	).Scan(&count)
 	if err != nil {
-		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return true, nil
 		}
-		return false, serviceerror.NewServiceError(serviceerror.ServerError)
+		metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return false, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
 
 	return count == 0, nil
 }
 
-func (r *UserRepository) Save(ctx context.Context, user *domain.User) error {
-	res, err := r.db.ExecContext(
+func (r *UserRepository) Save(ctx context.Context, user *domain.User) (*domain.User, error) {
+	err := r.db.QueryRowContext(
 		ctx,
-		"INSERT INTO users (first_name, last_name, email, password, status) VALUES ($1, $2, $3, $4, $5)",
+		`INSERT INTO users (first_name, last_name, email, password, status, google_id) 
+							VALUES ($1, $2, $3, $4, $5, $6) 
+							RETURNING id, uuid`,
 		user.FirstName,
 		user.LastName,
 		user.Email,
 		user.Password,
-		domain.UserStatusUnVerified,
-	)
+		user.Status,
+		user.GoogleID,
+	).Scan(&user.ID, &user.UUID)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseInsert, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.InsertDBArg: user,
 		})
-		return serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil || affected <= 0 {
-		if err != nil {
-			r.log.Error(logger.Database, logger.DatabaseInsert, err.Error(), nil)
-			return serviceerror.NewServiceError(serviceerror.ServerError)
-		}
-		r.log.Error(logger.Database, logger.DatabaseInsert, "There is any effected row in DB.", nil)
-		return serviceerror.NewServiceError(serviceerror.ServerError)
-	}
-
-	return nil
+	metrics.DbCall.WithLabelValues("users", "Save", "Success").Inc()
+	return user, nil
 }
 
 func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, error) {
@@ -84,43 +88,53 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 	)
 	user, err := scanUser(row)
 	if err != nil {
-		metrics.DbCall.WithLabelValues("users", "GetById", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("users", "GetByUUID", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "GetByUUID", "Success").Inc()
 
 	if !user.IsActive() {
 		r.log.Warn(logger.Database, logger.DatabaseSelect, "The User is inactive", map[logger.ExtraKey]interface{}{
 			logger.SelectDBArg: user,
 		})
-		return nil, serviceerror.NewServiceError(serviceerror.UserInActive)
+		return nil, serviceerror.New(serviceerror.UserInActive)
 	}
 
-	metrics.DbCall.WithLabelValues("users", "GetById", "Success").Inc()
 	return &user, nil
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user := &domain.User{}
+	var googleID sql.NullString
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT uuid, password FROM users WHERE deleted_at IS NULL AND status = $1 AND LOWER(email) = $2",
+		`SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent, google_id FROM users 
+					WHERE deleted_at IS NULL AND status IN ($1, $2) AND LOWER(email) = $3`,
+		domain.UserStatusUnverifiedStr,
 		domain.UserStatusActive,
 		strings.ToLower(email),
-	).Scan(&user.UUID, &user.Password)
+	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent, &googleID)
 	if err != nil {
+
+		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, nil
+		}
 		metrics.DbCall.WithLabelValues("users", "GetByEmail", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
-		}
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	user.SetGoogleID(googleID)
 
 	metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
 
@@ -133,13 +147,14 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL",
 	)
 	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
 
 	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
+		if err = rows.Close(); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return
 		}
@@ -150,28 +165,107 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	for rows.Next() {
 		user, err := scanUser(rows)
 		if err != nil {
-			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+
 			if errors.Is(err, sql.ErrNoRows) {
-				return nil, serviceerror.NewServiceError(serviceerror.RecordNotFound)
+				metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
+
+				r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
-			return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
 		}
 
 		users = append(users, user)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, serviceerror.NewServiceError(serviceerror.ServerError)
+		return nil, serviceerror.NewServerError()
 	}
+
+	metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
 
 	return users, nil
 }
 
+func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error {
+	res, err := r.db.ExecContext(
+		ctx,
+		"UPDATE users SET email_verified_at = now(), status = $1 WHERE deleted_at IS NULL AND email = $2",
+		domain.UserStatusActive,
+		email,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Success").Inc()
+
+	return nil
+}
+
+func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true WHERE id = $1", id)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Success").Inc()
+
+	return nil
+}
+
+func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1 WHERE id = $2;", googleID, ID)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Success").Inc()
+
+	return nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
+	var firstName sql.NullString
+	var lastName sql.NullString
 
-	err := scanner.Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Status)
+	err := scanner.Scan(&user.ID, &user.UUID, &firstName, &lastName, &user.Email, &user.Status)
+
+	user.SetFirstName(firstName).SetLastName(lastName)
 
 	return user, err
 }

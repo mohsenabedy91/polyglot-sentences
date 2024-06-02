@@ -5,38 +5,106 @@ option go_package = "github.com/mohsenabedy91/polyglot-sentences/internal/adapte
 
 import "google/protobuf/empty.proto";
 
+// UserService defines the gRPC service for managing users.
 service UserService {
+  // Retrieves user information by UUID.
   rpc GetByUUID(GetByUUIDRequest) returns (UserResponse);
+
+  // Retrieves user information by email.
   rpc GetByEmail(GetByEmailRequest) returns (UserResponse);
+
+  // Checks if an email is unique.
   rpc IsEmailUnique(IsEmailUniqueRequest) returns (google.protobuf.Empty);
-  rpc Create(CreateRequest) returns (google.protobuf.Empty);
+
+  // Creates a new user.
+  rpc Create(CreateRequest) returns (UserResponse);
+
+  // Marks the user's email as verified.
+  rpc VerifiedEmail(VerifiedEmailRequest) returns (google.protobuf.Empty);
+
+  // Updates the flag indicating whether the welcome message was sent.
+  rpc MarkWelcomeMessageSent(UpdateWelcomeMessageToSentRequest) returns (google.protobuf.Empty);
+
+  // Updates the user google ID.
+  rpc UpdateGoogleID(UpdateGoogleIDRequest) returns (google.protobuf.Empty);
 }
 
+// Request message for GetByUUID.
 message GetByUUIDRequest {
-  string user_uuid = 1;
+  // The unique UUID of the user.
+  string userUUID = 1;
 }
 
+// Request message for GetByEmail.
 message GetByEmailRequest {
+  // The email of the user.
   string email = 1;
 }
 
+// Request message for IsEmailUnique.
 message IsEmailUniqueRequest {
+  // The email to check for uniqueness.
   string email = 1;
 }
 
-message CreateRequest {
-  string first_name = 1;
-  string last_name = 2;
-  string email = 3;
-  string password = 4;
+// Request message for UpdateGoogleIDRequest.
+message UpdateGoogleIDRequest {
+  // The user ID for whom to update google id.
+  uint64 userId = 1;
+  // The google identifier user have a request register/login.
+  string googleId = 2;
 }
 
+// Request message for Create.
+message CreateRequest {
+  // The universally unique identifier of the user.
+  string UUID = 1;
+  // The first name of the user.
+  string firstName = 2;
+  // The last name of the user.
+  string lastName = 3;
+  // The email of the user.
+  string email = 4;
+  // The hashed password of the user, there is a secure value.
+  string password = 5;
+  // The avatar url of the user.
+  string avatar = 6;
+  // The google id of the user.
+  string googleId = 7;
+  // The status of the user.
+  string status = 8;
+}
+
+// Request message for VerifiedEmail.
+message VerifiedEmailRequest {
+  // The email to mark as verified.
+  string email = 1;
+}
+
+// Request message for MarkWelcomeMessageSent.
+message UpdateWelcomeMessageToSentRequest {
+  // The user ID for whom to update the welcome message sent flag.
+  uint64 userId = 1;
+}
+
+// Response message containing user details.
 message UserResponse {
+  // The unique ID of the user.
   uint64 id = 1;
-  string uuid = 2;
-  string first_name = 3;
-  string last_name = 4;
+  // The unique UUID of the user.
+  string UUID = 2;
+  // The first name of the user.
+  string firstName = 3;
+  // The last name of the user.
+  string lastName = 4;
+  // The email of the user.
   string email = 5;
+  // The status of the user.
   string status = 6;
+  // The hashed password of the user, there is a secure value.
   string password = 7;
+  // Whether the welcome message has been sent.
+  bool welcomeMessageSent = 8;
+  // The google Id of user has a authentication request.
+  string googleId = 9;
 }

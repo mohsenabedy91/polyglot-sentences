@@ -51,7 +51,7 @@ func NewResponse(
 
 func (r *Response) InvalidRequest(err error) *Response {
 	if err.Error() == io.EOF.Error() {
-		serviceErr := serviceerror.NewServiceError(serviceerror.InvalidRequestBody)
+		serviceErr := serviceerror.New(serviceerror.InvalidRequestBody)
 		r.serviceError = serviceErr
 		var errorResponse = Error{
 			Error: r.translation.Lang(serviceErr.Error(), nil, nil),
@@ -87,7 +87,7 @@ func (r *Response) Error(err error) *Response {
 	if ok := errors.As(err, &serviceErr); !ok {
 		statusErr := status.Convert(err)
 		msg, _ := statusErr.WithDetails()
-		serviceErr = serviceerror.NewServiceError(serviceerror.ErrorMessage(msg.Message()))
+		serviceErr = serviceerror.New(serviceerror.ErrorMessage(msg.Message()))
 	}
 	r.serviceError = serviceErr
 

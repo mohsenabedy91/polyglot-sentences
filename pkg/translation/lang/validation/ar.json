@@ -13,6 +13,7 @@
     "date": "يجب أن يكون {{.attribute}} بتنسيق تاريخ صالح (YYYY-MM-DD).",
     "timeHourMinute": "يجب أن يكون {{.attribute}} بتنسيق وقت صالح (HH:MM).",
     "password_complexity": "يجب أن يحتوي {{.attribute}} على حرف كبير واحد على الأقل، وحرف صغير واحد، ورقم واحد وحرف خاص واحد.",
-    "eqfield": "يجب أن يكون {{.attribute}} مساويًا لـ {{.eqfield}}."
+    "eqfield": "يجب أن يكون {{.attribute}} مساويًا لـ {{.eqfield}}.",
+    "token_length": "يجب أن يكون {{.attribute}} معرفًا صالحًا."
   }
 }

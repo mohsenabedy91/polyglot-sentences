@@ -23,3 +23,17 @@ type AuthLogin struct {
 	Email    string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	Password string `json:"password" binding:"required,password_complexity" example:"QWer123!@#"`
 }
+
+type AuthEmailOTPResend struct {
+	Email string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
+}
+
+type AuthEmailOTPVerify struct {
+	Email string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
+	Token string `json:"token" binding:"required,token_length" example:"123456"`
+}
+
+type GoogleAuth struct {
+	Email       string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
+	AccessToken string `json:"accessToken" binding:"required" example:"123456789"`
+}

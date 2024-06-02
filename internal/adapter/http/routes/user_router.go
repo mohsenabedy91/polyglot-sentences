@@ -9,16 +9,20 @@ import (
 
 // NewUserRouter creates a new HTTP router
 func (r *Router) NewUserRouter(
-	accessControlService port.AccessControlService,
+	aclService port.ACLService,
 	userHandler handler.UserHandler,
 ) *Router {
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
 	{
-		user := v1.Group("users", middlewares.Authentication(r.config.Jwt), middlewares.ACL(
-			accessControlService,
-			domain.PermissionKeyCreateUser,
-			domain.PermissionKeyReadUser,
-		))
+		user := v1.Group(
+			"users",
+			middlewares.Authentication(r.cfg.Jwt),
+			middlewares.ACL(
+				aclService,
+				domain.PermissionKeyCreateUser,
+				domain.PermissionKeyReadUser,
+			),
+		)
 		{
 			user.POST("", userHandler.Create)
 			user.GET("", userHandler.List)
@@ -27,6 +31,6 @@ func (r *Router) NewUserRouter(
 	}
 
 	return &Router{
-		r.Engine, r.log, r.config, r.trans,
+		r.Engine, r.log, r.cfg, r.trans,
 	}
 }

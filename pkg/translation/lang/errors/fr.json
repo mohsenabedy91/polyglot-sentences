@@ -1,6 +1,7 @@
 {
   "errors": {
-    "somethingIsWrong": "Nous sommes désolés, mais quelque chose s'est mal passé.",
+    "serverError": "Une erreur interne du serveur s'est produite. Veuillez réessayer plus tard.",
+    "serviceIsUnavailable": "Le service est actuellement indisponible. Veuillez réessayer plus tard.",
     "permissionDenied": "Vous n'avez pas la permission de faire cela.",
     "recordNotFound": "Enregistrement non trouvé. La ressource demandée n'a pas pu être localisée.",
     "unauthorized": "Vous n'êtes pas autorisé à faire cela.",
