@@ -21,4 +21,5 @@ type UserClient interface {
 
 	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 	UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error
+	UpdateLastLoginTime(ctx context.Context, ID uint64) error
 }

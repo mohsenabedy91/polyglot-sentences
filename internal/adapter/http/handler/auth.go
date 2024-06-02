@@ -247,6 +247,10 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 				return
 			}
 		}
+
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+			return
+		}
 	}()
 
 	result := presenter.ToTokenResource(token)
@@ -293,6 +297,14 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		).Echo()
 		return
 	}
+
+	go func() {
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+			return
+		}
+	}()
 
 	token, err := r.tokenService.GenerateToken(user.UUID.String())
 	if err != nil {
@@ -416,6 +428,8 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 	}
 
 	go func() {
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		if !user.WelcomeMessageSent {
 			message := authservice.SendWelcomeDto{
 				To:       user.Email,
@@ -424,11 +438,12 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			}
 			authservice.SendWelcomeEvent(r.queue).Publish(message)
 
-			ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
 			if err = r.userClient.MarkWelcomeMessageSent(ctxWithTimeout, user.ID); err != nil {
 				return
 			}
+		}
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+			return
 		}
 	}()
 

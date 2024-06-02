@@ -37,6 +37,8 @@ type UserServiceClient interface {
 	MarkWelcomeMessageSent(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Updates the user google ID.
 	UpdateGoogleID(ctx context.Context, in *UpdateGoogleIDRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Updates the user lat login time.
+	UpdateLastLoginTime(ctx context.Context, in *UpdateLastLoginTimeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type userServiceClient struct {
@@ -110,6 +112,15 @@ func (c *userServiceClient) UpdateGoogleID(ctx context.Context, in *UpdateGoogle
 	return out, nil
 }
 
+func (c *userServiceClient) UpdateLastLoginTime(ctx context.Context, in *UpdateLastLoginTimeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/user.UserService/UpdateLastLoginTime", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -128,6 +139,8 @@ type UserServiceServer interface {
 	MarkWelcomeMessageSent(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error)
 	// Updates the user google ID.
 	UpdateGoogleID(context.Context, *UpdateGoogleIDRequest) (*empty.Empty, error)
+	// Updates the user lat login time.
+	UpdateLastLoginTime(context.Context, *UpdateLastLoginTimeRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -155,6 +168,9 @@ func (UnimplementedUserServiceServer) MarkWelcomeMessageSent(context.Context, *U
 }
 func (UnimplementedUserServiceServer) UpdateGoogleID(context.Context, *UpdateGoogleIDRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGoogleID not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateLastLoginTime(context.Context, *UpdateLastLoginTimeRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateLastLoginTime not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -295,6 +311,24 @@ func _UserService_UpdateGoogleID_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdateLastLoginTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLastLoginTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateLastLoginTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/UpdateLastLoginTime",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateLastLoginTime(ctx, req.(*UpdateLastLoginTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -329,6 +363,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateGoogleID",
 			Handler:    _UserService_UpdateGoogleID_Handler,
+		},
+		{
+			MethodName: "UpdateLastLoginTime",
+			Handler:    _UserService_UpdateLastLoginTime_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

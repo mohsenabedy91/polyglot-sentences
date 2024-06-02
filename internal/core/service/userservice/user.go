@@ -72,3 +72,7 @@ func (r UserService) MarkWelcomeMessageSent(ctx context.Context, ID uint64) erro
 func (r UserService) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
 	return r.userRepo.UpdateGoogleID(ctx, ID, googleID)
 }
+
+func (r UserService) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
+	return r.userRepo.UpdateLastLoginTime(ctx, ID)
+}

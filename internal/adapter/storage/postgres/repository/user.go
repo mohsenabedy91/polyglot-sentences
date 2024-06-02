@@ -258,6 +258,26 @@ func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID
 	return nil
 }
 
+func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now() WHERE id = $1;", ID)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Success").Inc()
+
+	return nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
 	var firstName sql.NullString
