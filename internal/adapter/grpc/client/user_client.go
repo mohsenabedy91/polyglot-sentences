@@ -179,3 +179,15 @@ func (r UserClient) UpdateGoogleID(ctx context.Context, ID uint64, googleID stri
 	}
 	return nil
 }
+
+func (r UserClient) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
+	req := userpb.UpdateLastLoginTimeRequest{UserId: ID}
+	_, err := r.userServiceClient.UpdateLastLoginTime(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
+	return nil
+}

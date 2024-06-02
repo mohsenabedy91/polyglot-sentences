@@ -16,6 +16,7 @@ type UserRepository interface {
 	VerifiedEmail(ctx context.Context, email string) error
 	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 	UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error
+	UpdateLastLoginTime(ctx context.Context, ID uint64) error
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -28,4 +29,5 @@ type UserService interface {
 	VerifiedEmail(ctx context.Context, email string) error
 	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
 	UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error
+	UpdateLastLoginTime(ctx context.Context, ID uint64) error
 }

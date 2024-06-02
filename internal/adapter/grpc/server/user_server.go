@@ -192,3 +192,16 @@ func (r Server) UpdateGoogleID(ctx context.Context, req *userpb.UpdateGoogleIDRe
 
 	return nil, nil
 }
+
+func (r Server) UpdateLastLoginTime(ctx context.Context, req *userpb.UpdateLastLoginTimeRequest) (*emptypb.Empty, error) {
+	err := r.userService.UpdateLastLoginTime(ctx, req.GetUserId())
+	if err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil, nil
+}

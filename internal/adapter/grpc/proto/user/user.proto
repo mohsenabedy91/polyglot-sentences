@@ -27,6 +27,9 @@ service UserService {
 
   // Updates the user google ID.
   rpc UpdateGoogleID(UpdateGoogleIDRequest) returns (google.protobuf.Empty);
+
+  // Updates the user lat login time.
+  rpc UpdateLastLoginTime(UpdateLastLoginTimeRequest) returns (google.protobuf.Empty);
 }
 
 // Request message for GetByUUID.
@@ -53,6 +56,12 @@ message UpdateGoogleIDRequest {
   uint64 userId = 1;
   // The google identifier user have a request register/login.
   string googleId = 2;
+}
+
+// Request message for UpdateLastLoginTimeRequest.
+message UpdateLastLoginTimeRequest {
+  // The user ID for whom to update last login time.
+  uint64 userId = 1;
 }
 
 // Request message for Create.
