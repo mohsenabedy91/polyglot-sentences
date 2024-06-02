@@ -8,10 +8,12 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/claim"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"net/http"
 	"sync"
@@ -25,6 +27,8 @@ type AuthHandler struct {
 	tokenService port.AuthService
 	otpService   port.OtpService
 	queue        *messagebroker.Queue
+	oauthService oauth.GoogleService
+	aclService   port.ACLService
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -34,6 +38,8 @@ func NewAuthHandler(
 	tokenService port.AuthService,
 	otpService port.OtpService,
 	queue *messagebroker.Queue,
+	oauthService oauth.GoogleService,
+	aclService port.ACLService,
 ) *AuthHandler {
 	return &AuthHandler{
 		otpConfig:    otpConfig,
@@ -41,6 +47,8 @@ func NewAuthHandler(
 		tokenService: tokenService,
 		otpService:   otpService,
 		queue:        queue,
+		oauthService: oauthService,
+		aclService:   aclService,
 	}
 }
 
@@ -99,14 +107,20 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	req.Password = hashedPass
 
-	if err := r.userClient.Create(ctx.Request.Context(), req.ToDomain()); err != nil {
+	user, err := r.userClient.Create(ctx.Request.Context(), req.ToDomain())
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = r.aclService.AddUserRole(ctx, user.ID); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	message := authservice.SendEmailOTPDto{
-		To:       req.Email,
-		Name:     req.FirstName + " " + req.LastName,
+		To:       user.Email,
+		Name:     user.GetFullName(),
 		OTP:      otp,
 		Language: ctx.Param("language"),
 	}
@@ -315,6 +329,116 @@ func (r AuthHandler) Profile(ctx *gin.Context) {
 	}
 
 	result := presenter.ToUserResource(user)
+
+	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+}
+
+// Google godoc
+// @Summary Auth Google
+// @Description Register or Login Via Google
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.GoogleAuth true "Google request"
+// @Success 200 {object} presenter.Response{data=presenter.Token} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_v1_auth_google
+// @Router /v1/auth/google [post]
+func (r AuthHandler) Google(ctx *gin.Context) {
+	var req requests.GoogleAuth
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var (
+		googleUserInfo *oauth.GoogleUserInfo
+		googleErr      error
+		wg             sync.WaitGroup
+	)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		googleUserInfo, googleErr = r.oauthService.UserGoogleInfo(ctx.Request.Context(), req.AccessToken)
+	}()
+
+	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	wg.Wait()
+	if googleErr != nil || googleUserInfo == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.NewServerError(),
+		).Echo()
+		return
+	}
+
+	if user != nil && user.GoogleID != "" && user.GoogleID != googleUserInfo.Id {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.Unauthorized),
+		).Echo()
+		return
+	}
+
+	if user == nil {
+		// TODO add transaction if add user role method has error for rollback created user.
+		user, err = r.userClient.Create(ctx.Request.Context(), domain.User{
+			FirstName: googleUserInfo.FirstName,
+			LastName:  googleUserInfo.LastName,
+			Email:     googleUserInfo.Email,
+			Avatar:    googleUserInfo.AvatarURL,
+			GoogleID:  googleUserInfo.Id,
+			Status:    domain.UserStatusActive,
+		})
+		if err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		if err = r.aclService.AddUserRole(ctx, user.ID); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+	} else if user.GoogleID == "" {
+		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, googleUserInfo.Id); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+	}
+
+	go func() {
+		if !user.WelcomeMessageSent {
+			message := authservice.SendWelcomeDto{
+				To:       user.Email,
+				Name:     user.GetFullName(),
+				Language: ctx.Param("language"),
+			}
+			authservice.SendWelcomeEvent(r.queue).Publish(message)
+
+			ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err = r.userClient.MarkWelcomeMessageSent(ctxWithTimeout, user.ID); err != nil {
+				return
+			}
+		}
+	}()
+
+	token, err := r.tokenService.GenerateToken(user.UUID.String())
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	result := presenter.ToTokenResource(token)
 
 	presenter.NewResponse(ctx, nil).Payload(result).Echo()
 }

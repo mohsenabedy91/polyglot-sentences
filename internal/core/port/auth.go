@@ -12,7 +12,7 @@ type AuthService interface {
 type UserClient interface {
 	IsEmailUnique(ctx context.Context, email string) error
 
-	Create(ctx context.Context, user domain.User) error
+	Create(ctx context.Context, user domain.User) (*domain.User, error)
 
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	GetByUUID(ctx context.Context, uuidStr string) (*domain.User, error)
@@ -20,4 +20,5 @@ type UserClient interface {
 	VerifiedEmail(ctx context.Context, email string) error
 
 	MarkWelcomeMessageSent(ctx context.Context, ID uint64) error
+	UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error
 }

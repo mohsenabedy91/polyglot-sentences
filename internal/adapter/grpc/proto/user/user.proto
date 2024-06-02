@@ -17,13 +17,16 @@ service UserService {
   rpc IsEmailUnique(IsEmailUniqueRequest) returns (google.protobuf.Empty);
 
   // Creates a new user.
-  rpc Create(CreateRequest) returns (google.protobuf.Empty);
+  rpc Create(CreateRequest) returns (UserResponse);
 
   // Marks the user's email as verified.
   rpc VerifiedEmail(VerifiedEmailRequest) returns (google.protobuf.Empty);
 
   // Updates the flag indicating whether the welcome message was sent.
   rpc MarkWelcomeMessageSent(UpdateWelcomeMessageToSentRequest) returns (google.protobuf.Empty);
+
+  // Updates the user google ID.
+  rpc UpdateGoogleID(UpdateGoogleIDRequest) returns (google.protobuf.Empty);
 }
 
 // Request message for GetByUUID.
@@ -44,16 +47,32 @@ message IsEmailUniqueRequest {
   string email = 1;
 }
 
+// Request message for UpdateGoogleIDRequest.
+message UpdateGoogleIDRequest {
+  // The user ID for whom to update google id.
+  uint64 userId = 1;
+  // The google identifier user have a request register/login.
+  string googleId = 2;
+}
+
 // Request message for Create.
 message CreateRequest {
+  // The universally unique identifier of the user.
+  string UUID = 1;
   // The first name of the user.
-  string firstName = 1;
+  string firstName = 2;
   // The last name of the user.
-  string lastName = 2;
+  string lastName = 3;
   // The email of the user.
-  string email = 3;
+  string email = 4;
   // The hashed password of the user, there is a secure value.
-  string password = 4;
+  string password = 5;
+  // The avatar url of the user.
+  string avatar = 6;
+  // The google id of the user.
+  string googleId = 7;
+  // The status of the user.
+  string status = 8;
 }
 
 // Request message for VerifiedEmail.
@@ -86,4 +105,6 @@ message UserResponse {
   string password = 7;
   // Whether the welcome message has been sent.
   bool welcomeMessageSent = 8;
+  // The google Id of user has a authentication request.
+  string googleId = 9;
 }

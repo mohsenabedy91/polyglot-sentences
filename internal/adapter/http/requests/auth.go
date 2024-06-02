@@ -32,3 +32,8 @@ type AuthEmailOTPVerify struct {
 	Email string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	Token string `json:"token" binding:"required,token_length" example:"123456"`
 }
+
+type GoogleAuth struct {
+	Email       string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
+	AccessToken string `json:"accessToken" binding:"required" example:"123456789"`
+}

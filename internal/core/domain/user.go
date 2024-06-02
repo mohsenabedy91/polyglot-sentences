@@ -1,5 +1,7 @@
 package domain
 
+import "database/sql"
+
 type UserStatusType string
 
 const (
@@ -30,9 +32,10 @@ type User struct {
 	Status    UserStatusType
 
 	WelcomeMessageSent bool
+	GoogleID           string
 }
 
-func (r User) IsActive() bool {
+func (r *User) IsActive() bool {
 	return r.Status == UserStatusActive
 }
 
@@ -72,6 +75,27 @@ func ToUserStatus(status string) UserStatusType {
 	return userStatus
 }
 
-func (r User) GetFullName() string {
+func (r *User) GetFullName() string {
 	return r.FirstName + " " + r.LastName
+}
+
+func (r *User) SetGoogleID(googleID sql.NullString) *User {
+	if googleID.Valid {
+		r.GoogleID = googleID.String
+	}
+	return r
+}
+
+func (r *User) SetFirstName(firstName sql.NullString) *User {
+	if firstName.Valid {
+		r.FirstName = firstName.String
+	}
+	return r
+}
+
+func (r *User) SetLastName(lastName sql.NullString) *User {
+	if lastName.Valid {
+		r.LastName = lastName.String
+	}
+	return r
 }

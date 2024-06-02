@@ -9,7 +9,7 @@ import (
 
 // NewUserRouter creates a new HTTP router
 func (r *Router) NewUserRouter(
-	accessControlService port.AccessControlService,
+	aclService port.ACLService,
 	userHandler handler.UserHandler,
 ) *Router {
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
@@ -18,7 +18,7 @@ func (r *Router) NewUserRouter(
 			"users",
 			middlewares.Authentication(r.cfg.Jwt),
 			middlewares.ACL(
-				accessControlService,
+				aclService,
 				domain.PermissionKeyCreateUser,
 				domain.PermissionKeyReadUser,
 			),

@@ -43,7 +43,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	err := r.userService.Create(ctx.Request.Context(), req.ToDomain())
+	_, err := r.userService.Create(ctx.Request.Context(), req.ToDomain())
 	if err != nil {
 		presenter.NewResponse(ctx, nil).Error(err).Echo()
 		return

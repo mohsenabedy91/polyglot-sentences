@@ -7,11 +7,15 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
 	"os"
@@ -31,6 +35,17 @@ func main() {
 	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
 	profiling(cfg.Profile)
+
+	defer func() {
+		err := postgres.Close()
+		if err != nil {
+			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
+		}
+	}()
+	if err := postgres.InitClient(log, cfg); err != nil {
+		return
+	}
+	postgresDB := postgres.Get()
 
 	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
 	if err != nil {
@@ -58,7 +73,14 @@ func main() {
 	}()
 	tokenService := authservice.New(log, cfg.Jwt)
 	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
-	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue)
+	oauthService := oauth.New(cfg.Oauth)
+
+	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
+	roleRepo := repository.NewRoleRepository(log, postgresDB)
+	aclRepo := repository.NewACLRepository(log, postgresDB)
+	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
+
+	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue, oauthService, aclService)
 
 	router = router.NewAuthRouter(*authHandler)
 	if err != nil {

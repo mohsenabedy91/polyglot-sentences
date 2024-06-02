@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	userpb "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -115,12 +116,18 @@ func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequ
 	return nil, nil
 }
 
-func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*emptypb.Empty, error) {
-	err := r.userService.Create(ctx, domain.User{
+func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.UserResponse, error) {
+	resp, err := r.userService.Create(ctx, domain.User{
+		Base: domain.Base{
+			UUID: uuid.MustParse(req.GetUUID()),
+		},
 		FirstName: req.GetFirstName(),
 		LastName:  req.GetLastName(),
 		Email:     req.GetEmail(),
 		Password:  req.GetPassword(),
+		Avatar:    req.GetAvatar(),
+		GoogleID:  req.GetGoogleId(),
+		Status:    domain.ToUserStatus(req.GetStatus()),
 	})
 	if err != nil {
 		var se *serviceerror.ServiceError
@@ -128,6 +135,20 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*emptypb
 			return nil, serviceerror.ConvertToGrpcError(se)
 		}
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if resp != nil {
+		return &userpb.UserResponse{
+			Id:                 resp.ID,
+			UUID:               resp.UUID.String(),
+			FirstName:          resp.FirstName,
+			LastName:           resp.LastName,
+			Email:              resp.Email,
+			Password:           resp.Password,
+			Status:             resp.Status.String(),
+			WelcomeMessageSent: resp.WelcomeMessageSent,
+			GoogleId:           resp.GoogleID,
+		}, nil
 	}
 
 	return nil, nil
@@ -148,6 +169,19 @@ func (r Server) VerifiedEmail(ctx context.Context, req *userpb.VerifiedEmailRequ
 
 func (r Server) MarkWelcomeMessageSent(ctx context.Context, req *userpb.UpdateWelcomeMessageToSentRequest) (*emptypb.Empty, error) {
 	err := r.userService.MarkWelcomeMessageSent(ctx, req.GetUserId())
+	if err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil, nil
+}
+
+func (r Server) UpdateGoogleID(ctx context.Context, req *userpb.UpdateGoogleIDRequest) (*emptypb.Empty, error) {
+	err := r.userService.UpdateGoogleID(ctx, req.GetUserId(), req.GetGoogleId())
 	if err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {

@@ -11,7 +11,7 @@ import (
 )
 
 func ACL(
-	service port.AccessControlService,
+	service port.ACLService,
 	permissions ...domain.PermissionKeyType,
 ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {

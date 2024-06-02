@@ -130,6 +130,16 @@ type SendGrid struct {
 	Address string
 }
 
+type Oauth struct {
+	Google
+}
+
+type Google struct {
+	ClientId     string
+	ClientSecret string
+	CallbackURL  string
+}
+
 // Config represents the application configuration.
 type Config struct {
 	App            App
@@ -144,6 +154,7 @@ type Config struct {
 	OTP            OTP
 	RabbitMQ       RabbitMQ
 	SendGrid       SendGrid
+	Oauth          Oauth
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -243,6 +254,11 @@ func LoadConfig() (Config, error) {
 	sendGrid.Name = os.Getenv("SEND_GRID_NAME")
 	sendGrid.Address = os.Getenv("SEND_GRID_ADDRESS")
 
+	var oauth Oauth
+	oauth.Google.ClientId = os.Getenv("OAUTH_GOOGLE_CLIENT_ID")
+	oauth.Google.ClientSecret = os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET")
+	oauth.Google.CallbackURL = os.Getenv("OAUTH_GOOGLE_CALLBACK_URL")
+
 	return Config{
 		App:            app,
 		Auth:           auth,
@@ -256,6 +272,7 @@ func LoadConfig() (Config, error) {
 		OTP:            otp,
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,
+		Oauth:          oauth,
 	}, nil
 }
 

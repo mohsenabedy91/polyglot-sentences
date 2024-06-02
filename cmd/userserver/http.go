@@ -55,9 +55,11 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
-	accessControlService := authorizationservice.New(log, permissionRepo, userService)
+	roleRepo := repository.NewRoleRepository(log, postgresDB)
+	aclRepo := repository.NewACLRepository(log, postgresDB)
+	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
 
-	router = router.NewUserRouter(accessControlService, *userHandler)
+	router = router.NewUserRouter(aclService, *userHandler)
 
 	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{

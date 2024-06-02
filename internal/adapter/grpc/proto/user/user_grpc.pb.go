@@ -30,11 +30,13 @@ type UserServiceClient interface {
 	// Checks if an email is unique.
 	IsEmailUnique(ctx context.Context, in *IsEmailUniqueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Creates a new user.
-	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	// Marks the user's email as verified.
 	VerifiedEmail(ctx context.Context, in *VerifiedEmailRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Updates the flag indicating whether the welcome message was sent.
 	MarkWelcomeMessageSent(ctx context.Context, in *UpdateWelcomeMessageToSentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Updates the user google ID.
+	UpdateGoogleID(ctx context.Context, in *UpdateGoogleIDRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type userServiceClient struct {
@@ -72,8 +74,8 @@ func (c *userServiceClient) IsEmailUnique(ctx context.Context, in *IsEmailUnique
 	return out, nil
 }
 
-func (c *userServiceClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*UserResponse, error) {
+	out := new(UserResponse)
 	err := c.cc.Invoke(ctx, "/user.UserService/Create", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -99,6 +101,15 @@ func (c *userServiceClient) MarkWelcomeMessageSent(ctx context.Context, in *Upda
 	return out, nil
 }
 
+func (c *userServiceClient) UpdateGoogleID(ctx context.Context, in *UpdateGoogleIDRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/user.UserService/UpdateGoogleID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -110,11 +121,13 @@ type UserServiceServer interface {
 	// Checks if an email is unique.
 	IsEmailUnique(context.Context, *IsEmailUniqueRequest) (*empty.Empty, error)
 	// Creates a new user.
-	Create(context.Context, *CreateRequest) (*empty.Empty, error)
+	Create(context.Context, *CreateRequest) (*UserResponse, error)
 	// Marks the user's email as verified.
 	VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error)
 	// Updates the flag indicating whether the welcome message was sent.
 	MarkWelcomeMessageSent(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error)
+	// Updates the user google ID.
+	UpdateGoogleID(context.Context, *UpdateGoogleIDRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -131,7 +144,7 @@ func (UnimplementedUserServiceServer) GetByEmail(context.Context, *GetByEmailReq
 func (UnimplementedUserServiceServer) IsEmailUnique(context.Context, *IsEmailUniqueRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsEmailUnique not implemented")
 }
-func (UnimplementedUserServiceServer) Create(context.Context, *CreateRequest) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) Create(context.Context, *CreateRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
 func (UnimplementedUserServiceServer) VerifiedEmail(context.Context, *VerifiedEmailRequest) (*empty.Empty, error) {
@@ -139,6 +152,9 @@ func (UnimplementedUserServiceServer) VerifiedEmail(context.Context, *VerifiedEm
 }
 func (UnimplementedUserServiceServer) MarkWelcomeMessageSent(context.Context, *UpdateWelcomeMessageToSentRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkWelcomeMessageSent not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateGoogleID(context.Context, *UpdateGoogleIDRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGoogleID not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -261,6 +277,24 @@ func _UserService_MarkWelcomeMessageSent_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdateGoogleID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGoogleIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateGoogleID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/UpdateGoogleID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateGoogleID(ctx, req.(*UpdateGoogleIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -291,6 +325,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkWelcomeMessageSent",
 			Handler:    _UserService_MarkWelcomeMessageSent_Handler,
+		},
+		{
+			MethodName: "UpdateGoogleID",
+			Handler:    _UserService_UpdateGoogleID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

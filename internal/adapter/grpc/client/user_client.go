@@ -106,21 +106,42 @@ func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
 	return nil
 }
 
-func (r UserClient) Create(ctx context.Context, userParam domain.User) error {
+func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.User, error) {
 	req := userpb.CreateRequest{
+		UUID:      userParam.UUID.String(),
 		FirstName: userParam.FirstName,
 		LastName:  userParam.LastName,
 		Email:     userParam.Email,
 		Password:  userParam.Password,
+		Avatar:    userParam.Avatar,
+		GoogleId:  userParam.GoogleID,
+		Status:    userParam.Status.String(),
 	}
-	_, err := r.userServiceClient.Create(ctx, &req)
+	resp, err := r.userServiceClient.Create(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,
 		})
-		return serviceerror.ExtractFromGrpcError(err)
+		return nil, serviceerror.ExtractFromGrpcError(err)
 	}
-	return nil
+
+	if resp.String() != "" {
+		return &domain.User{
+			Base: domain.Base{
+				ID:   resp.GetId(),
+				UUID: uuid.MustParse(resp.GetUUID()),
+			},
+			FirstName:          resp.GetFirstName(),
+			LastName:           resp.GetLastName(),
+			Email:              resp.GetEmail(),
+			Password:           resp.GetPassword(),
+			Status:             domain.ToUserStatus(resp.Status),
+			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
+			GoogleID:           resp.GetGoogleId(),
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
@@ -138,6 +159,18 @@ func (r UserClient) VerifiedEmail(ctx context.Context, email string) error {
 func (r UserClient) MarkWelcomeMessageSent(ctx context.Context, ID uint64) error {
 	req := userpb.UpdateWelcomeMessageToSentRequest{UserId: ID}
 	_, err := r.userServiceClient.MarkWelcomeMessageSent(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
+	return nil
+}
+
+func (r UserClient) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
+	req := userpb.UpdateGoogleIDRequest{UserId: ID, GoogleId: googleID}
+	_, err := r.userServiceClient.UpdateGoogleID(ctx, &req)
 	if err != nil {
 		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.RequestBody: &req,

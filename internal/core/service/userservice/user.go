@@ -54,7 +54,10 @@ func (r UserService) List(ctx context.Context) ([]domain.User, error) {
 	return r.userRepo.List(ctx)
 }
 
-func (r UserService) Create(ctx context.Context, user domain.User) error {
+func (r UserService) Create(ctx context.Context, user domain.User) (*domain.User, error) {
+	if user.Status != domain.UserStatusActive {
+		user.Status = domain.UserStatusUnVerified
+	}
 	return r.userRepo.Save(ctx, &user)
 }
 
@@ -64,4 +67,8 @@ func (r UserService) VerifiedEmail(ctx context.Context, email string) error {
 
 func (r UserService) MarkWelcomeMessageSent(ctx context.Context, ID uint64) error {
 	return r.userRepo.MarkWelcomeMessageSent(ctx, ID)
+}
+
+func (r UserService) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
+	return r.userRepo.UpdateGoogleID(ctx, ID, googleID)
 }
