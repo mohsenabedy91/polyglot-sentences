@@ -196,7 +196,7 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error {
 	res, err := r.db.ExecContext(
 		ctx,
-		"UPDATE users SET email_verified_at = now(), status = $1 WHERE deleted_at IS NULL AND email = $2",
+		"UPDATE users SET email_verified_at = now(), status = $1, updated_at = NOW() WHERE deleted_at IS NULL AND email = $2",
 		domain.UserStatusActive,
 		email,
 	)
@@ -219,7 +219,7 @@ func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error 
 }
 
 func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true WHERE id = $1", id)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true, updated_at = NOW() WHERE id = $1", id)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
@@ -239,7 +239,7 @@ func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) 
 }
 
 func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1 WHERE id = $2;", googleID, ID)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2;", googleID, ID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
 
@@ -259,7 +259,7 @@ func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID
 }
 
 func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now() WHERE id = $1;", ID)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now(), updated_at = NOW() WHERE id = $1;", ID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
 
@@ -274,6 +274,31 @@ func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) err
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Success").Inc()
+
+	return nil
+}
+
+func (r *UserRepository) UpdatePassword(ctx context.Context, ID uint64, password string) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		"UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2;",
+		password,
+		ID,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Success").Inc()
 
 	return nil
 }

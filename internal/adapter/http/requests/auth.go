@@ -37,3 +37,14 @@ type GoogleAuth struct {
 	Email       string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	AccessToken string `json:"accessToken" binding:"required" example:"123456789"`
 }
+
+type ForgetPassword struct {
+	Email string `json:"email" binding:"required,email" example:"john@doe.com"`
+}
+
+type ResetPassword struct {
+	Email             string `json:"email" binding:"required,email" example:"john@doe.com"`
+	Token             string `json:"token" binding:"required,token_length" example:"123456"`
+	Password          string `json:"password" binding:"required,password_complexity" example:"QWer123!@#"`
+	ConfirmedPassword string `json:"confirmedPassword" binding:"required,eqfield=Password" example:"QWer123!@#"`
+}

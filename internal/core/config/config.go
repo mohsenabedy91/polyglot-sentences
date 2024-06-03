@@ -22,6 +22,7 @@ var (
 )
 
 type App struct {
+	ResetPasswordURL   string
 	VerificationURL    string
 	SupportEmail       string
 	Env                string
@@ -117,8 +118,9 @@ type Jwt struct {
 }
 
 type OTP struct {
-	ExpireSecond time.Duration
-	Digits       int8
+	ExpireSecond               time.Duration
+	ForgetPasswordExpireSecond time.Duration
+	Digits                     int8
 }
 type RabbitMQ struct {
 	URL string
@@ -165,8 +167,9 @@ func LoadConfig() (Config, error) {
 	}
 
 	var app App
-	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
+	app.ResetPasswordURL = os.Getenv("RESET_PASSWORD_URL")
 	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
+	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
 	app.Env = os.Getenv("APP_ENV")
 	app.Debug = getBoolEnv("APP_DEBUG")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
@@ -244,6 +247,7 @@ func LoadConfig() (Config, error) {
 
 	var otp OTP
 	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
+	otp.ForgetPasswordExpireSecond = time.Duration(getIntEnv("FORGET_PASSWORD_EXPIRE_SECOND", 86400)) * time.Second
 	otp.Digits = int8(getIntEnv("OTP_DIGITS", 6))
 
 	var rabbitMQ RabbitMQ

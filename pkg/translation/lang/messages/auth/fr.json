@@ -2,7 +2,9 @@
   "auth": {
     "success": {
       "registeredUser": "Vous vous êtes inscrit avec succès.",
-      "emailOTPSent": "Un OTP a été envoyé à votre adresse e-mail. Veuillez vérifier votre boîte de réception."
+      "emailOTPSent": "Un OTP a été envoyé à votre adresse e-mail. Veuillez vérifier votre boîte de réception.",
+      "forgetPassword": "Un lien de réinitialisation de mot de passe a été envoyé à votre email.",
+      "resetPassword": "Votre mot de passe a été réinitialisé avec succès. Veuillez essayer de vous connecter à nouveau."
     }
   }
 }
