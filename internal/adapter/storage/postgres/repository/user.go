@@ -196,7 +196,7 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error {
 	res, err := r.db.ExecContext(
 		ctx,
-		"UPDATE users SET email_verified_at = now(), status = $1 WHERE deleted_at IS NULL AND email = $2",
+		"UPDATE users SET email_verified_at = now(), status = $1, updated_at = NOW() WHERE deleted_at IS NULL AND email = $2",
 		domain.UserStatusActive,
 		email,
 	)
@@ -219,7 +219,7 @@ func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error 
 }
 
 func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true WHERE id = $1", id)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true, updated_at = NOW() WHERE id = $1", id)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
@@ -239,7 +239,7 @@ func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) 
 }
 
 func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1 WHERE id = $2;", googleID, ID)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2;", googleID, ID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
 
@@ -259,7 +259,7 @@ func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID
 }
 
 func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now() WHERE id = $1;", ID)
+	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now(), updated_at = NOW() WHERE id = $1;", ID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
 
