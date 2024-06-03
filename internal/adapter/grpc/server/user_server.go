@@ -205,3 +205,16 @@ func (r Server) UpdateLastLoginTime(ctx context.Context, req *userpb.UpdateLastL
 
 	return nil, nil
 }
+
+func (r Server) UpdatePassword(ctx context.Context, req *userpb.UpdatePasswordRequest) (*emptypb.Empty, error) {
+	err := r.userService.UpdatePassword(ctx, req.GetUserId(), req.GetPassword())
+	if err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil, nil
+}

@@ -39,6 +39,8 @@ type UserServiceClient interface {
 	UpdateGoogleID(ctx context.Context, in *UpdateGoogleIDRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Updates the user lat login time.
 	UpdateLastLoginTime(ctx context.Context, in *UpdateLastLoginTimeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Updates the user password.
+	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type userServiceClient struct {
@@ -121,6 +123,15 @@ func (c *userServiceClient) UpdateLastLoginTime(ctx context.Context, in *UpdateL
 	return out, nil
 }
 
+func (c *userServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/user.UserService/UpdatePassword", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -141,6 +152,8 @@ type UserServiceServer interface {
 	UpdateGoogleID(context.Context, *UpdateGoogleIDRequest) (*empty.Empty, error)
 	// Updates the user lat login time.
 	UpdateLastLoginTime(context.Context, *UpdateLastLoginTimeRequest) (*empty.Empty, error)
+	// Updates the user password.
+	UpdatePassword(context.Context, *UpdatePasswordRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -171,6 +184,9 @@ func (UnimplementedUserServiceServer) UpdateGoogleID(context.Context, *UpdateGoo
 }
 func (UnimplementedUserServiceServer) UpdateLastLoginTime(context.Context, *UpdateLastLoginTimeRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateLastLoginTime not implemented")
+}
+func (UnimplementedUserServiceServer) UpdatePassword(context.Context, *UpdatePasswordRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -329,6 +345,24 @@ func _UserService_UpdateLastLoginTime_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdatePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/UpdatePassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdatePassword(ctx, req.(*UpdatePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -367,6 +401,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateLastLoginTime",
 			Handler:    _UserService_UpdateLastLoginTime_Handler,
+		},
+		{
+			MethodName: "UpdatePassword",
+			Handler:    _UserService_UpdatePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

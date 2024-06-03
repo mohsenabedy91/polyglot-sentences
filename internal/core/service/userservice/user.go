@@ -76,3 +76,7 @@ func (r UserService) UpdateGoogleID(ctx context.Context, ID uint64, googleID str
 func (r UserService) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
 	return r.userRepo.UpdateLastLoginTime(ctx, ID)
 }
+
+func (r UserService) UpdatePassword(ctx context.Context, ID uint64, password string) error {
+	return r.userRepo.UpdatePassword(ctx, ID, password)
+}

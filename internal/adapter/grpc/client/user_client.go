@@ -191,3 +191,15 @@ func (r UserClient) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
 	}
 	return nil
 }
+
+func (r UserClient) UpdatePassword(ctx context.Context, ID uint64, password string) error {
+	req := userpb.UpdatePasswordRequest{UserId: ID, Password: password}
+	_, err := r.userServiceClient.UpdatePassword(ctx, &req)
+	if err != nil {
+		r.log.Error(logger.UserManagement, logger.API, err.Error(), map[logger.ExtraKey]interface{}{
+			logger.RequestBody: &req,
+		})
+		return serviceerror.ExtractFromGrpcError(err)
+	}
+	return nil
+}

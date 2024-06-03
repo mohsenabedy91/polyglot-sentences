@@ -451,3 +451,140 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 
 	presenter.NewResponse(ctx, nil).Payload(result).Echo()
 }
+
+// ForgetPassword godoc
+// @Summary Auth ForgetPassword
+// @Description Forget Password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.ForgetPassword true "ForgetPassword request"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_v1_auth_forget_password
+// @Router /v1/auth/forget-password [post]
+func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
+	var req requests.ForgetPassword
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var (
+		otp       string
+		otpSetErr error
+		wg        sync.WaitGroup
+	)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		otp = helper.GenerateOTP(r.otpConfig.Digits)
+		otpSetErr = r.otpService.SetForgetPassword(ctx.Request.Context(), req.Email, otp)
+	}()
+
+	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+	if user == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.RecordNotFound),
+		).Echo()
+		return
+	}
+
+	wg.Wait()
+	if otpSetErr != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(otpSetErr).Echo()
+		return
+	}
+
+	go func() {
+		// TODO add rate limit
+		message := authservice.SendResetPasswordLinkDto{
+			To:       user.Email,
+			Name:     user.GetFullName(),
+			OTP:      otp,
+			Language: ctx.Param("language"),
+		}
+		authservice.SendResetPasswordLinkEvent(r.queue).Publish(message)
+	}()
+
+	presenter.NewResponse(ctx, nil).Message(constant.AuthForgetPassword).Echo(http.StatusOK)
+}
+
+// ResetPassword godoc
+// @Summary Auth ResetPassword
+// @Description Reset Password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.ResetPassword true "Reset Password request"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_v1_auth_reset_password
+// @Router /v1/auth/reset-password [post]
+func (r AuthHandler) ResetPassword(ctx *gin.Context) {
+	var req requests.ResetPassword
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var (
+		hashedErr    error
+		hashPassword string
+		wg           sync.WaitGroup
+	)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		hashPassword, hashedErr = helper.HashPassword(req.Password)
+	}()
+
+	if err := r.otpService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if user == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.RecordNotFound),
+		).Echo()
+		return
+	}
+
+	wg.Wait()
+	if hashedErr != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(hashedErr).Echo()
+		return
+	}
+
+	if err = r.userClient.UpdatePassword(ctx.Request.Context(), user.ID, hashPassword); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	go func() {
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = r.otpService.UsedForgetPassword(ctxWithTimeout, req.Email)
+	}()
+
+	presenter.NewResponse(ctx, nil).Message(constant.AuthResetPassword).Echo(http.StatusOK)
+}

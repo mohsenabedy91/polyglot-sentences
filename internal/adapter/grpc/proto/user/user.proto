@@ -30,6 +30,9 @@ service UserService {
 
   // Updates the user lat login time.
   rpc UpdateLastLoginTime(UpdateLastLoginTimeRequest) returns (google.protobuf.Empty);
+
+  // Updates the user password.
+  rpc UpdatePassword(UpdatePasswordRequest) returns (google.protobuf.Empty);
 }
 
 // Request message for GetByUUID.
@@ -50,7 +53,7 @@ message IsEmailUniqueRequest {
   string email = 1;
 }
 
-// Request message for UpdateGoogleIDRequest.
+// Request message for UpdateGoogleID.
 message UpdateGoogleIDRequest {
   // The user ID for whom to update google id.
   uint64 userId = 1;
@@ -58,10 +61,18 @@ message UpdateGoogleIDRequest {
   string googleId = 2;
 }
 
-// Request message for UpdateLastLoginTimeRequest.
+// Request message for UpdateLastLoginTime.
 message UpdateLastLoginTimeRequest {
   // The user ID for whom to update last login time.
   uint64 userId = 1;
+}
+
+// Request message for UpdatePassword.
+message UpdatePasswordRequest {
+  // The user ID for whom to update password.
+  uint64 userId = 1;
+  // The hashed password of the user, there is a secure value.
+  string password = 2;
 }
 
 // Request message for Create.
