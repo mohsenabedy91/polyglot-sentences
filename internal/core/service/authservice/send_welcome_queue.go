@@ -68,6 +68,10 @@ func (r *SendWelcome) Consume(message []byte) error {
 	trans := translation.NewTranslation(msg.Language)
 	appName := trans.Lang("appName", nil, &msg.Language)
 
+	if strings.TrimSpace(msg.Name) == "" {
+		msg.Name = trans.Lang("user", nil, &msg.Language)
+	}
+
 	emailBuffer := new(bytes.Buffer)
 	parseFiles, err := template.ParseFiles("internal/core/views/email/base.html", "internal/core/views/email/auth/welcome.html")
 	if err != nil {

@@ -34,6 +34,7 @@ func main() {
 	messagebroker.RegisterAllQueues(
 		authservice.SendEmailOTPEvent(queue),
 		authservice.SendWelcomeEvent(queue, userClient),
+		authservice.SendResetPasswordLinkEvent(queue),
 		// add new queues here
 		// ...
 	)
