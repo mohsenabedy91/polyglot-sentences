@@ -2,18 +2,22 @@ package authservice
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"html/template"
+	"strings"
 )
 
 type SendWelcome struct {
 	queue       *messagebroker.Queue
 	emailSender email.Sender
+	userClient  port.UserClient
 }
 
 var sendWelcomeInstance *SendWelcome
@@ -21,16 +25,18 @@ var sendWelcomeInstance *SendWelcome
 const delaySendWelcomeSeconds int64 = 60
 
 type SendWelcomeDto struct {
+	UserID   uint64 `json:"userID"`
 	To       string `json:"to"`
 	Name     string `json:"name"`
 	Language string `json:"language"`
 }
 
-func SendWelcomeEvent(queue *messagebroker.Queue) *SendWelcome {
+func SendWelcomeEvent(queue *messagebroker.Queue, userClient port.UserClient) *SendWelcome {
 	if sendWelcomeInstance == nil {
 		sendWelcomeInstance = &SendWelcome{
 			queue:       queue,
 			emailSender: email.NewSender(queue.Log, queue.Config.SendGrid),
+			userClient:  userClient,
 		}
 	}
 
@@ -90,6 +96,11 @@ func (r *SendWelcome) Consume(message []byte) error {
 	}, &msg.Language)
 
 	err = r.emailSender.Send(msg.To, msg.Name, subject, string(body))
+	if err == nil {
+		if updateErr := r.userClient.MarkWelcomeMessageSent(context.Background(), msg.UserID); updateErr != nil {
+			r.queue.Log.Error(logger.Email, logger.SendEmail, updateErr.Error(), nil)
+		}
+	}
 
 	return err
 }

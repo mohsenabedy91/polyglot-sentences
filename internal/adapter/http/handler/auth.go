@@ -237,15 +237,12 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 
 		if !user.WelcomeMessageSent {
 			message := authservice.SendWelcomeDto{
+				UserID:   user.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
 			}
-			authservice.SendWelcomeEvent(r.queue).Publish(message)
-
-			if err = r.userClient.MarkWelcomeMessageSent(ctxWithTimeout, user.ID); err != nil {
-				return
-			}
+			authservice.SendWelcomeEvent(r.queue, r.userClient).Publish(message)
 		}
 
 		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
@@ -432,15 +429,12 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 		defer cancel()
 		if !user.WelcomeMessageSent {
 			message := authservice.SendWelcomeDto{
+				UserID:   user.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
 			}
-			authservice.SendWelcomeEvent(r.queue).Publish(message)
-
-			if err = r.userClient.MarkWelcomeMessageSent(ctxWithTimeout, user.ID); err != nil {
-				return
-			}
+			authservice.SendWelcomeEvent(r.queue, r.userClient).Publish(message)
 		}
 		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
 			return
