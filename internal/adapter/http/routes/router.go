@@ -7,6 +7,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/validations"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
@@ -22,6 +23,7 @@ type Router struct {
 	log   logger.Logger
 	cfg   config.Config
 	trans *translation.Translation
+	cache *redis.CacheDriver[any]
 }
 
 // NewRouter creates a new HTTP router
@@ -30,6 +32,7 @@ func NewRouter(
 	cfg config.Config,
 	trans *translation.Translation,
 	healthHandler handler.HealthHandler,
+	cache *redis.CacheDriver[any],
 ) (*Router, error) {
 
 	// Disable debug mode in production
@@ -57,7 +60,7 @@ func NewRouter(
 	}
 
 	return &Router{
-		router, log, cfg, trans,
+		router, log, cfg, trans, cache,
 	}, nil
 }
 

@@ -64,3 +64,15 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 
 	return &jwtString, nil
 }
+
+func (r JWTService) LogoutToken(ctx context.Context, jti string, exp int64) error {
+	expTime := time.Unix(exp, 0)
+
+	key := fmt.Sprintf("%s:%s", constant.RedisAuthToken, jti)
+
+	if err := r.jwtCache.Set(ctx, key, constant.LogoutRedisValue, expTime.Sub(time.Now())); err != nil {
+		return err
+	}
+
+	return nil
+}

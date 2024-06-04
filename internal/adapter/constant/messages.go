@@ -6,4 +6,5 @@ const (
 	AuthSuccessEmailOTPSent   = "auth.success.emailOTPSent"
 	AuthForgetPassword        = "auth.success.forgetPassword"
 	AuthResetPassword         = "auth.success.resetPassword"
+	AuthLogout                = "auth.success.logout"
 )

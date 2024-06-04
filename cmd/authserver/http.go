@@ -62,7 +62,7 @@ func main() {
 
 	healthHandler := handler.NewHealthHandler(trans)
 
-	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
 	defer func() {

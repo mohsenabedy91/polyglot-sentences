@@ -16,6 +16,7 @@ var (
 	UserUnVerified    ErrorMessage = "errors.userUnVerified"
 	EmailRegistered   ErrorMessage = "errors.emailRegistered"
 	CredentialInvalid ErrorMessage = "errors.credentialInvalid"
+	UserLogout        ErrorMessage = "errors.userLogout"
 
 	// OTP
 	InvalidOTP ErrorMessage = "errors.invalidOTP"

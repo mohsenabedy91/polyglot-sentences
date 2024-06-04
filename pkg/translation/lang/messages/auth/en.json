@@ -4,7 +4,8 @@
       "registeredUser": "The User was successfully registered.",
       "emailOTPSent": "An OTP has been sent to your email. Please check your inbox.",
       "forgetPassword": "A reset password link has been sent to your email.",
-      "resetPassword": "Your password has been reset successfully. Please try to log in again."
+      "resetPassword": "Your password has been reset successfully. Please try to log in again.",
+      "logout": "Logged out successfully."
     }
   },
   "user": {

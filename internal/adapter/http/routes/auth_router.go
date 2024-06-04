@@ -15,14 +15,15 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 			auth.POST("email-otp/resend", authHandler.EmailOTPResend)
 			auth.POST("email-otp/verify", authHandler.EmailOTPVerify)
 			auth.POST("login", authHandler.Login)
-			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt), authHandler.Profile)
+			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Profile)
 			auth.POST("google", authHandler.Google)
 			auth.POST("forget-password", authHandler.ForgetPassword)
 			auth.PATCH("reset-password", authHandler.ResetPassword)
+			auth.POST("logout", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Logout)
 		}
 	}
 
 	return &Router{
-		r.Engine, r.log, r.cfg, r.trans,
+		r.Engine, r.log, r.cfg, r.trans, r.cache,
 	}
 }
