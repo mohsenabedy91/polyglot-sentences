@@ -530,8 +530,8 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_reset_password
-// @Router /v1/auth/reset-password [post]
+// @ID patch_v1_auth_reset_password
+// @Router /v1/auth/reset-password [patch]
 func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	var req requests.ResetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {

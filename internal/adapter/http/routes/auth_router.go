@@ -18,7 +18,7 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt), authHandler.Profile)
 			auth.POST("google", authHandler.Google)
 			auth.POST("forget-password", authHandler.ForgetPassword)
-			auth.POST("reset-password", authHandler.ResetPassword)
+			auth.PATCH("reset-password", authHandler.ResetPassword)
 		}
 	}
 
