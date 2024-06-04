@@ -11,6 +11,7 @@
     "userUnVerified": "Your account is not yet verified. Please check your email for the verification link or contact support if you need help.",
     "emailRegistered": "This is already an account with {{.email}} email registered. What would you like to do?",
     "credentialInvalid": "Invalid credential. Please double-check and try again.",
+    "userLogout": "You have been logged out. Please log in again to continue.",
 
     "invalidOTP": "The One-Time Password (OTP) you entered is invalid. Please try again or request a new OTP.",
     "OTPExpired": "The One-Time Password (OTP) has expired. Please request a new OTP to continue.",

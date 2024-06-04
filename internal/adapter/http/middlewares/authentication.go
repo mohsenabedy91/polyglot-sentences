@@ -1,17 +1,20 @@
 package middlewares
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
+	cache "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"strings"
 )
 
-func Authentication(cfg config.Jwt) gin.HandlerFunc {
+func Authentication(cfg config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" {
@@ -50,10 +53,32 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set(config.AuthUserUUIDKey, claims[config.AuthUserUUIDKey])
+		if jti, ok := claims[config.AuthTokenJTI].(string); ok {
+			if err = checkLogout(ctx.Request.Context(), cacheDriver, jti); err != nil {
+				presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
+				return
+			}
+		}
 
+		ctx.Set(config.AuthTokenJTI, claims[config.AuthTokenJTI])
+		ctx.Set(config.AuthTokenExpirationTime, claims[config.AuthTokenExpirationTime])
+		ctx.Set(config.AuthTokenUserUUID, claims[config.AuthTokenUserUUID])
 		ctx.Next()
 	}
+}
+
+func checkLogout(ctx context.Context, cacheDriver *cache.CacheDriver[any], jti string) error {
+	authCache := (*cache.CacheDriver[string])(cacheDriver)
+
+	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthToken, jti))
+	if err != nil {
+		return serviceerror.NewServerError()
+
+	} else if result == constant.LogoutRedisValue {
+		return serviceerror.New(serviceerror.UserLogout)
+	}
+
+	return nil
 }
 
 func validationToken(accessTokenSecret string, token string) (*jwt.Token, error) {

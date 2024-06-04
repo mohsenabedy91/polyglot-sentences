@@ -65,11 +65,13 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (T, error) {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	v, err := r.client.WithContext(ctx).Get(key).Result()
 	if err != nil {
+		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
 		return destination, serviceerror.NewServerError()
 	}
 
 	err = json.Unmarshal([]byte(v), &destination)
 	if err != nil {
+		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
 		return destination, serviceerror.NewServerError()
 	}
 
@@ -79,13 +81,19 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (T, error) {
 func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 
+	extra := map[logger.ExtraKey]interface{}{
+		logger.CacheKey:    key,
+		logger.CacheSetArg: value,
+	}
+
 	data, err := json.Marshal(value)
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error marshalling value, error: %v", err), nil)
+		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error marshalling value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
 	if err = r.client.WithContext(ctx).Set(key, data, expiration).Err(); err != nil {
+		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error Set value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
@@ -95,6 +103,7 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 func (r *CacheDriver[T]) Delete(ctx context.Context, key string) error {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	if err := r.client.WithContext(ctx).Del(key).Err(); err != nil {
+		r.log.Error(logger.Redis, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -115,10 +124,12 @@ func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration ti
 	if err != nil {
 
 		if destination, err = callback(); err != nil {
+			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
 			return destination, serviceerror.NewServerError()
 		}
 
 		if err = r.Set(ctx, key, destination, expiration); err != nil {
+			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
 			return destination, serviceerror.NewServerError()
 		}
 	}

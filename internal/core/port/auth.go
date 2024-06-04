@@ -7,6 +7,7 @@ import (
 
 type AuthService interface {
 	GenerateToken(userUUIDStr string) (*string, error)
+	LogoutToken(ctx context.Context, jti string, exp int64) error
 }
 
 type UserClient interface {

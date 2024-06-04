@@ -16,7 +16,7 @@ func (r *Router) NewUserRouter(
 	{
 		user := v1.Group(
 			"users",
-			middlewares.Authentication(r.cfg.Jwt),
+			middlewares.Authentication(r.cfg.Jwt, r.cache),
 			middlewares.ACL(
 				aclService,
 				domain.PermissionKeyCreateUser,
@@ -31,6 +31,6 @@ func (r *Router) NewUserRouter(
 	}
 
 	return &Router{
-		r.Engine, r.log, r.cfg, r.trans,
+		r.Engine, r.log, r.cfg, r.trans, r.cache,
 	}
 }

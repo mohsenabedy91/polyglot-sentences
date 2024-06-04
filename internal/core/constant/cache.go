@@ -1,4 +1,9 @@
 package constant
 
-const RedisOTPPrefix string = "otp"
-const RedisForgetPasswordPrefix string = "forget_password"
+const (
+	RedisOTPPrefix            string = "otp"
+	RedisForgetPasswordPrefix string = "forget_password"
+	RedisAuthToken            string = "auth_token"
+)
+
+const LogoutRedisValue string = "logout"

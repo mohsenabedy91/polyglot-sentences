@@ -62,7 +62,7 @@ func main() {
 
 	healthHandler := handler.NewHealthHandler(trans)
 
-	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
 	defer func() {
@@ -71,7 +71,7 @@ func main() {
 			return
 		}
 	}()
-	tokenService := authservice.New(log, cfg.Jwt)
+	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
 	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
 	oauthService := oauth.New(cfg.Oauth)
 

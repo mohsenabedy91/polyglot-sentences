@@ -13,7 +13,14 @@ const (
 	AppDeviceHeaderKey     string = "x-AppDevice"
 	AppVersionHeaderKey    string = "x-AppVersion"
 	AuthorizationHeaderKey string = "Authorization"
-	AuthUserUUIDKey        string = "UserUUID"
+)
+
+// please never change this keys
+const (
+	AuthTokenUserUUID       string = "sub"
+	AuthTokenJTI            string = "jti"
+	AuthTokenIssuedAt       string = "iat"
+	AuthTokenExpirationTime string = "exp"
 )
 
 var (

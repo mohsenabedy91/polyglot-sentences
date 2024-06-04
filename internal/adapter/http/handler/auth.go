@@ -530,8 +530,8 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_reset_password
-// @Router /v1/auth/reset-password [post]
+// @ID patch_v1_auth_reset_password
+// @Router /v1/auth/reset-password [patch]
 func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	var req requests.ResetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -587,4 +587,33 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	}()
 
 	presenter.NewResponse(ctx, nil).Message(constant.AuthResetPassword).Echo(http.StatusOK)
+}
+
+// Logout godoc
+// @Security AuthBearer
+// @Summary Logout
+// @Description Logout user based on Authorization value
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_v1_auth_logout
+// @Router /v1/auth/logout [post]
+func (r AuthHandler) Logout(ctx *gin.Context) {
+	err := r.tokenService.LogoutToken(
+		ctx.Request.Context(),
+		claim.GetJTIFromGinContext(ctx),
+		claim.GetExpFromGinContext(ctx),
+	)
+
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, nil).Message(constant.AuthLogout).Echo(http.StatusOK)
 }

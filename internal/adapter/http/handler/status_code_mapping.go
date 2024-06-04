@@ -19,6 +19,7 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.UserUnVerified:    http.StatusForbidden,
 	serviceerror.EmailRegistered:   http.StatusConflict,
 	serviceerror.CredentialInvalid: http.StatusUnauthorized,
+	serviceerror.UserLogout:        http.StatusUnauthorized,
 	// OTP
 	serviceerror.InvalidOTP: http.StatusBadRequest,
 	serviceerror.OTPExpired: http.StatusUnauthorized,
