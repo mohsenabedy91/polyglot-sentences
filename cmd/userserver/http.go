@@ -7,6 +7,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
@@ -38,13 +39,18 @@ func main() {
 	}
 	postgresDB := postgres.Get()
 
+	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
+	if err != nil {
+		return
+	}
+
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
 		os.Exit(1)
