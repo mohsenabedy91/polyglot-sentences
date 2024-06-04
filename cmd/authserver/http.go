@@ -71,7 +71,7 @@ func main() {
 			return
 		}
 	}()
-	tokenService := authservice.New(log, cfg.Jwt)
+	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
 	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
 	oauthService := oauth.New(cfg.Oauth)
 
