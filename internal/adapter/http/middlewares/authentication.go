@@ -52,6 +52,9 @@ func Authentication(cfg config.Jwt) gin.HandlerFunc {
 
 		ctx.Set(config.AuthUserUUIDKey, claims[config.AuthUserUUIDKey])
 
+		ctx.Set(config.AuthTokenJTI, claims[config.AuthTokenJTI])
+		ctx.Set(config.AuthTokenExpirationTime, claims[config.AuthTokenExpirationTime])
+		ctx.Set(config.AuthTokenUserUUID, claims[config.AuthTokenUserUUID])
 		ctx.Next()
 	}
 }
