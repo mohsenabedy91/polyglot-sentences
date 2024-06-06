@@ -73,7 +73,7 @@ func main() {
 	}()
 	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
 	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
-	oauthService := oauth.New(cfg.Oauth)
+	oauthService := oauth.New(log, cfg.Oauth)
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
 	roleRepo := repository.NewRoleRepository(log, postgresDB)

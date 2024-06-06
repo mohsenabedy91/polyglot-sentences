@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"io"
@@ -25,14 +27,15 @@ type GoogleService interface {
 }
 
 type OAuth struct {
+	log    logger.Logger
 	config config.Oauth
 }
 
-func New(config config.Oauth) *OAuth {
-	return &OAuth{config: config}
+func New(log logger.Logger, config config.Oauth) *OAuth {
+	return &OAuth{config: config, log: log}
 }
 
-func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (user *GoogleUserInfo, err error) {
+func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (*GoogleUserInfo, error) {
 	var oauthCfg = oauth2.Config{
 		ClientID:     r.config.Google.ClientId,
 		ClientSecret: r.config.Google.ClientSecret,
@@ -49,8 +52,10 @@ func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (user *G
 
 	response, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		return nil, err
+		r.log.Error(logger.Google, logger.ExternalService, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
 	}
+
 	defer func(Body io.ReadCloser) {
 		err = Body.Close()
 		if err != nil {
@@ -59,12 +64,18 @@ func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (user *G
 	}(response.Body)
 
 	if response.StatusCode == http.StatusOK {
+		var userInfo *GoogleUserInfo
+
 		body, _ := io.ReadAll(response.Body)
-		if err = json.Unmarshal(body, &user); err != nil {
-			return nil, err
+		if err = json.Unmarshal(body, &userInfo); err != nil {
+
+			r.log.Error(logger.Google, logger.ExternalService, fmt.Sprintf("Error unmarshalling message, error: %v", err), nil)
+			return nil, serviceerror.NewServerError()
 		}
-		return user, nil
-	} else {
-		return nil, fmt.Errorf("error: Unable to fetch user info. Status Code: %s", response.Status)
+
+		return userInfo, nil
 	}
+
+	r.log.Error(logger.Google, logger.ExternalService, fmt.Sprintf("error: Unable to fetch user info. Status Code: %s", response.Status), nil)
+	return nil, serviceerror.NewServerError()
 }

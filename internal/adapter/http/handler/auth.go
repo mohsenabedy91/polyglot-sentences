@@ -383,7 +383,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 	}
 
 	wg.Wait()
-	if googleErr != nil || googleUserInfo == nil {
+	if googleErr != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.NewServerError(),
 		).Echo()
