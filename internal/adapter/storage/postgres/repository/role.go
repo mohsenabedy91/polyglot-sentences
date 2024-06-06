@@ -28,18 +28,18 @@ func (r RoleRepository) GetUserRole(ctx context.Context) (role domain.Role, err 
 	if err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
-			metrics.DbCall.WithLabelValues("users", "GetUserRole", "Success").Inc()
+			metrics.DbCall.WithLabelValues("roles", "GetUserRole", "Success").Inc()
 
 			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return role, serviceerror.New(serviceerror.RecordNotFound)
 		}
-		metrics.DbCall.WithLabelValues("users", "GetUserRole", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("roles", "GetUserRole", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		return role, serviceerror.NewServerError()
 	}
 
-	metrics.DbCall.WithLabelValues("users", "GetUserRole", "Success").Inc()
+	metrics.DbCall.WithLabelValues("roles", "GetUserRole", "Success").Inc()
 
 	return role, nil
 }
