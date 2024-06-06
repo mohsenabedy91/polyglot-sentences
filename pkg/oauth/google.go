@@ -14,12 +14,12 @@ import (
 )
 
 type GoogleUserInfo struct {
-	Id            string `json:"id"`
-	Email         string `json:"email"`
-	FirstName     string `json:"given_name"`
-	LastName      string `json:"family_name"`
-	AvatarURL     string `json:"picture"`
-	VerifiedEmail bool   `json:"verified_email"`
+	Id            *string `json:"id"`
+	Email         string  `json:"email"`
+	FirstName     *string `json:"given_name"`
+	LastName      *string `json:"family_name"`
+	AvatarURL     *string `json:"picture"`
+	VerifiedEmail bool    `json:"verified_email"`
 }
 
 type GoogleService interface {

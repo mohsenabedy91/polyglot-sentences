@@ -77,22 +77,20 @@ message UpdatePasswordRequest {
 
 // Request message for Create.
 message CreateRequest {
-  // The universally unique identifier of the user.
-  string UUID = 1;
   // The first name of the user.
-  string firstName = 2;
+  optional string firstName = 1;
   // The last name of the user.
-  string lastName = 3;
+  optional string lastName = 2;
   // The email of the user.
-  string email = 4;
+  string email = 3;
   // The hashed password of the user, there is a secure value.
-  string password = 5;
+  optional string password = 4;
   // The avatar url of the user.
-  string avatar = 6;
+  optional string avatar = 5;
   // The google id of the user.
-  string googleId = 7;
+  optional string googleId = 6;
   // The status of the user.
-  string status = 8;
+  string status = 7;
 }
 
 // Request message for VerifiedEmail.
@@ -114,17 +112,17 @@ message UserResponse {
   // The unique UUID of the user.
   string UUID = 2;
   // The first name of the user.
-  string firstName = 3;
+  optional string firstName = 3;
   // The last name of the user.
-  string lastName = 4;
+  optional string lastName = 4;
   // The email of the user.
   string email = 5;
   // The status of the user.
   string status = 6;
   // The hashed password of the user, there is a secure value.
-  string password = 7;
+  optional string password = 7;
   // Whether the welcome message has been sent.
   bool welcomeMessageSent = 8;
   // The google Id of user has a authentication request.
-  string googleId = 9;
+  optional string googleId = 9;
 }

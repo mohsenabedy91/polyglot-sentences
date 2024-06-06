@@ -288,7 +288,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	if ok := helper.CheckPasswordHash(req.Password, user.Password); !ok {
+	if ok := helper.CheckPasswordHash(req.Password, *user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.CredentialInvalid),
 		).Echo()
@@ -390,7 +390,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 		return
 	}
 
-	if user != nil && user.GoogleID != "" && user.GoogleID != googleUserInfo.Id {
+	if user != nil && user.GoogleID != nil && *user.GoogleID != *googleUserInfo.Id {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.Unauthorized),
 		).Echo()
@@ -417,8 +417,8 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			return
 		}
 
-	} else if user.GoogleID == "" {
-		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, googleUserInfo.Id); err != nil {
+	} else if user.GoogleID == nil {
+		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, *googleUserInfo.Id); err != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 			return
 		}

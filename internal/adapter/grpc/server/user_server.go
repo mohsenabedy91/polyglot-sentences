@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	userpb "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -118,16 +117,13 @@ func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequ
 
 func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.UserResponse, error) {
 	resp, err := r.userService.Create(ctx, domain.User{
-		Base: domain.Base{
-			UUID: uuid.MustParse(req.GetUUID()),
-		},
-		FirstName: req.GetFirstName(),
-		LastName:  req.GetLastName(),
-		Email:     req.GetEmail(),
-		Password:  req.GetPassword(),
-		Avatar:    req.GetAvatar(),
-		GoogleID:  req.GetGoogleId(),
-		Status:    domain.ToUserStatus(req.GetStatus()),
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  req.Password,
+		Avatar:    req.Avatar,
+		GoogleID:  req.GoogleId,
+		Status:    domain.ToUserStatus(req.Status),
 	})
 	if err != nil {
 		var se *serviceerror.ServiceError
