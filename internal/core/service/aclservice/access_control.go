@@ -1,4 +1,4 @@
-package authorizationservice
+package aclservice
 
 import (
 	"context"

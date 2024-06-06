@@ -9,7 +9,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -63,7 +63,7 @@ func main() {
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
 	roleRepo := repository.NewRoleRepository(log, postgresDB)
 	aclRepo := repository.NewACLRepository(log, postgresDB)
-	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
+	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
 
 	router = router.NewUserRouter(aclService, *userHandler)
 

@@ -11,7 +11,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authorizationservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -68,7 +68,6 @@ func main() {
 	defer func() {
 		if err = userClient.Close(); err != nil {
 			log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
-			return
 		}
 	}()
 	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
@@ -78,7 +77,7 @@ func main() {
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
 	roleRepo := repository.NewRoleRepository(log, postgresDB)
 	aclRepo := repository.NewACLRepository(log, postgresDB)
-	aclService := authorizationservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
+	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
 
 	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue, oauthService, aclService)
 

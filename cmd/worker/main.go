@@ -27,7 +27,6 @@ func main() {
 	defer func() {
 		if err := userClient.Close(); err != nil {
 			log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
-			return
 		}
 	}()
 
