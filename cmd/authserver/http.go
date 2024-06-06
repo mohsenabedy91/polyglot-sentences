@@ -37,8 +37,7 @@ func main() {
 	profiling(cfg.Profile)
 
 	defer func() {
-		err := postgres.Close()
-		if err != nil {
+		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
@@ -65,11 +64,8 @@ func main() {
 	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
-	defer func() {
-		if err = userClient.Close(); err != nil {
-			log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
-		}
-	}()
+	defer userClient.Close()
+
 	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
 	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
 	oauthService := oauth.New(log, cfg.Oauth)
@@ -83,14 +79,13 @@ func main() {
 
 	router = router.NewAuthRouter(*authHandler)
 	if err != nil {
-		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
-		os.Exit(1)
+		return
 	}
 
 	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
 	server := &http.Server{
 		Addr:    listenAddr,
-		Handler: router.Handler(),
+		Handler: router.Engine.Handler(),
 	}
 	log.Info(logger.Internal, logger.Startup, "Starting the HTTP server", map[logger.ExtraKey]interface{}{
 		logger.ListeningAddress: server.Addr,

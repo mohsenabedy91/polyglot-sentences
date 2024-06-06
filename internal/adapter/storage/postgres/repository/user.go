@@ -156,7 +156,6 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	defer func(rows *sql.Rows) {
 		if err = rows.Close(); err != nil {
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return
 		}
 	}(rows)
 

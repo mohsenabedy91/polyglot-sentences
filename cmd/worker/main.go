@@ -24,11 +24,7 @@ func main() {
 	log.Info(logger.Queue, logger.Startup, fmt.Sprintf("Setup queue successfully"), nil)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)
-	defer func() {
-		if err := userClient.Close(); err != nil {
-			log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
-		}
-	}()
+	defer userClient.Close()
 
 	messagebroker.RegisterAllQueues(
 		authservice.SendEmailOTPEvent(queue),

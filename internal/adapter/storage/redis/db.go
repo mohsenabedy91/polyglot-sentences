@@ -42,7 +42,7 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 
 	if val, err := client.Ping().Result(); err != nil {
 		log.Error(
-			logger.Redis,
+			logger.Cache,
 			logger.RedisPing,
 			fmt.Sprintf("Redis client doesn't connected val: %s, error: %v", val, err.Error()),
 			nil,
@@ -50,7 +50,7 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 		return nil, serviceerror.New(serviceerror.ServiceUnavailable)
 	}
 
-	log.Info(logger.Redis, logger.Startup, "Redis client initialized", nil)
+	log.Info(logger.Cache, logger.Startup, "Redis client initialized", nil)
 
 	return &CacheDriver[T]{
 		log:    log,
@@ -65,13 +65,13 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (T, error) {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	v, err := r.client.WithContext(ctx).Get(key).Result()
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
+		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
 		return destination, serviceerror.NewServerError()
 	}
 
 	err = json.Unmarshal([]byte(v), &destination)
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
+		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
 		return destination, serviceerror.NewServerError()
 	}
 
@@ -88,12 +88,12 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 
 	data, err := json.Marshal(value)
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error marshalling value: %v", err), extra)
+		r.log.Error(logger.Cache, logger.RedisSet, fmt.Sprintf("Error marshalling value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
 	if err = r.client.WithContext(ctx).Set(key, data, expiration).Err(); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error Set value: %v", err), extra)
+		r.log.Error(logger.Cache, logger.RedisSet, fmt.Sprintf("Error Set value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
@@ -103,7 +103,7 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 func (r *CacheDriver[T]) Delete(ctx context.Context, key string) error {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	if err := r.client.WithContext(ctx).Del(key).Err(); err != nil {
-		r.log.Error(logger.Redis, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
+		r.log.Error(logger.Cache, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -124,12 +124,12 @@ func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration ti
 	if err != nil {
 
 		if destination, err = callback(); err != nil {
-			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
+			r.log.Error(logger.Cache, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
 			return destination, serviceerror.NewServerError()
 		}
 
 		if err = r.Set(ctx, key, destination, expiration); err != nil {
-			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
+			r.log.Error(logger.Cache, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
 			return destination, serviceerror.NewServerError()
 		}
 	}

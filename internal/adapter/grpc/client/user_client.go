@@ -35,8 +35,11 @@ func NewUserClient(log logger.Logger, cfg config.UserManagement) *UserClient {
 	}
 }
 
-func (r UserClient) Close() error {
-	return r.conn.Close()
+func (r UserClient) Close() {
+	if err := r.conn.Close(); err != nil {
+		r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
+	}
+	return
 }
 
 func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {

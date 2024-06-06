@@ -24,7 +24,7 @@ func ACL(
 
 		userUUID := claim.GetUserUUIDFromGinContext(ctx)
 
-		isAllowed, err := service.CheckAccess(ctx, userUUID, permissions...)
+		isAllowed, err := service.CheckAccess(ctx.Request.Context(), userUUID, permissions...)
 		if err != nil {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
 			return

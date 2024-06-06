@@ -15,8 +15,7 @@ func main() {
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
-		err := postgres.Close()
-		if err != nil {
+		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()

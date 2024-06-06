@@ -48,7 +48,7 @@ func (r OtpService) Set(ctx context.Context, key string, otp string) error {
 	}
 
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.CacheKey:    key,
 			logger.CacheSetArg: otpState,
 		})
@@ -79,7 +79,7 @@ func (r OtpService) Used(ctx context.Context, key string) error {
 	otpState, err := r.otpCache.Get(ctx, key)
 	if err != nil || otpState.Used || otpState.Value == "" {
 		if err != nil {
-			r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+			r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 				logger.CacheKey: key,
 			})
 			return serviceerror.NewServerError()
@@ -90,7 +90,7 @@ func (r OtpService) Used(ctx context.Context, key string) error {
 
 	otpState.Used = true
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.CacheKey:    key,
 			logger.CacheSetArg: otpState,
 		})
@@ -121,7 +121,7 @@ func (r OtpService) SetForgetPassword(ctx context.Context, key string, otp strin
 	}
 
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ForgetPasswordExpireSecond); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.CacheKey:    key,
 			logger.CacheSetArg: otpState,
 		})
@@ -152,7 +152,7 @@ func (r OtpService) UsedForgetPassword(ctx context.Context, key string) error {
 	otpState, err := r.otpCache.Get(ctx, key)
 	if err != nil || otpState.Used || otpState.Value == "" {
 		if err != nil {
-			r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+			r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 				logger.CacheKey: key,
 			})
 			return serviceerror.NewServerError()
@@ -163,7 +163,7 @@ func (r OtpService) UsedForgetPassword(ctx context.Context, key string) error {
 
 	otpState.Used = true
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
 			logger.CacheKey:    key,
 			logger.CacheSetArg: otpState,
 		})

@@ -59,7 +59,7 @@ func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (*Google
 	defer func(Body io.ReadCloser) {
 		err = Body.Close()
 		if err != nil {
-			return
+			r.log.Error(logger.Google, logger.ExternalService, err.Error(), nil)
 		}
 	}(response.Body)
 

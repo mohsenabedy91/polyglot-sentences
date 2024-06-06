@@ -29,8 +29,7 @@ func main() {
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	defer func() {
-		err := postgres.Close()
-		if err != nil {
+		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
@@ -70,7 +69,7 @@ func main() {
 	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{
 		Addr:    listenAddr,
-		Handler: router.Handler(),
+		Handler: router.Engine.Handler(),
 	}
 	log.Info(logger.Internal, logger.Startup, "Starting the HTTP server", map[logger.ExtraKey]interface{}{
 		logger.ListeningAddress: server.Addr,

@@ -15,9 +15,10 @@ type ExtraKey string
 const (
 	General         Category = "General"
 	Profile         Category = "Profile"
+	Router          Category = "Router"
 	Internal        Category = "Internal"
 	Database        Category = "Database"
-	Redis           Category = "Redis"
+	Cache           Category = "Cache"
 	Validation      Category = "Validation"
 	RequestResponse Category = "RequestResponse"
 	Prometheus      Category = "Prometheus"
@@ -56,6 +57,7 @@ const (
 	MigrationUp             SubCategory = "MigrationUp"
 	MigrationDown           SubCategory = "MigrationDown"
 
+	Redis         SubCategory = "Redis"
 	RedisRemember SubCategory = "RedisRemember"
 	RedisSet      SubCategory = "RedisSet"
 	RedisGet      SubCategory = "RedisGet"
@@ -95,6 +97,7 @@ const (
 
 	DataConversion SubCategory = "DataConversion"
 
+	RabbitMQ                 SubCategory = "RabbitMQ"
 	RabbitMQProduce          SubCategory = "RabbitMQProduce"
 	RabbitMQPublish          SubCategory = "RabbitMQPublish"
 	RabbitMQConsume          SubCategory = "RabbitMQConsume"
