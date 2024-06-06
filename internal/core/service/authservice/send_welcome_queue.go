@@ -16,7 +16,7 @@ import (
 
 type SendWelcome struct {
 	queue       *messagebroker.Queue
-	emailSender email.Sender
+	emailSender port.EmailSender
 	userClient  port.UserClient
 }
 

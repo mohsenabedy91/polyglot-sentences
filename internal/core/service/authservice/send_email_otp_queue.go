@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"html/template"
@@ -13,7 +14,7 @@ import (
 
 type SendEmailOTP struct {
 	queue       *messagebroker.Queue
-	emailSender email.Sender
+	emailSender port.EmailSender
 }
 
 var sendEmailOTPInstance *SendEmailOTP
