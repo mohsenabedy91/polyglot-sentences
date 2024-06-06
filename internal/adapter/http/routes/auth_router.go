@@ -24,6 +24,11 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 	}
 
 	return &Router{
-		r.Engine, r.log, r.cfg, r.trans, r.cache,
+		Engine:     r.Engine,
+		log:        r.log,
+		cfg:        r.cfg,
+		aclService: r.aclService,
+		trans:      r.trans,
+		cache:      r.cache,
 	}
 }

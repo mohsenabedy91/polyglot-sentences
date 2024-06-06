@@ -63,15 +63,6 @@ func main() {
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
-	queue := messagebroker.NewQueue(log, cfg)
-	if err = queue.SetupRabbitMQ(cfg.RabbitMQ.URL, log); err != nil {
-		log.Fatal(logger.Queue, logger.Startup, fmt.Sprintf("Failed to setup queue, error: %v", err), nil)
-	}
-
-	healthHandler := handler.NewHealthHandler(trans)
-
-	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
-
 	userClient := client.NewUserClient(log, cfg.UserManagement)
 	defer userClient.Close()
 
@@ -84,12 +75,16 @@ func main() {
 	aclRepo := repository.NewACLRepository(log, postgresDB)
 	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
 
+	healthHandler := handler.NewHealthHandler(trans)
 	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue, oauthService, aclService)
 
-	router = router.NewAuthRouter(*authHandler)
+	// Init router
+	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)
 	if err != nil {
 		return
 	}
+
+	router = router.NewAuthRouter(*authHandler)
 
 	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
 	server := &http.Server{

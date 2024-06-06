@@ -49,25 +49,24 @@ func main() {
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
-	healthHandler := handler.NewHealthHandler(trans)
-
-	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, *healthHandler, cacheDriver)
-	if err != nil {
-		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
-		os.Exit(1)
-	}
-
 	userRepo := repository.NewUserRepository(log, postgresDB)
 	userService := userservice.New(log, userRepo)
-	userHandler := handler.NewUserHandler(userService)
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
 	roleRepo := repository.NewRoleRepository(log, postgresDB)
 	aclRepo := repository.NewACLRepository(log, postgresDB)
 	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
 
-	router = router.NewUserRouter(aclService, *userHandler)
+	userHandler := handler.NewUserHandler(userService)
+	healthHandler := handler.NewHealthHandler(trans)
+
+	// Init router
+	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)
+	if err != nil {
+		return
+	}
+
+	router = router.NewUserRouter(*userHandler)
 
 	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
 	server := &http.Server{
