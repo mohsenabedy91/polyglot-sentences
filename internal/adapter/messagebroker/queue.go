@@ -2,6 +2,7 @@ package messagebroker
 
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 )
 
@@ -23,14 +24,8 @@ func NewQueue(log logger.Logger, config config.Config) *Queue {
 	}
 }
 
-type JobQueue interface {
-	RegisterQueue()
-	Name() string
-	Consume(message []byte) (err error)
-}
-
-func RegisterAllQueues(jobs ...JobQueue) {
-	for _, r := range jobs {
-		r.RegisterQueue()
+func RegisterAllQueues(events ...port.EventQueue) {
+	for _, event := range events {
+		event.Register()
 	}
 }

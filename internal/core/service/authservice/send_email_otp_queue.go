@@ -97,7 +97,7 @@ func (r *SendEmailOTP) Consume(message []byte) error {
 	return err
 }
 
-func (r *SendEmailOTP) RegisterQueue() {
+func (r *SendEmailOTP) Register() {
 	go func() {
 		if err := r.queue.Driver.RegisterConsumer(r.Name(), r.Consume); err != nil {
 			r.queue.Log.Error(

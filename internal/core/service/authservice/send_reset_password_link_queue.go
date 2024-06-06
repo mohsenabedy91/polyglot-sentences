@@ -102,7 +102,7 @@ func (r *SendResetPasswordLink) Consume(message []byte) error {
 	return err
 }
 
-func (r *SendResetPasswordLink) RegisterQueue() {
+func (r *SendResetPasswordLink) Register() {
 	go func() {
 		if err := r.queue.Driver.RegisterConsumer(r.Name(), r.Consume); err != nil {
 			r.queue.Log.Error(
