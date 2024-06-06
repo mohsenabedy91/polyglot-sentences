@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
@@ -16,10 +17,11 @@ func main() {
 	cfg := config.GetConfig()
 	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
-	queue := messagebroker.NewQueue(log, cfg)
-	if err := queue.SetupRabbitMQ(cfg.RabbitMQ.URL, log); err != nil {
-		log.Fatal(logger.Queue, logger.Startup, fmt.Sprintf("Failed to setup queue, error: %v", err), nil)
+	queue, err := setup.InitializeQueue(log, cfg)
+	if err != nil {
+		return
 	}
+	defer queue.Driver.Close()
 
 	log.Info(logger.Queue, logger.Startup, fmt.Sprintf("Setup queue successfully"), nil)
 

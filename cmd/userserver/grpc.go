@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/server"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
@@ -14,15 +16,16 @@ func main() {
 	cfg := config.GetConfig()
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
+	ctx := context.Background()
 	defer func() {
 		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(log, cfg); err != nil {
+	postgresDB, err := setup.InitializeDatabase(ctx, log, cfg)
+	if err != nil {
 		return
 	}
-	postgresDB := postgres.Get()
 
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
@@ -36,20 +36,29 @@ func main() {
 
 	profiling(cfg.Profile)
 
+	ctx := context.Background()
 	defer func() {
 		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(log, cfg); err != nil {
+
+	postgresDB, err := setup.InitializeDatabase(ctx, log, cfg)
+	if err != nil {
 		return
 	}
-	postgresDB := postgres.Get()
 
 	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
 	if err != nil {
 		return
 	}
+	defer cacheDriver.Close()
+
+	queue, err := setup.InitializeQueue(log, cfg)
+	if err != nil {
+		return
+	}
+	defer queue.Driver.Close()
 
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)

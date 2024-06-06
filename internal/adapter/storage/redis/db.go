@@ -59,6 +59,14 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 	}, nil
 }
 
+func (r *CacheDriver[T]) Close() {
+	err := r.client.Close()
+	if err != nil {
+		r.log.Error(logger.Cache, logger.Redis, err.Error(), nil)
+		return
+	}
+}
+
 func (r *CacheDriver[T]) Get(ctx context.Context, key string) (T, error) {
 	var destination T
 

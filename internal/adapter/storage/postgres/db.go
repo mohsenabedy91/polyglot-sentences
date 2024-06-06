@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 
 var dbClient *sql.DB
 
-func InitClient(log logger.Logger, cfg config.Config) error {
+func InitClient(ctx context.Context, log logger.Logger, cfg config.Config) error {
 	var err error
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 		cfg.DB.Host, cfg.DB.Port, cfg.DB.Username, cfg.DB.Password,
@@ -25,7 +26,9 @@ func InitClient(log logger.Logger, cfg config.Config) error {
 		return err
 	}
 
-	if err = dbClient.Ping(); err != nil {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	if err = dbClient.PingContext(ctx); err != nil {
 		log.Error(logger.Database, logger.Startup, fmt.Sprintf("Database Ping is not available %v", err), nil)
 		return err
 	}
@@ -51,12 +54,12 @@ func Close() error {
 	return nil
 }
 
-func getMigrateInstance(log logger.Logger) (*migrate.Migrate, error) {
+func getMigrateInstance(ctx context.Context, log logger.Logger) (*migrate.Migrate, error) {
 	// Get the application configuration
 	cfg := config.GetConfig()
 
 	// Initialize the database client
-	if err := InitClient(log, cfg); err != nil {
+	if err := InitClient(ctx, log, cfg); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +82,7 @@ func getMigrateInstance(log logger.Logger) (*migrate.Migrate, error) {
 
 func RunMigrations(log logger.Logger) error {
 	// Get the migration instance
-	instance, err := getMigrateInstance(log)
+	instance, err := getMigrateInstance(context.Background(), log)
 	if err != nil {
 		return err
 	}
@@ -94,7 +97,7 @@ func RunMigrations(log logger.Logger) error {
 
 func RunDownMigration(log logger.Logger, step int) error {
 	// Get the migration instance
-	instance, err := getMigrateInstance(log)
+	instance, err := getMigrateInstance(context.Background(), log)
 	if err != nil {
 		return err
 	}
