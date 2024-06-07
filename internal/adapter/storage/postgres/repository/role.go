@@ -154,7 +154,7 @@ func (r RoleRepository) Delete(ctx context.Context, uuid uuid.UUID) error {
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		r.log.Error(logger.Database, logger.DatabaseDelete, err.Error(), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -162,13 +162,13 @@ func (r RoleRepository) Delete(ctx context.Context, uuid uuid.UUID) error {
 		if err != nil {
 			metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-			r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+			r.log.Error(logger.Database, logger.DatabaseDelete, err.Error(), nil)
 			return serviceerror.NewServerError()
 		}
 
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseDelete, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
 		return serviceerror.New(serviceerror.IsNotDeletable)
 	}
 
