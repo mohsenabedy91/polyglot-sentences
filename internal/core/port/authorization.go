@@ -10,10 +10,6 @@ type PermissionRepository interface {
 	GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error)
 }
 
-type RoleRepository interface {
-	GetUserRole(ctx context.Context) (domain.Role, error)
-}
-
 type ACLRepository interface {
 	AddUserRole(ctx context.Context, userID, roleID uint64) error
 }

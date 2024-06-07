@@ -10,4 +10,6 @@ const (
 	LogoutRedisValue string = "logout"
 )
 
-const LogoutRedisValue string = "logout"
+const (
+	RoleKeyPrefix string = "role"
+)

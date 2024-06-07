@@ -9,6 +9,7 @@ var (
 	PermissionDenied   ErrorMessage = "errors.permissionDenied"
 	RecordNotFound     ErrorMessage = "errors.recordNotFound"
 	Unauthorized       ErrorMessage = "errors.unauthorized"
+	IsNotDeletable     ErrorMessage = "errors.isNotDeletable"
 
 	// User
 	UserIsBanned      ErrorMessage = "errors.userIsBanned"
@@ -28,4 +29,7 @@ var (
 
 	// Validation
 	InvalidRequestBody ErrorMessage = "errors.invalidRequestBody"
+
+	// Role
+	RoleExisted ErrorMessage = "errors.roleExisted"
 )

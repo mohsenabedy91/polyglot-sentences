@@ -62,7 +62,7 @@ func (r ACLService) CheckAccess(
 }
 
 func (r ACLService) AddUserRole(ctx context.Context, userID uint64) error {
-	role, err := r.roleRepo.GetUserRole(ctx)
+	role, err := r.roleRepo.GetRoleUser(ctx)
 	if err != nil {
 		return err
 	}

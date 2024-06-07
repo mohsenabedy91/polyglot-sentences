@@ -8,9 +8,15 @@
       "logout": "Logged out successfully."
     }
   },
+  "role": {
+    "success": {
+      "created": "The Role was successfully created.",
+      "updated": "The Role was successfully updated."
+    }
+  },
   "user": {
     "success": {
-      "create": "The User was successfully created."
+      "created": "The User was successfully created."
     }
   }
 }

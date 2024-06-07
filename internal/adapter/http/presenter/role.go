@@ -1,0 +1,34 @@
+package presenter
+
+import "github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+
+type Role struct {
+	ID          string `json:"id" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
+	Title       string `json:"title" example:"Admin"`
+	Description string `json:"description" example:"Admin description"`
+}
+
+func prepareRole(role *domain.Role) Role {
+	if role == nil {
+		return Role{}
+	}
+
+	return Role{
+		ID:          role.UUID.String(),
+		Title:       role.Title,
+		Description: role.Description,
+	}
+}
+
+func ToRoleResource(role *domain.Role) Role {
+	return prepareRole(role)
+}
+
+func ToRoleCollection(roles []*domain.Role) []Role {
+	var result []Role
+	for _, role := range roles {
+		result = append(result, prepareRole(role))
+	}
+
+	return result
+}

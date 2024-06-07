@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
+
 type RoleKeyType string
 
 const (
@@ -20,4 +22,11 @@ type Role struct {
 	Title       string
 	Key         RoleKeyType
 	Description string
+
+	IsDefault bool
+}
+
+func (r Role) SetKey(key string) {
+	key = helper.ConvertToUpperCase(key)
+	r.Key = RoleKeyType(key)
 }

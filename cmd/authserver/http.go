@@ -14,6 +14,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/roleservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -72,11 +73,14 @@ func main() {
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
 	roleRepo := repository.NewRoleRepository(log, postgresDB)
+	roleCache := roleservice.NewRoleCache(log, cacheDriver)
+	roleService := roleservice.New(log, roleRepo, roleCache)
 	aclRepo := repository.NewACLRepository(log, postgresDB)
 	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
 	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService)
+	roleHandler := handler.NewRoleHandler(roleService)
 
 	// Init router
 	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)
@@ -84,7 +88,7 @@ func main() {
 		return
 	}
 
-	router = router.NewAuthRouter(*authHandler)
+	router = router.NewAuthRouter(*authHandler, *roleHandler)
 
 	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
 	server := &http.Server{

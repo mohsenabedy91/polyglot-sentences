@@ -9,5 +9,10 @@ const (
 )
 
 const (
+	RoleSuccessCreated = "role.success.created"
+	RoleSuccessUpdated = "role.success.updated"
+)
+
+const (
 	UserSuccessCreate = "user.success.created"
 )
