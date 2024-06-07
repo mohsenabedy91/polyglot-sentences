@@ -11,10 +11,10 @@ type PermissionRepository interface {
 }
 
 type ACLRepository interface {
-	AddUserRole(ctx context.Context, userID, roleID uint64) error
+	AssignRolesToUser(ctx context.Context, userID uint64, roleIDs []uint64) error
 }
 
 type ACLService interface {
 	CheckAccess(ctx context.Context, userUUID uuid.UUID, permission ...domain.PermissionKeyType) (bool, error)
-	AddUserRole(ctx context.Context, userID uint64) error
+	AssignRoleToUser(ctx context.Context, userID uint64) error
 }

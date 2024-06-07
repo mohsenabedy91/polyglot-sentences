@@ -61,11 +61,14 @@ func (r ACLService) CheckAccess(
 	return false, nil
 }
 
-func (r ACLService) AddUserRole(ctx context.Context, userID uint64) error {
+func (r ACLService) AssignRoleToUser(ctx context.Context, userID uint64) error {
 	role, err := r.roleRepo.GetRoleUser(ctx)
 	if err != nil {
 		return err
 	}
 
-	return r.aclRepo.AddUserRole(ctx, userID, role.ID)
+	roleIDs := make([]uint64, 1)
+	roleIDs[0] = role.ID
+
+	return r.aclRepo.AssignRolesToUser(ctx, userID, roleIDs)
 }
