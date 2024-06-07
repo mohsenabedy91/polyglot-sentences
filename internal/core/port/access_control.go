@@ -16,5 +16,5 @@ type ACLRepository interface {
 
 type ACLService interface {
 	CheckAccess(ctx context.Context, userUUID uuid.UUID, permission ...domain.PermissionKeyType) (bool, error)
-	AssignRoleToUser(ctx context.Context, userID uint64) error
+	AssignUserRoleToUser(ctx context.Context, userID uint64) error
 }

@@ -113,7 +113,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err = r.aclService.AssignRoleToUser(ctx, user.ID); err != nil {
+	if err = r.aclService.AssignUserRoleToUser(ctx, user.ID); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -412,7 +412,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			return
 		}
 
-		if err = r.aclService.AssignRoleToUser(ctx, user.ID); err != nil {
+		if err = r.aclService.AssignUserRoleToUser(ctx, user.ID); err != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 			return
 		}
