@@ -67,7 +67,7 @@ func main() {
 	defer userClient.Close()
 
 	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
-	otpService := otpservice.New(log, cfg.OTP, cacheDriver)
+	otpCacheService := otpservice.NewOTPCache(log, cfg.OTP, cacheDriver)
 	oauthService := oauth.New(log, cfg.Oauth)
 
 	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
@@ -76,7 +76,7 @@ func main() {
 	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
-	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpService, queue, oauthService, aclService)
+	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService)
 
 	// Init router
 	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)

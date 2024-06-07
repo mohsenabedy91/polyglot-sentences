@@ -70,11 +70,11 @@ func Authentication(cfg config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Han
 func checkLogout(ctx context.Context, cacheDriver *cache.CacheDriver[any], jti string) error {
 	authCache := (*cache.CacheDriver[string])(cacheDriver)
 
-	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthToken, jti))
+	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
 	if err != nil {
 		return serviceerror.NewServerError()
 
-	} else if result == constant.LogoutRedisValue {
+	} else if *result == constant.LogoutRedisValue {
 		return serviceerror.New(serviceerror.UserLogout)
 	}
 

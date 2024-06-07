@@ -43,7 +43,7 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		key := fmt.Sprintf("%s:%s", constant.RedisAuthToken, jti)
+		key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
 		err := r.jwtCache.Set(ctxWithTimeout, key, nil, accessTokenExpirationHour)
 		if err != nil {
 			r.log.Error(logger.JWT, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
@@ -68,7 +68,7 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 func (r JWTService) LogoutToken(ctx context.Context, jti string, exp int64) error {
 	expTime := time.Unix(exp, 0)
 
-	key := fmt.Sprintf("%s:%s", constant.RedisAuthToken, jti)
+	key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
 
 	if err := r.jwtCache.Set(ctx, key, constant.LogoutRedisValue, expTime.Sub(time.Now())); err != nil {
 		return err

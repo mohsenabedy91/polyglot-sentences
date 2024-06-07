@@ -22,13 +22,13 @@ import (
 
 // AuthHandler represents the HTTP handler for auth-related requests
 type AuthHandler struct {
-	otpConfig    config.OTP
-	userClient   port.UserClient
-	tokenService port.AuthService
-	otpService   port.OtpService
-	queue        *messagebroker.Queue
-	oauthService oauth.GoogleService
-	aclService   port.ACLService
+	otpConfig       config.OTP
+	userClient      port.UserClient
+	tokenService    port.AuthService
+	otpCacheService port.OTPCacheService
+	queue           *messagebroker.Queue
+	oauthService    oauth.GoogleService
+	aclService      port.ACLService
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -36,19 +36,19 @@ func NewAuthHandler(
 	otpConfig config.OTP,
 	userClient port.UserClient,
 	tokenService port.AuthService,
-	otpService port.OtpService,
+	otpCacheService port.OTPCacheService,
 	queue *messagebroker.Queue,
 	oauthService oauth.GoogleService,
 	aclService port.ACLService,
 ) *AuthHandler {
 	return &AuthHandler{
-		otpConfig:    otpConfig,
-		userClient:   userClient,
-		tokenService: tokenService,
-		otpService:   otpService,
-		queue:        queue,
-		oauthService: oauthService,
-		aclService:   aclService,
+		otpConfig:       otpConfig,
+		userClient:      userClient,
+		tokenService:    tokenService,
+		otpCacheService: otpCacheService,
+		queue:           queue,
+		oauthService:    oauthService,
+		aclService:      aclService,
 	}
 }
 
@@ -92,7 +92,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	otp := helper.GenerateOTP(r.otpConfig.Digits)
 
-	if err := r.otpService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+	if err := r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -164,7 +164,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 
 	otp := helper.GenerateOTP(r.otpConfig.Digits)
 
-	if err = r.otpService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+	if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -202,7 +202,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 		return
 	}
 
-	if err := r.otpService.Validate(ctx.Request.Context(), req.Email, req.Token); err != nil {
+	if err := r.otpCacheService.Validate(ctx.Request.Context(), req.Email, req.Token); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -233,7 +233,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
-		_ = r.otpService.Used(ctxWithTimeout, req.Email)
+		_ = r.otpCacheService.Used(ctxWithTimeout, req.Email)
 
 		if !user.WelcomeMessageSent {
 			message := authservice.SendWelcomeDto{
@@ -483,7 +483,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 	go func() {
 		defer wg.Done()
 		otp = helper.GenerateOTP(r.otpConfig.Digits)
-		otpSetErr = r.otpService.SetForgetPassword(ctx.Request.Context(), req.Email, otp)
+		otpSetErr = r.otpCacheService.SetForgetPassword(ctx.Request.Context(), req.Email, otp)
 	}()
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
@@ -515,7 +515,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 		authservice.SendResetPasswordLinkEvent(r.queue).Publish(message)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthForgetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessForgetPassword).Echo(http.StatusOK)
 }
 
 // ResetPassword godoc
@@ -551,7 +551,7 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 		hashPassword, hashedErr = helper.HashPassword(req.Password)
 	}()
 
-	if err := r.otpService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
+	if err := r.otpCacheService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -583,10 +583,10 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		_ = r.otpService.UsedForgetPassword(ctxWithTimeout, req.Email)
+		_ = r.otpCacheService.UsedForgetPassword(ctxWithTimeout, req.Email)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthResetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessResetPassword).Echo(http.StatusOK)
 }
 
 // Logout godoc
@@ -615,5 +615,5 @@ func (r AuthHandler) Logout(ctx *gin.Context) {
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthLogout).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessLogout).Echo(http.StatusOK)
 }
