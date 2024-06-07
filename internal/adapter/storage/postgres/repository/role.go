@@ -55,8 +55,8 @@ func (r RoleRepository) Create(ctx context.Context, role domain.Role) error {
 
 func (r RoleRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.Role, error) {
 	var role domain.Role
-	err := r.db.QueryRowContext(ctx, "SELECT uuid, title, key, description FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
-		Scan(&role.UUID, &role.Title, &role.Key, &role.Description)
+	err := r.db.QueryRowContext(ctx, "SELECT uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
+		Scan(&role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			metrics.DbCall.WithLabelValues("roles", "GetByUUID", "Success").Inc()

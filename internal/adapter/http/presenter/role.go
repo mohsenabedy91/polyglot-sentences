@@ -6,6 +6,7 @@ type Role struct {
 	ID          string `json:"id" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
 	Title       string `json:"title" example:"Admin"`
 	Description string `json:"description" example:"Admin description"`
+	IsDefault   bool   `json:"isDefault" example:"true"`
 }
 
 func prepareRole(role *domain.Role) Role {
@@ -17,6 +18,7 @@ func prepareRole(role *domain.Role) Role {
 		ID:          role.UUID.String(),
 		Title:       role.Title,
 		Description: role.Description,
+		IsDefault:   role.IsDefault,
 	}
 }
 
