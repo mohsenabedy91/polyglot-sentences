@@ -6,10 +6,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
-type PermissionRepository interface {
-	GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error)
-}
-
 type ACLRepository interface {
 	AssignRolesToUser(ctx context.Context, userID uint64, roleIDs []uint64) error
 }

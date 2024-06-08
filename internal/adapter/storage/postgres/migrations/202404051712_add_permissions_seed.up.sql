@@ -12,16 +12,9 @@ VALUES (1, 'Create user', 'CREATE_USER', 'user', 'Create a new user', 1, 1),
        (10, 'Read permission', 'READ_PERMISSION', 'permission', 'Read permission information', 1, 1),
        (11, 'Update permission', 'UPDATE_PERMISSION', 'permission', 'Update permission information', 1, 1),
        (12, 'Delete permission', 'DELETE_PERMISSION', 'permission', 'Delete permission', 1, 1),
-       (13, 'Create user role', 'CREATE_USER_ROLE', 'user_role', 'Create a new user role', 1, 1),
-       (14, 'Read user role', 'READ_USER_ROLE', 'user_role', 'Read user role information', 1, 1),
-       (15, 'Update user role', 'UPDATE_USER_ROLE', 'user_role', 'Update user role information', 1, 1),
-       (16, 'Delete user role', 'DELETE_USER_ROLE', 'user_role', 'Delete user role', 1, 1),
-       (17, 'Create role permission', 'CREATE_ROLE_PERMISSION', 'role_permission', 'Create a new role permission', 1,
-        1),
-       (18, 'Read role permission', 'READ_ROLE_PERMISSION', 'role_permission', 'Read role permission information', 1,
-        1),
-       (19, 'Update role permission', 'UPDATE_ROLE_PERMISSION', 'role_permission', 'Update role permission information',
-        1, 1),
-       (20, 'Delete role permission', 'DELETE_ROLE_PERMISSION', 'role_permission', 'Delete role permission', 1, 1);
+       (13, 'Assign Roles To User', 'ASSIGN_ROLES_TO_USER', 'access_control', 'Assign roles to user', 1, 1),
+       (14, 'Read User Roles', 'READ_USER_ROLES', 'access_control', 'Read user roles information', 1, 1),
+       (15, 'Assign Permissions To Role', 'ASSIGN_PERMISSIONS_TO_ROLE', 'access_control', 'Assign permissions to role ', 1, 1),
+       (16, 'Read Role Permissions', 'READ_ROLE_PERMISSIONS', 'access_control', 'Read role permissions information', 1, 1);
 
 SELECT setval('permissions_id_seq', (SELECT MAX(id) FROM permissions));

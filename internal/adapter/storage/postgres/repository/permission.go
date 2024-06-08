@@ -75,3 +75,41 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 
 	return permissionKeys, nil
 }
+
+func (r PermissionRepository) List(ctx context.Context) ([]*domain.Permission, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT uuid, title, description, "group" FROM permissions WHERE deleted_at IS NULL;`)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	defer func(rows *sql.Rows) {
+		if err = rows.Close(); err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		}
+	}(rows)
+
+	var permissions []*domain.Permission
+	for rows.Next() {
+		var permission domain.Permission
+		if err = rows.Scan(&permission.UUID, &permission.Title, &permission.Description, &permission.Group); err != nil {
+			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
+		}
+		permissions = append(permissions, &permission)
+	}
+
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
+	return permissions, nil
+}

@@ -10,6 +10,7 @@ import (
 func (r *Router) NewAuthRouter(
 	authHandler handler.AuthHandler,
 	roleHandler handler.RoleHandler,
+	permissionHandler handler.PermissionHandler,
 ) *Router {
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
 	{
@@ -34,6 +35,13 @@ func (r *Router) NewAuthRouter(
 			role.PUT(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyUpdateRole), roleHandler.Update)
 			role.DELETE(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyDeleteRole), roleHandler.Delete)
 		}
+
+		v1.GET(
+			"permissions",
+			middlewares.Authentication(r.cfg.Jwt, r.cache),
+			middlewares.ACL(r.aclService, domain.PermissionKeyReadPermission),
+			permissionHandler.List,
+		)
 	}
 
 	return &Router{
