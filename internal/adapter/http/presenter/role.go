@@ -27,9 +27,9 @@ func ToRoleResource(role *domain.Role) Role {
 }
 
 func ToRoleCollection(roles []*domain.Role) []Role {
-	var result []Role
-	for _, role := range roles {
-		result = append(result, prepareRole(role))
+	result := make([]Role, len(roles))
+	for index, role := range roles {
+		result[index] = prepareRole(role)
 	}
 
 	return result

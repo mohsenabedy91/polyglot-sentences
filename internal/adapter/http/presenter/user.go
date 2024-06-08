@@ -32,9 +32,9 @@ func ToUserResource(user *domain.User) *User {
 }
 
 func ToUserCollection(users []domain.User) []User {
-	var result []User
-	for _, user := range users {
-		result = append(result, prepareUser(user))
+	result := make([]User, len(users))
+	for index, user := range users {
+		result[index] = prepareUser(user)
 	}
 
 	return result
