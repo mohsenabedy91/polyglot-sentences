@@ -25,12 +25,11 @@ func NewPermissionRepository(log logger.Logger, db *sql.DB) *PermissionRepositor
 func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT DISTINCT p.key
-        FROM permissions p
-        JOIN role_permissions rp ON p.id = rp.permission_id
-        JOIN roles r ON rp.role_id = r.id AND r.deleted_at IS NULL
-        JOIN access_controls ac on r.id = ac.role_id OR p.id = ac.permission_id AND ac.deleted_at IS NULL
-        WHERE p.deleted_at IS NULL AND ac.user_id = $1`,
+		`SELECT DISTINCT p.key FROM access_controls AS ac
+				LEFT JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
+				LEFT JOIN role_permissions rp on rp.role_id = r.id
+				LEFT JOIN permissions AS p on (p.id = rp.permission_id OR p.id = ac.permission_id) AND p.deleted_at IS NULL
+				WHERE ac.deleted_at IS NULL AND ac.user_id = $1`,
 		userID,
 	)
 	if err != nil {
