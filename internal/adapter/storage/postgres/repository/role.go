@@ -220,3 +220,74 @@ func (r RoleRepository) GetRoleUser(ctx context.Context) (role domain.Role, err 
 
 	return role, nil
 }
+
+func (r RoleRepository) GetPermissions(ctx context.Context, roleUUID uuid.UUID) (*domain.Role, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT r.uuid, r.title, r.description, p.uuid, p.title, p.group, p.description
+				FROM roles AS r
+				LEFT JOIN role_permissions AS rp ON rp.role_id = r.id
+				LEFT JOIN permissions AS p ON rp.permission_id = p.id
+				WHERE r.uuid = $1`,
+		roleUUID,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	defer func(rows *sql.Rows) {
+		if err = rows.Close(); err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		}
+	}(rows)
+
+	var role domain.Role
+	var permissions []*domain.Permission
+
+	for rows.Next() {
+		var permission domain.Permission
+		err = rows.Scan(
+			&role.UUID,
+			&role.Title,
+			&role.Description,
+			&permission.UUID,
+			&permission.Title,
+			&permission.Group,
+			&permission.Description,
+		)
+		if err != nil {
+			metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
+		}
+
+		if permission.UUID == uuid.Nil {
+			continue
+		}
+
+		permissions = append(permissions, &permission)
+	}
+
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	if role.UUID == uuid.Nil {
+		metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, fmt.Sprintf("There is any role for %s", roleUUID.String()), nil)
+		return nil, serviceerror.New(serviceerror.RecordNotFound)
+	}
+
+	metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Success").Inc()
+
+	role.Permissions = permissions
+	return &role, nil
+}

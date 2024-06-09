@@ -22,8 +22,8 @@ type Permission struct {
 	Base
 	Modifier
 
-	Title       string
-	Key         PermissionKeyType
-	Group       string
-	Description string
+	Title       *string
+	Key         *PermissionKeyType
+	Group       *string
+	Description *string
 }

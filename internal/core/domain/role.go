@@ -24,6 +24,8 @@ type Role struct {
 	Description string
 
 	IsDefault bool
+
+	Permissions []*Permission
 }
 
 func (r Role) SetKey(key string) {

@@ -75,3 +75,7 @@ func (r *Service) Update(ctx context.Context, role domain.Role, uuidStr string) 
 func (r *Service) Delete(ctx context.Context, uuidStr string) error {
 	return r.roleRepo.Delete(ctx, uuid.MustParse(uuidStr))
 }
+
+func (r *Service) GetPermissions(ctx context.Context, uuidStr string) (*domain.Role, error) {
+	return r.roleRepo.GetPermissions(ctx, uuid.MustParse(uuidStr))
+}

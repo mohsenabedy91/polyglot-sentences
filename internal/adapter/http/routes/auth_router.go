@@ -34,6 +34,8 @@ func (r *Router) NewAuthRouter(
 			role.GET("", middlewares.ACL(r.aclService, domain.PermissionKeyReadRole), roleHandler.List)
 			role.PUT(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyUpdateRole), roleHandler.Update)
 			role.DELETE(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyDeleteRole), roleHandler.Delete)
+
+			role.GET(":roleID/permissions", middlewares.ACL(r.aclService, domain.PermissionKeyReadRolePermissions), roleHandler.GetPermissions)
 		}
 
 		v1.GET(

@@ -186,3 +186,21 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 
 	presenter.NewResponse(ctx, nil).Echo(http.StatusNoContent)
 }
+
+func (r RoleHandler) GetPermissions(ctx *gin.Context) {
+	var roleReq requests.RoleUUIDUri
+	if err := ctx.ShouldBindUri(&roleReq); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	rolePermissions, err := r.roleService.GetPermissions(ctx.Request.Context(), roleReq.UUIDStr)
+	if err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	data := presenter.ToRoleResource(rolePermissions)
+
+	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+}

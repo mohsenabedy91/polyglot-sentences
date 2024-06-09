@@ -3,10 +3,11 @@ package presenter
 import "github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 
 type Role struct {
-	ID          string `json:"id" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
-	Title       string `json:"title" example:"Admin"`
-	Description string `json:"description" example:"Admin description"`
-	IsDefault   bool   `json:"isDefault" example:"true"`
+	ID          string       `json:"id" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
+	Title       string       `json:"title" example:"Admin"`
+	Description string       `json:"description,omitempty" example:"Admin description"`
+	IsDefault   bool         `json:"isDefault,omitempty" example:"true"`
+	Permissions []Permission `json:"permissions,omitempty"`
 }
 
 func prepareRole(role *domain.Role) Role {
@@ -19,6 +20,7 @@ func prepareRole(role *domain.Role) Role {
 		Title:       role.Title,
 		Description: role.Description,
 		IsDefault:   role.IsDefault,
+		Permissions: ToPermissionCollection(role.Permissions),
 	}
 }
 

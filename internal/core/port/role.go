@@ -15,6 +15,8 @@ type RoleRepository interface {
 
 	ExistKey(ctx context.Context, key string) (bool, error)
 	GetRoleUser(ctx context.Context) (domain.Role, error)
+
+	GetPermissions(ctx context.Context, uuid uuid.UUID) (*domain.Role, error)
 }
 
 type RoleService interface {
@@ -23,6 +25,8 @@ type RoleService interface {
 	List(ctx context.Context) ([]*domain.Role, error)
 	Update(ctx context.Context, role domain.Role, uuidStr string) error
 	Delete(ctx context.Context, uuidStr string) error
+
+	GetPermissions(ctx context.Context, uuidStr string) (*domain.Role, error)
 }
 
 type RoleCache interface {
