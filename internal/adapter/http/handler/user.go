@@ -32,6 +32,7 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 // @Param request body requests.CreateUserRequest true "Create user request"
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID post_v1_users
@@ -62,6 +63,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Success 200 {object} presenter.Response{data=[]presenter.User} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID get_v1_users
@@ -89,6 +91,7 @@ func (r UserHandler) List(ctx *gin.Context) {
 // @Param userID path string true "user id should be uuid"
 // @Success 200 {object} presenter.Response{data=presenter.User} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID get_v1_users_userID

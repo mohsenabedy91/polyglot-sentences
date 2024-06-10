@@ -26,7 +26,7 @@ func NewRoleHandler(roleService port.RoleService) *RoleHandler {
 // @Security AuthBearer
 // @Summary Create a Role
 // @Description Create a Role
-// @Tags ACL
+// @Tags Role
 // @Accept json
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
@@ -34,6 +34,7 @@ func NewRoleHandler(roleService port.RoleService) *RoleHandler {
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID post_v1_roles
 // @Router /v1/roles [post]
@@ -60,7 +61,7 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 // @Security AuthBearer
 // @Summary Get a Role
 // @Description return a role by role uuid
-// @Tags ACL
+// @Tags Role
 // @Accept json
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
@@ -69,6 +70,7 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 404 {object} presenter.Error "Not found"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID get_v1_roles_roleID
 // @Router /v1/roles/{roleID} [get]
@@ -94,7 +96,7 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 // @Security AuthBearer
 // @Summary List of Role
 // @Description return a list of role
-// @Tags ACL
+// @Tags Role
 // @Accept json
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
@@ -120,15 +122,16 @@ func (r RoleHandler) List(ctx *gin.Context) {
 // @Security AuthBearer
 // @Summary Update a Role
 // @Description Update a Role
-// @Tags ACL
+// @Tags Role
 // @Accept json
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Param roleID path string true "role id should be uuid"
-// @Param request body requests.RoleUpdate true "Role Create"
+// @Param request body requests.RoleUpdate true "Create Role"
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID put_v1_roles_roleID
 // @Router /v1/roles/{roleID} [put]
@@ -160,7 +163,7 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 // @Security AuthBearer
 // @Summary Delete a Role
 // @Description Delete a Role
-// @Tags ACL
+// @Tags Role
 // @Accept json
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
@@ -168,6 +171,8 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 403 {object} presenter.Error "Forbidden"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
 // @ID delete_v1_roles_roleID
 // @Router /v1/roles/{roleID} [delete]
@@ -187,6 +192,22 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 	presenter.NewResponse(ctx, nil).Echo(http.StatusNoContent)
 }
 
+// GetPermissions godoc
+// @Security AuthBearer
+// @Summary Get Permissions
+// @Description get permissions for a Role
+// @Tags Role
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param roleID path string true "role id should be uuid"
+// @Success 200 {object} presenter.Response{data=presenter.Role} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID get_v1_roles_roleID_permissions
+// @Router /v1/roles/{roleID}/permissions [get]
 func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
