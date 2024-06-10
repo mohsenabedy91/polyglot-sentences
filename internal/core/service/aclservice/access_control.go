@@ -44,6 +44,17 @@ func (r ACLService) CheckAccess(
 		return false, err
 	}
 
+	roleKeys, err := r.roleRepo.GetRoleKeys(ctx, user.ID)
+	if err != nil {
+		return false, err
+	}
+
+	for _, key := range roleKeys {
+		if key == domain.RoleKeySuperAdmin {
+			return true, nil
+		}
+	}
+
 	permissionKeys, err := r.permissionRepo.GetUserPermissionKeys(ctx, user.ID)
 	if err != nil {
 		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)

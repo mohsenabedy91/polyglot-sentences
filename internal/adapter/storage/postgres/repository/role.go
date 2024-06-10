@@ -291,3 +291,48 @@ func (r RoleRepository) GetPermissions(ctx context.Context, roleUUID uuid.UUID) 
 	role.Permissions = permissions
 	return &role, nil
 }
+
+func (r RoleRepository) GetRoleKeys(ctx context.Context, userID uint64) ([]domain.RoleKeyType, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT DISTINCT r.key FROM access_controls AS ac
+         		INNER JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
+				WHERE ac.deleted_at IS NULL AND ac.user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	defer func() {
+		if err = rows.Close(); err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		}
+	}()
+
+	var keys []domain.RoleKeyType
+	for rows.Next() {
+		var key domain.RoleKeyType
+		if err = rows.Scan(&key); err != nil {
+			metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
+		}
+		keys = append(keys, key)
+	}
+
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Success").Inc()
+
+	return keys, nil
+}

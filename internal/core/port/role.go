@@ -17,6 +17,8 @@ type RoleRepository interface {
 	GetRoleUser(ctx context.Context) (domain.Role, error)
 
 	GetPermissions(ctx context.Context, uuid uuid.UUID) (*domain.Role, error)
+
+	GetRoleKeys(ctx context.Context, userID uint64) ([]domain.RoleKeyType, error)
 }
 
 type RoleService interface {
