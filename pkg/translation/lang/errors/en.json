@@ -6,6 +6,7 @@
     "recordNotFound": "We couldn't find the resource you requested.",
     "unauthorized": "You are not authorized to perform this action.",
     "isNotDeletable": "This item cannot be deleted.",
+    "noRowsEffected": "No rows were affected.",
 
     "userIsBanned": "Your account has been banned. If you believe this is a mistake, please contact support.",
     "userInActive": "Your account is currently inactive. Please contact support for assistance.",

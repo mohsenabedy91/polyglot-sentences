@@ -132,11 +132,15 @@ func (r RoleRepository) Update(ctx context.Context, role domain.Role, uuid uuid.
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
+	if affected, err := res.RowsAffected(); err != nil || affected < 0 {
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
 		return serviceerror.NewServerError()
+	} else if affected == 0 {
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		return serviceerror.New(serviceerror.NoRowsEffected)
 	}
 
 	metrics.DbCall.WithLabelValues("roles", "Delete", "Success").Inc()

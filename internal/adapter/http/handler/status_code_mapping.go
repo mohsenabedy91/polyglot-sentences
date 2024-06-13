@@ -14,6 +14,7 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.PermissionDenied:   http.StatusForbidden,
 	serviceerror.Unauthorized:       http.StatusUnauthorized,
 	serviceerror.IsNotDeletable:     http.StatusForbidden,
+	serviceerror.NoRowsEffected:     http.StatusNotFound,
 	// User
 	serviceerror.UserIsBanned:      http.StatusForbidden,
 	serviceerror.UserInActive:      http.StatusForbidden,

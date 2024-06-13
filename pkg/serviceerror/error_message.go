@@ -10,6 +10,7 @@ var (
 	RecordNotFound     ErrorMessage = "errors.recordNotFound"
 	Unauthorized       ErrorMessage = "errors.unauthorized"
 	IsNotDeletable     ErrorMessage = "errors.isNotDeletable"
+	NoRowsEffected     ErrorMessage = "errors.noRowsEffected"
 
 	// User
 	UserIsBanned      ErrorMessage = "errors.userIsBanned"
