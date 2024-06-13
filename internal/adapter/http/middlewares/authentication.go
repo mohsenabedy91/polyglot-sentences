@@ -17,7 +17,7 @@ import (
 func Authentication(cfg config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
-		if authHeaderToken == "" {
+		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
 				serviceerror.New(serviceerror.Unauthorized),
 			).Echo()
@@ -71,7 +71,7 @@ func checkLogout(ctx context.Context, cacheDriver *cache.CacheDriver[any], jti s
 	authCache := (*cache.CacheDriver[string])(cacheDriver)
 
 	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
-	if err != nil {
+	if err != nil || result == nil {
 		return serviceerror.NewServerError()
 
 	} else if *result == constant.LogoutRedisValue {
