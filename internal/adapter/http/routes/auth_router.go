@@ -3,7 +3,6 @@ package routes
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
 // NewAuthRouter creates a new HTTP router
@@ -20,38 +19,31 @@ func (r *Router) NewAuthRouter(
 			auth.POST("email-otp/resend", authHandler.EmailOTPResend)
 			auth.POST("email-otp/verify", authHandler.EmailOTPVerify)
 			auth.POST("login", authHandler.Login)
-			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Profile)
 			auth.POST("google", authHandler.Google)
 			auth.POST("forget-password", authHandler.ForgetPassword)
 			auth.PATCH("reset-password", authHandler.ResetPassword)
-			auth.POST("logout", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Logout)
+			auth.POST("logout", authHandler.Logout)
 		}
 
-		role := v1.Group("roles", middlewares.Authentication(r.cfg.Jwt, r.cache))
+		role := v1.Group("roles")
 		{
-			role.POST("", middlewares.ACL(r.aclService, domain.PermissionKeyCreateRole), roleHandler.Create)
-			role.GET(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyReadRole), roleHandler.Get)
-			role.GET("", middlewares.ACL(r.aclService, domain.PermissionKeyReadRole), roleHandler.List)
-			role.PUT(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyUpdateRole), roleHandler.Update)
-			role.DELETE(":roleID", middlewares.ACL(r.aclService, domain.PermissionKeyDeleteRole), roleHandler.Delete)
+			role.POST("", roleHandler.Create)
+			role.GET(":roleID", roleHandler.Get)
+			role.GET("", roleHandler.List)
+			role.PUT(":roleID", roleHandler.Update)
+			role.DELETE(":roleID", roleHandler.Delete)
 
-			role.GET(":roleID/permissions", middlewares.ACL(r.aclService, domain.PermissionKeyReadRolePermissions), roleHandler.GetPermissions)
+			role.GET(":roleID/permissions", roleHandler.GetPermissions)
 		}
 
-		v1.GET(
-			"permissions",
-			middlewares.Authentication(r.cfg.Jwt, r.cache),
-			middlewares.ACL(r.aclService, domain.PermissionKeyReadPermission),
-			permissionHandler.List,
-		)
+		v1.GET("permissions", permissionHandler.List)
 	}
 
 	return &Router{
-		Engine:     r.Engine,
-		log:        r.log,
-		cfg:        r.cfg,
-		aclService: r.aclService,
-		trans:      r.trans,
-		cache:      r.cache,
+		Engine: r.Engine,
+		log:    r.log,
+		cfg:    r.cfg,
+		trans:  r.trans,
+		cache:  r.cache,
 	}
 }
