@@ -31,8 +31,8 @@ func NewPermissionHandler(permissionService port.PermissionService) *PermissionH
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_permissions
-// @Router /v1/permissions [get]
+// @ID get_language_v1_permissions
+// @Router /{language}/v1/permissions [get]
 func (r PermissionHandler) List(ctx *gin.Context) {
 	permissions, err := r.permissionService.List(ctx.Request.Context())
 	if err != nil {
@@ -42,5 +42,7 @@ func (r PermissionHandler) List(ctx *gin.Context) {
 
 	data := presenter.ToPermissionCollection(permissions)
 
-	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToPermissionCollection(permissions),
+	).Echo(http.StatusOK)
 }

@@ -31,7 +31,7 @@ func (r OTPCacheService) Set(ctx context.Context, key string, otp string) error 
 	key = fmt.Sprintf("%s:%s", constant.RedisOTPPrefix, strings.ToLower(key))
 
 	otpState, err := r.otpCache.Get(ctx, key)
-	if err == nil && !otpState.Used && otpState.Value != "" {
+	if err == nil && otpState != nil && !otpState.Used && otpState.Value != "" {
 
 		otpState.Value = otp
 		otpState.RequestCount++
@@ -104,7 +104,7 @@ func (r OTPCacheService) SetForgetPassword(ctx context.Context, key string, otp 
 	key = fmt.Sprintf("%s:%s", constant.RedisForgetPasswordPrefix, strings.ToLower(key))
 
 	otpState, err := r.otpCache.Get(ctx, key)
-	if err == nil && !otpState.Used && otpState.Value != "" {
+	if err == nil && otpState != nil && !otpState.Used && otpState.Value != "" {
 
 		otpState.Value = otp
 		otpState.RequestCount++

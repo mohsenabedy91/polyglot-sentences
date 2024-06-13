@@ -64,8 +64,8 @@ func NewAuthHandler(
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_register
-// @Router /v1/auth/register [post]
+// @ID post_language_v1_auth_register
+// @Router /{language}/v1/auth/register [post]
 func (r AuthHandler) Register(ctx *gin.Context) {
 	var req requests.AuthRegister
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -141,8 +141,8 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_email_otp_resend
-// @Router /v1/auth/email-otp/resend [post]
+// @ID post_language_v1_auth_email_otp_resend
+// @Router /{language}/v1/auth/email-otp/resend [post]
 func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	var req requests.AuthEmailOTPResend
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -193,8 +193,8 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_email_otp_verify
-// @Router /v1/auth/email-otp/verify [post]
+// @ID post_language_v1_auth_email_otp_verify
+// @Router /{language}/v1/auth/email-otp/verify [post]
 func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	var req requests.AuthEmailOTPVerify
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -267,8 +267,8 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_login
-// @Router /v1/auth/login [post]
+// @ID post_language_v1_auth_login
+// @Router /{language}/v1/auth/login [post]
 func (r AuthHandler) Login(ctx *gin.Context) {
 	var req requests.AuthLogin
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -355,8 +355,8 @@ func (r AuthHandler) Profile(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_google
-// @Router /v1/auth/google [post]
+// @ID post_language_v1_auth_google
+// @Router /{language}/v1/auth/google [post]
 func (r AuthHandler) Google(ctx *gin.Context) {
 	var req requests.GoogleAuth
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -464,8 +464,8 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_forget_password
-// @Router /v1/auth/forget-password [post]
+// @ID post_language_v1_auth_forget_password
+// @Router /{language}/v1/auth/forget-password [post]
 func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 	var req requests.ForgetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -530,8 +530,8 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID patch_v1_auth_reset_password
-// @Router /v1/auth/reset-password [patch]
+// @ID patch_language_v1_auth_reset_password
+// @Router /{language}/v1/auth/reset-password [patch]
 func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	var req requests.ResetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -601,8 +601,8 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_logout
-// @Router /v1/auth/logout [post]
+// @ID post_language_v1_auth_logout
+// @Router /{language}/v1/auth/logout [post]
 func (r AuthHandler) Logout(ctx *gin.Context) {
 	err := r.tokenService.LogoutToken(
 		ctx.Request.Context(),

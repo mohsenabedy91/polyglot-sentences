@@ -35,8 +35,8 @@ func NewUserHandler(userSvc port.UserService) *UserHandler {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_users
-// @Router /v1/users [post]
+// @ID post_language_v1_users
+// @Router /{language}/v1/users [post]
 func (r UserHandler) Create(ctx *gin.Context) {
 	var req requests.CreateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -66,8 +66,8 @@ func (r UserHandler) Create(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_users
-// @Router /v1/users [get]
+// @ID get_language_v1_users
+// @Router /{language}/v1/users [get]
 func (r UserHandler) List(ctx *gin.Context) {
 	users, err := r.userService.List(ctx.Request.Context())
 	if err != nil {
@@ -94,8 +94,8 @@ func (r UserHandler) List(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_users_userID
-// @Router /v1/users/{userID} [get]
+// @ID get_language_v1_users_userID
+// @Router /{language}/v1/users/{userID} [get]
 func (r UserHandler) Get(ctx *gin.Context) {
 	var userReq requests.UserUUIDUri
 	if err := ctx.ShouldBindUri(&userReq); err != nil {

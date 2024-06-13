@@ -84,8 +84,7 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (*T, error) {
 		return nil, serviceerror.NewServerError()
 	}
 
-	err = json.Unmarshal([]byte(v), &destination)
-	if err != nil {
+	if err = json.Unmarshal([]byte(v), &destination); err != nil {
 		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
 		return nil, serviceerror.NewServerError()
 	}

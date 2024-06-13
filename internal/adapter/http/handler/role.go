@@ -36,8 +36,8 @@ func NewRoleHandler(roleService port.RoleService) *RoleHandler {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_roles
-// @Router /v1/roles [post]
+// @ID post_language_v1_roles
+// @Router /{language}/v1/roles [post]
 func (r RoleHandler) Create(ctx *gin.Context) {
 	var req requests.RoleCreate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -72,8 +72,8 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 // @Failure 404 {object} presenter.Error "Not found"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_roles_roleID
-// @Router /v1/roles/{roleID} [get]
+// @ID get_language_v1_roles_roleID
+// @Router /{language}/v1/roles/{roleID} [get]
 func (r RoleHandler) Get(ctx *gin.Context) {
 	var userReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&userReq); err != nil {
@@ -87,9 +87,9 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	data := presenter.ToRoleResource(role)
-
-	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToRoleResource(role),
+	).Echo(http.StatusOK)
 }
 
 // List godoc
@@ -104,8 +104,8 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_roles
-// @Router /v1/roles [get]
+// @ID get_language_v1_roles
+// @Router /{language}/v1/roles [get]
 func (r RoleHandler) List(ctx *gin.Context) {
 	roles, err := r.roleService.List(ctx.Request.Context())
 	if err != nil {
@@ -115,7 +115,9 @@ func (r RoleHandler) List(ctx *gin.Context) {
 
 	data := presenter.ToRoleCollection(roles)
 
-	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToRoleCollection(roles),
+	).Echo(http.StatusOK)
 }
 
 // Update godoc
@@ -133,8 +135,8 @@ func (r RoleHandler) List(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID put_v1_roles_roleID
-// @Router /v1/roles/{roleID} [put]
+// @ID put_language_v1_roles_roleID
+// @Router /{language}/v1/roles/{roleID} [put]
 func (r RoleHandler) Update(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
@@ -174,8 +176,8 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 // @Failure 403 {object} presenter.Error "Forbidden"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID delete_v1_roles_roleID
-// @Router /v1/roles/{roleID} [delete]
+// @ID delete_language_v1_roles_roleID
+// @Router /{language}/v1/roles/{roleID} [delete]
 func (r RoleHandler) Delete(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
@@ -206,8 +208,8 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_roles_roleID_permissions
-// @Router /v1/roles/{roleID}/permissions [get]
+// @ID get_language_v1_roles_roleID_permissions
+// @Router /{language}/v1/roles/{roleID}/permissions [get]
 func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
@@ -223,5 +225,7 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 
 	data := presenter.ToRoleResource(rolePermissions)
 
-	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToRoleResource(rolePermissions),
+	).Echo(http.StatusOK)
 }
