@@ -144,6 +144,10 @@ go tool pprof -http=:2020 goroutine.o
 ```
 if debug mode was true its work
 
+# API Gateway
+There is an API gateway, and we used of `Kong` for management.
+The APIs available on `http://localhost:8000` and for Dashboard you can open with this link:
+[workspaces](http://localhost:8002/default/overview)
 
 # Requirements
 ## Authentication/Authorization:

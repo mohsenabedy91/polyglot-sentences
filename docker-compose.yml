@@ -212,6 +212,61 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  db:
+    image: "postgres:9.6"
+    container_name: "kong-database"
+    restart: always
+    volumes:
+      - "kong_db_data:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_USER=${KONG_POSTGRES_USER}
+      - POSTGRES_DB=${KONG_POSTGRES_DATABASE}
+      - POSTGRES_PASSWORD=${KONG_POSTGRES_PASSWORD}
+    ports:
+      - "${KONG_POSTGRES_PORT}:5432"
+    networks:
+      - app_network
+
+  kong:
+    image: "kong/kong-gateway:3.6"
+    container_name: "kong-gateway"
+    restart: on-failure
+    depends_on:
+      - "db"
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+      - "8444:8444"
+      - "8002:8002"
+      - "8445:8445"
+      - "8003:8003"
+      - "8004:8004"
+    environment:
+      - KONG_DATABASE=${KONG_POSTGRES_CONNECTION}
+      - KONG_PG_HOST=${KONG_DB_HOST}
+      - KONG_PG_USER=${KONG_POSTGRES_USER}
+      - KONG_PG_PASSWORD=${KONG_POSTGRES_PASSWORD}
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ADMIN_GUI_URL=http://localhost:8002
+      - KONG_LUA_PACKAGE_PATH=/kong/plugins/?.lua
+      - KONG_CUSTOM_PLUGINS=${KONG_CUSTOM_PLUGINS}
+      - KONG_LICENSE_DATA
+    volumes:
+      - ./docker/kong/:/kong/
+    command: sh -c "
+      kong migrations bootstrap
+      && kong migrations up
+      && kong migrations finish
+      && kong start -c /kong/kong.conf
+      "
+    networks:
+      - app_network
+
 volumes:
   postgres:
   redis:
@@ -221,6 +276,7 @@ volumes:
   elasticsearch:
   logs:
   rabbitmq_data:
+  kong_db_data:
 
 networks:
   default:
