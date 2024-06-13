@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS access_controls
     updated_at    TIMESTAMP WITH TIME ZONE DEFAULT now(),
     deleted_at    TIMESTAMP WITH TIME ZONE,
 
-    UNIQUE (user_id, role_id),
-    UNIQUE (user_id, permission_id),
+    UNIQUE (user_id, role_id, deleted_at),
+    UNIQUE (user_id, permission_id, deleted_at),
 
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (role_id) REFERENCES roles (id),
