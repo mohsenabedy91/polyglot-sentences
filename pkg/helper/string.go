@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -17,4 +18,12 @@ func ConvertToUpperCase(input string) string {
 		}
 	}
 	return builder.String()
+}
+
+func MakeSQLPlaceholders(n int) []string {
+	placeholders := make([]string, n)
+	for i := range placeholders {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+	}
+	return placeholders
 }
