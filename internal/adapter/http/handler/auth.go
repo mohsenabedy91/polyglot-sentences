@@ -622,3 +622,50 @@ func (r AuthHandler) Logout(ctx *gin.Context) {
 
 	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessLogout).Echo(http.StatusOK)
 }
+
+func (r AuthHandler) Authorize(ctx *gin.Context) {
+	var req requests.AuthorizeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	userUUID := claim.GetUserUUIDFromGinContext(ctx)
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	isAllowed, userID, err := r.aclService.CheckAccess(ctx.Request.Context(), uowFactory, userUUID, req.RequiredPermissions...)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if !isAllowed {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.PermissionDenied),
+		).Echo()
+		return
+	}
+
+	data := presenter.Authorize{
+		Authorized: isAllowed,
+		JTI:        claim.GetJTIFromGinContext(ctx),
+		EXP:        claim.GetExpFromGinContext(ctx),
+		ID:         userID,
+	}
+
+	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+}

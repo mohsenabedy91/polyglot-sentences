@@ -106,6 +106,34 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 	return &user, nil
 }
 
+func (r *UserRepository) GetByID(id uint64) (*domain.User, error) {
+	row := r.tx.QueryRow(
+		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND id = $1",
+		id,
+	)
+	user, err := scanUser(row)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "GetByUUID", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
+		}
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("users", "GetByUUID", "Success").Inc()
+
+	if !user.IsActive() {
+		r.log.Warn(logger.Database, logger.DatabaseSelect, "The User is inactive", map[logger.ExtraKey]interface{}{
+			logger.SelectDBArg: user,
+		})
+		return nil, serviceerror.New(serviceerror.UserInActive)
+	}
+
+	return &user, nil
+}
+
 func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	user := &domain.User{}
 	var googleID sql.NullString

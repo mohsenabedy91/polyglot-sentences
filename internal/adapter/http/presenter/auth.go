@@ -9,3 +9,10 @@ func ToTokenResource(token *string) *Token {
 		AccessToken: token,
 	}
 }
+
+type Authorize struct {
+	Authorized bool   `json:"authorized"`
+	JTI        string `json:"jti"`
+	EXP        int64  `json:"exp"`
+	ID         uint64 `json:"id"`
+}

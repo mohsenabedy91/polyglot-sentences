@@ -48,3 +48,7 @@ type ResetPassword struct {
 	Password          string `json:"password" binding:"required,password_complexity" example:"QWer123!@#"`
 	ConfirmedPassword string `json:"confirmedPassword" binding:"required,eqfield=Password" example:"QWer123!@#"`
 }
+
+type AuthorizeRequest struct {
+	RequiredPermissions []domain.PermissionKeyType `json:"requiredPermissions"`
+}

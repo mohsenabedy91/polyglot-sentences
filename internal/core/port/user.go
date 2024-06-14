@@ -9,6 +9,7 @@ import (
 // UserRepository is an interface for interacting with user-related data
 type UserRepository interface {
 	GetByUUID(uuid uuid.UUID) (*domain.User, error)
+	GetByID(id uint64) (*domain.User, error)
 	IsEmailUnique(email string) (bool, error)
 	GetByEmail(email string) (*domain.User, error)
 	List() ([]domain.User, error)
