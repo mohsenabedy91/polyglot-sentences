@@ -3,77 +3,71 @@ package aclservice
 import (
 	"context"
 	"github.com/google/uuid"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 )
 
 type ACLService struct {
-	log            logger.Logger
-	permissionRepo port.PermissionRepository
-	roleRepo       port.RoleRepository
-	aclRepo        port.ACLRepository
-	userClient     port.UserClient
+	log        logger.Logger
+	userClient port.UserClient
 }
 
-func New(
-	log logger.Logger,
-	permissionRepo port.PermissionRepository,
-	roleRepo port.RoleRepository,
-	aclRepo port.ACLRepository,
-	userClient port.UserClient,
-) *ACLService {
+func New(log logger.Logger, userClient port.UserClient) *ACLService {
 	return &ACLService{
-		log:            log,
-		permissionRepo: permissionRepo,
-		roleRepo:       roleRepo,
-		aclRepo:        aclRepo,
-		userClient:     userClient,
+		log:        log,
+		userClient: userClient,
 	}
 }
 
 func (r ACLService) CheckAccess(
 	ctx context.Context,
+	uow repository.UnitOfWork,
 	userUUID uuid.UUID,
-	permissions ...domain.PermissionKeyType,
-) (bool, error) {
+	requiredPermissions ...domain.PermissionKeyType,
+) (bool, uint64, error) {
 
 	user, err := r.userClient.GetByUUID(ctx, userUUID.String())
 	if err != nil {
 		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
-		return false, err
+		return false, 0, err
 	}
 
-	roleKeys, err := r.roleRepo.GetRoleKeys(ctx, user.ID)
+	roleKeys, err := uow.RoleRepository().GetRoleKeys(user.ID)
 	if err != nil {
-		return false, err
+		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
+		return false, 0, err
 	}
 
 	for _, key := range roleKeys {
 		if key == domain.RoleKeySuperAdmin {
-			return true, nil
+			return true, user.ID, nil
 		}
 	}
 
-	permissionKeys, err := r.permissionRepo.GetUserPermissionKeys(ctx, user.ID)
+	permissionKeys, err := uow.PermissionRepository().GetUserPermissionKeys(user.ID)
 	if err != nil {
 		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
-		return false, err
+		return false, 0, err
 	}
 
-	for _, key := range permissionKeys {
-		for _, permission := range permissions {
-			if permission == key {
-				return true, nil
+	for _, requiredPermission := range requiredPermissions {
+		if requiredPermission == domain.PermissionKeyNone {
+			return true, user.ID, nil
+		}
+		for _, key := range permissionKeys {
+			if requiredPermission == key {
+				return true, user.ID, nil
 			}
 		}
 	}
 
-	return false, nil
+	return false, 0, nil
 }
 
-func (r ACLService) AssignUserRoleToUser(ctx context.Context, userID uint64) error {
-	role, err := r.roleRepo.GetRoleUser(ctx)
+func (r ACLService) AssignUserRoleToUser(uow repository.UnitOfWork, userID uint64) error {
+	role, err := uow.RoleRepository().GetRoleUser()
 	if err != nil {
 		return err
 	}
@@ -81,5 +75,5 @@ func (r ACLService) AssignUserRoleToUser(ctx context.Context, userID uint64) err
 	roleIDs := make([]uint64, 1)
 	roleIDs[0] = role.ID
 
-	return r.aclRepo.AssignRolesToUser(ctx, userID, roleIDs)
+	return uow.ACLRepository().AssignRolesToUser(userID, roleIDs)
 }

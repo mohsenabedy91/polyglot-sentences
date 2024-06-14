@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"github.com/google/uuid"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -11,6 +12,11 @@ type ACLRepository interface {
 }
 
 type ACLService interface {
-	CheckAccess(ctx context.Context, userUUID uuid.UUID, permission ...domain.PermissionKeyType) (bool, error)
-	AssignUserRoleToUser(ctx context.Context, userID uint64) error
+	CheckAccess(
+		ctx context.Context,
+		uow repository.UnitOfWork,
+		userUUID uuid.UUID,
+		requiredPermissions ...domain.PermissionKeyType,
+	) (bool, uint64, error)
+	AssignUserRoleToUser(uow repository.UnitOfWork, userID uint64) error
 }

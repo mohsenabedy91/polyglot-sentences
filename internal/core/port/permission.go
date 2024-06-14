@@ -1,7 +1,8 @@
 package port
 
 import (
-	"context"
+	"github.com/google/uuid"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -11,5 +12,5 @@ type PermissionRepository interface {
 }
 
 type PermissionService interface {
-	List(ctx context.Context) ([]*domain.Permission, error)
+	List(uow repository.UnitOfWork) ([]*domain.Permission, error)
 }

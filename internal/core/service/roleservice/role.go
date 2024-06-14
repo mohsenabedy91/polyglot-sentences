@@ -3,44 +3,41 @@ package roleservice
 import (
 	"context"
 	"github.com/google/uuid"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
 
 type Service struct {
 	log       logger.Logger
-	roleRepo  port.RoleRepository
 	roleCache port.RoleCache
 }
 
-func New(log logger.Logger, roleRepo port.RoleRepository, roleCache port.RoleCache) *Service {
+func New(log logger.Logger, roleCache port.RoleCache) *Service {
 	return &Service{
 		log:       log,
-		roleRepo:  roleRepo,
 		roleCache: roleCache,
 	}
 }
 
-func (r *Service) Create(ctx context.Context, role domain.Role) error {
+func (r *Service) Create(uow repository.UnitOfWork, role domain.Role) error {
+	role.SetKey(role.Title)
 
-	key := helper.ConvertToUpperCase(role.Title)
-	if exists, err := r.roleRepo.ExistKey(ctx, key); err != nil || !exists {
+	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
 		return serviceerror.New(serviceerror.RoleExisted)
 	}
 
-	role.Key = domain.RoleKeyType(key)
-	return r.roleRepo.Create(ctx, role)
+	return uow.RoleRepository().Create(role)
 }
 
-func (r *Service) Get(ctx context.Context, uuidStr string) (*domain.Role, error) {
-	return r.roleRepo.GetByUUID(ctx, uuid.MustParse(uuidStr))
+func (r *Service) Get(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error) {
+	return uow.RoleRepository().GetByUUID(uuid.MustParse(uuidStr))
 }
 
-func (r *Service) List(ctx context.Context) ([]*domain.Role, error) {
-	roles, err := r.roleRepo.List(ctx)
+func (r *Service) List(ctx context.Context, uow repository.UnitOfWork) ([]*domain.Role, error) {
+	roles, err := uow.RoleRepository().List()
 
 	go func() {
 		cacheRoles := make(map[string]domain.RoleKeyType)
@@ -56,7 +53,7 @@ func (r *Service) List(ctx context.Context) ([]*domain.Role, error) {
 	return roles, err
 }
 
-func (r *Service) Update(ctx context.Context, role domain.Role, uuidStr string) error {
+func (r *Service) Update(ctx context.Context, uow repository.UnitOfWork, role domain.Role, uuidStr string) error {
 
 	cachedRoleKey, err := r.roleCache.Get(ctx, uuidStr)
 	if err != nil {
@@ -69,13 +66,46 @@ func (r *Service) Update(ctx context.Context, role domain.Role, uuidStr string) 
 		role.SetKey(role.Title)
 	}
 
-	return r.roleRepo.Update(ctx, role, uuid.MustParse(uuidStr))
+	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
+		return serviceerror.New(serviceerror.RoleExisted)
+	}
+
+	return uow.RoleRepository().Update(role, uuid.MustParse(uuidStr))
 }
 
-func (r *Service) Delete(ctx context.Context, uuidStr string) error {
-	return r.roleRepo.Delete(ctx, uuid.MustParse(uuidStr))
+func (r *Service) Delete(uow repository.UnitOfWork, uuidStr string) error {
+	return uow.RoleRepository().Delete(uuid.MustParse(uuidStr))
 }
 
-func (r *Service) GetPermissions(ctx context.Context, uuidStr string) (*domain.Role, error) {
-	return r.roleRepo.GetPermissions(ctx, uuid.MustParse(uuidStr))
+func (r *Service) GetPermissions(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error) {
+	return uow.RoleRepository().GetPermissions(uuid.MustParse(uuidStr))
+}
+
+func (r *Service) SyncPermissions(uow repository.UnitOfWork, uuidStr string, permissionUUIDStr []string) error {
+
+	permissionUUIDs := make([]uuid.UUID, len(permissionUUIDStr))
+	for i, p := range permissionUUIDStr {
+		parsedUUID, err := uuid.Parse(p)
+		if err != nil {
+			return serviceerror.New(serviceerror.InvalidRequestBody)
+		}
+		permissionUUIDs[i] = parsedUUID
+	}
+
+	validPermissions, err := uow.PermissionRepository().FilterValidPermissions(permissionUUIDs)
+	if err != nil {
+		return err
+	}
+
+	roleUUID, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return serviceerror.New(serviceerror.InvalidRequestBody)
+	}
+
+	role, err := uow.RoleRepository().GetByUUID(roleUUID)
+	if err != nil {
+		return err
+	}
+
+	return uow.RoleRepository().SyncPermissions(role.ID, validPermissions)
 }
