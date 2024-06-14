@@ -9,6 +9,7 @@ import (
 type PermissionRepository interface {
 	GetUserPermissionKeys(userID uint64) ([]domain.PermissionKeyType, error)
 	List() ([]*domain.Permission, error)
+	FilterValidPermissions(uuids []uuid.UUID) ([]uint64, error)
 }
 
 type PermissionService interface {

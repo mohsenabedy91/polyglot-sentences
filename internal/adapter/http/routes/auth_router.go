@@ -34,6 +34,7 @@ func (r *Router) NewAuthRouter(
 			role.DELETE(":roleID", roleHandler.Delete)
 
 			role.GET(":roleID/permissions", roleHandler.GetPermissions)
+			role.PUT(":roleID/permissions", roleHandler.SyncPermissions)
 		}
 
 		v1.GET("permissions", permissionHandler.List)

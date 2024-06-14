@@ -334,3 +334,45 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 
 	return keys, nil
 }
+
+func (r *RoleRepository) SyncPermissions(roleID uint64, permissionIDs []uint64) error {
+	result, err := r.tx.Exec("DELETE FROM role_permissions WHERE role_id = $1", roleID)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseDelete, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, err := result.RowsAffected(); err != nil || affected < 0 {
+		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
+		return serviceerror.NewServerError()
+	}
+
+	stmt, err := r.tx.Prepare("INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2);")
+	if err != nil {
+		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	defer func(stmt *sql.Stmt) {
+		if err = stmt.Close(); err != nil {
+			r.log.Error(logger.Database, logger.DatabaseInsert, err.Error(), nil)
+		}
+	}(stmt)
+
+	for _, permissionID := range permissionIDs {
+		if _, err = stmt.Exec(roleID, permissionID); err != nil {
+			metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+			r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+			return serviceerror.NewServerError()
+		}
+	}
+
+	metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Success").Inc()
+
+	return nil
+}

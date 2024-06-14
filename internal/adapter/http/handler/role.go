@@ -317,3 +317,56 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 		presenter.ToRoleResource(rolePermissions),
 	).Echo(http.StatusOK)
 }
+
+// SyncPermissions godoc
+// @Security AuthBearer
+// @Summary Sync Permissions
+// @Description Assign/Remove permissions for a Role
+// @Tags Role
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param roleID path string true "role id should be uuid"
+// @Param request body requests.SyncPermissions true "Assign Permissions"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID put_language_v1_roles_roleID_permissions
+// @Router /{language}/v1/roles/{roleID}/permissions [put]
+func (r RoleHandler) SyncPermissions(ctx *gin.Context) {
+	var roleReq requests.RoleUUIDUri
+	if err := ctx.ShouldBindUri(&roleReq); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var req requests.SyncPermissions
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := r.roleService.SyncPermissions(uowFactory, roleReq.UUIDStr, req.Permissions); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, nil).Message(constant.RoleSuccessSyncPermissions).Echo(http.StatusOK)
+}

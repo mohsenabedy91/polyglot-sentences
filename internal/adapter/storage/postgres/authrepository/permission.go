@@ -116,3 +116,49 @@ func (r *PermissionRepository) List() ([]*domain.Permission, error) {
 	metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
 	return permissions, nil
 }
+
+func (r *PermissionRepository) FilterValidPermissions(uuids []uuid.UUID) ([]uint64, error) {
+	placeholders := strings.Join(helper.MakeSQLPlaceholders(len(uuids)), ",")
+	args := make([]interface{}, len(uuids))
+	for i, u := range uuids {
+		args[i] = u.String()
+	}
+	query := `SELECT id FROM permissions WHERE deleted_at IS NULL AND uuid IN (` + placeholders + `);`
+	rows, err := r.tx.Query(query, args...)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "FilterValidPermissions", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	defer func() {
+		if err = rows.Close(); err != nil {
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		}
+	}()
+
+	var validPermissions []uint64
+	for rows.Next() {
+		var permission uint64
+		if err = rows.Scan(&permission); err != nil {
+			metrics.DbCall.WithLabelValues("users", "FilterValidPermissions", "Failed").Inc()
+
+			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, serviceerror.NewServerError()
+		}
+
+		validPermissions = append(validPermissions, permission)
+	}
+
+	if err = rows.Err(); err != nil {
+		metrics.DbCall.WithLabelValues("users", "FilterValidPermissions", "Failed").Inc()
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("users", "FilterValidPermissions", "Success").Inc()
+
+	return validPermissions, nil
+}

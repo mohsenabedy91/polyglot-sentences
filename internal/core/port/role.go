@@ -18,6 +18,7 @@ type RoleRepository interface {
 	GetRoleUser() (domain.Role, error)
 
 	GetPermissions(uuid uuid.UUID) (*domain.Role, error)
+	SyncPermissions(roleID uint64, permissionIDs []uint64) error
 
 	GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error)
 }
