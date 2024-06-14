@@ -1,33 +1,34 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"strings"
 )
 
 type PermissionRepository struct {
 	log logger.Logger
-	db  *sql.DB
+	tx  *sql.Tx
 }
 
-func NewPermissionRepository(log logger.Logger, db *sql.DB) *PermissionRepository {
+func NewPermissionRepository(log logger.Logger, tx *sql.Tx) *PermissionRepository {
 	return &PermissionRepository{
 		log: log,
-		db:  db,
+		tx:  tx,
 	}
 }
 
-func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error) {
-	rows, err := r.db.QueryContext(
-		ctx,
+func (r *PermissionRepository) GetUserPermissionKeys(userID uint64) ([]domain.PermissionKeyType, error) {
+	rows, err := r.tx.Query(
 		`SELECT DISTINCT p.key FROM access_controls AS ac
 				LEFT JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
-				LEFT JOIN role_permissions rp on rp.role_id = r.id
+				LEFT JOIN role_permissions rp on rp.role_id = r.id AND r.deleted_at IS NULL
 				LEFT JOIN permissions AS p on (p.id = rp.permission_id OR p.id = ac.permission_id) AND p.deleted_at IS NULL
 				WHERE ac.deleted_at IS NULL AND ac.user_id = $1`,
 		userID,
@@ -45,7 +46,7 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 	}(rows)
 
 	var permissionKeys []domain.PermissionKeyType
-	var key domain.PermissionKeyType
+	var key *domain.PermissionKeyType
 
 	for rows.Next() {
 		if err = rows.Scan(&key); err != nil {
@@ -60,7 +61,10 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return nil, serviceerror.NewServerError()
 		}
-		permissionKeys = append(permissionKeys, key)
+		if key == nil {
+			continue
+		}
+		permissionKeys = append(permissionKeys, *key)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -75,8 +79,8 @@ func (r PermissionRepository) GetUserPermissionKeys(ctx context.Context, userID 
 	return permissionKeys, nil
 }
 
-func (r PermissionRepository) List(ctx context.Context) ([]*domain.Permission, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT uuid, title, description, "group" FROM permissions WHERE deleted_at IS NULL;`)
+func (r *PermissionRepository) List() ([]*domain.Permission, error) {
+	rows, err := r.tx.Query(`SELECT uuid, title, description, "group" FROM permissions WHERE deleted_at IS NULL;`)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 

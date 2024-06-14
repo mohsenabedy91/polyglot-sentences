@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -14,19 +13,18 @@ import (
 
 type RoleRepository struct {
 	log logger.Logger
-	db  *sql.DB
+	tx  *sql.Tx
 }
 
-func NewRoleRepository(log logger.Logger, db *sql.DB) *RoleRepository {
+func NewRoleRepository(log logger.Logger, tx *sql.Tx) *RoleRepository {
 	return &RoleRepository{
 		log: log,
-		db:  db,
+		tx:  tx,
 	}
 }
 
-func (r RoleRepository) Create(ctx context.Context, role domain.Role) error {
-	res, err := r.db.ExecContext(
-		ctx,
+func (r *RoleRepository) Create(role domain.Role) error {
+	res, err := r.tx.Exec(
 		`INSERT INTO roles (title, key, description) VALUES ($1, $2, $3)`,
 		role.Title,
 		role.Key,
@@ -53,10 +51,10 @@ func (r RoleRepository) Create(ctx context.Context, role domain.Role) error {
 	return nil
 }
 
-func (r RoleRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.Role, error) {
+func (r *RoleRepository) GetByUUID(uuid uuid.UUID) (*domain.Role, error) {
 	var role domain.Role
-	err := r.db.QueryRowContext(ctx, "SELECT uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
-		Scan(&role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
+	err := r.tx.QueryRow("SELECT id, uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
+		Scan(&role.ID, &role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			metrics.DbCall.WithLabelValues("roles", "GetByUUID", "Success").Inc()
@@ -75,8 +73,8 @@ func (r RoleRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.
 	return &role, nil
 }
 
-func (r RoleRepository) List(ctx context.Context) ([]*domain.Role, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL")
+func (r *RoleRepository) List() ([]*domain.Role, error) {
+	rows, err := r.tx.Query("SELECT uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "List", "Failed").Inc()
 
@@ -116,9 +114,8 @@ func (r RoleRepository) List(ctx context.Context) ([]*domain.Role, error) {
 	return roles, nil
 }
 
-func (r RoleRepository) Update(ctx context.Context, role domain.Role, uuid uuid.UUID) error {
-	res, err := r.db.ExecContext(
-		ctx,
+func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
+	res, err := r.tx.Exec(
 		"UPDATE roles SET title = $1, key = $2, description = $3 WHERE deleted_at IS NULL AND uuid = $4;",
 		role.Title,
 		role.Key,
@@ -148,10 +145,9 @@ func (r RoleRepository) Update(ctx context.Context, role domain.Role, uuid uuid.
 	return nil
 }
 
-func (r RoleRepository) Delete(ctx context.Context, uuid uuid.UUID) error {
-	res, err := r.db.ExecContext(
-		ctx,
-		"UPDATE roles SET deleted_at = now(), key = $1 WHERE is_default = TRUE AND uuid = $2",
+func (r *RoleRepository) Delete(uuid uuid.UUID) error {
+	res, err := r.tx.Exec(
+		"UPDATE roles SET deleted_at = now(), key = $1 WHERE is_default = FALSE AND uuid = $2",
 		uuid,
 		uuid,
 	)
@@ -181,9 +177,9 @@ func (r RoleRepository) Delete(ctx context.Context, uuid uuid.UUID) error {
 	return nil
 }
 
-func (r RoleRepository) ExistKey(ctx context.Context, key string) (bool, error) {
+func (r *RoleRepository) ExistKey(key domain.RoleKeyType) (bool, error) {
 	var count int
-	err := r.db.QueryRowContext(ctx, "SELECT count(*) FROM roles WHERE deleted_at IS NULL AND key = $1", key).
+	err := r.tx.QueryRow("SELECT count(*) FROM roles WHERE deleted_at IS NULL AND key = $1", key).
 		Scan(&count)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -203,8 +199,8 @@ func (r RoleRepository) ExistKey(ctx context.Context, key string) (bool, error) 
 	return count == 0, nil
 }
 
-func (r RoleRepository) GetRoleUser(ctx context.Context) (role domain.Role, err error) {
-	err = r.db.QueryRowContext(ctx, `SELECT id FROM roles WHERE key=$1`, domain.RoleKeyUser).
+func (r *RoleRepository) GetRoleUser() (role domain.Role, err error) {
+	err = r.tx.QueryRow(`SELECT id FROM roles WHERE key=$1`, domain.RoleKeyUser).
 		Scan(&role.ID)
 	if err != nil {
 
@@ -225,9 +221,8 @@ func (r RoleRepository) GetRoleUser(ctx context.Context) (role domain.Role, err 
 	return role, nil
 }
 
-func (r RoleRepository) GetPermissions(ctx context.Context, roleUUID uuid.UUID) (*domain.Role, error) {
-	rows, err := r.db.QueryContext(
-		ctx,
+func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error) {
+	rows, err := r.tx.Query(
 		`SELECT r.uuid, r.title, r.description, p.uuid, p.title, p.group, p.description
 				FROM roles AS r
 				LEFT JOIN role_permissions AS rp ON rp.role_id = r.id
@@ -296,9 +291,8 @@ func (r RoleRepository) GetPermissions(ctx context.Context, roleUUID uuid.UUID) 
 	return &role, nil
 }
 
-func (r RoleRepository) GetRoleKeys(ctx context.Context, userID uint64) ([]domain.RoleKeyType, error) {
-	rows, err := r.db.QueryContext(
-		ctx,
+func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
+	rows, err := r.tx.Query(
 		`SELECT DISTINCT r.key FROM access_controls AS ac
          		INNER JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
 				WHERE ac.deleted_at IS NULL AND ac.user_id = $1`,
