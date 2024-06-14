@@ -8,7 +8,7 @@ import (
 )
 
 type ACLRepository interface {
-	AssignRolesToUser(ctx context.Context, userID uint64, roleIDs []uint64) error
+	AssignRolesToUser(userID uint64, roleIDs []uint64) error
 }
 
 type ACLService interface {

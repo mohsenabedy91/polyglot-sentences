@@ -7,8 +7,8 @@ import (
 )
 
 type PermissionRepository interface {
-	GetUserPermissionKeys(ctx context.Context, userID uint64) ([]domain.PermissionKeyType, error)
-	List(ctx context.Context) ([]*domain.Permission, error)
+	GetUserPermissionKeys(userID uint64) ([]domain.PermissionKeyType, error)
+	List() ([]*domain.Permission, error)
 }
 
 type PermissionService interface {

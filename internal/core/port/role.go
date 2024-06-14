@@ -8,18 +8,18 @@ import (
 )
 
 type RoleRepository interface {
-	Create(ctx context.Context, role domain.Role) error
-	GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.Role, error)
-	List(ctx context.Context) ([]*domain.Role, error)
-	Update(ctx context.Context, role domain.Role, uuid uuid.UUID) error
-	Delete(ctx context.Context, uuid uuid.UUID) error
+	Create(role domain.Role) error
+	GetByUUID(uuid uuid.UUID) (*domain.Role, error)
+	List() ([]*domain.Role, error)
+	Update(role domain.Role, uuid uuid.UUID) error
+	Delete(uuid uuid.UUID) error
 
-	ExistKey(ctx context.Context, key string) (bool, error)
-	GetRoleUser(ctx context.Context) (domain.Role, error)
+	ExistKey(key domain.RoleKeyType) (bool, error)
+	GetRoleUser() (domain.Role, error)
 
-	GetPermissions(ctx context.Context, uuid uuid.UUID) (*domain.Role, error)
+	GetPermissions(uuid uuid.UUID) (*domain.Role, error)
 
-	GetRoleKeys(ctx context.Context, userID uint64) ([]domain.RoleKeyType, error)
+	GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error)
 }
 
 type RoleService interface {

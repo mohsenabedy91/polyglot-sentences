@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -17,22 +16,21 @@ import (
 // UserRepository implements port.UserRepository interface and provides access to the postgres database
 type UserRepository struct {
 	log logger.Logger
-	db  *sql.DB
+	tx  *sql.Tx
 }
 
 // NewUserRepository creates a new user repository instance
-func NewUserRepository(log logger.Logger, db *sql.DB) *UserRepository {
+func NewUserRepository(log logger.Logger, tx *sql.Tx) *UserRepository {
 	return &UserRepository{
 		log: log,
-		db:  db,
+		tx:  tx,
 	}
 }
 
-func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
+func (r *UserRepository) IsEmailUnique(email string) (bool, error) {
 	email = strings.ToLower(email)
 	var count int
-	err := r.db.QueryRowContext(
-		ctx,
+	err := r.tx.QueryRow(
 		`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND LOWER(email) = $1`,
 		email,
 	).Scan(&count)
@@ -54,9 +52,8 @@ func (r *UserRepository) IsEmailUnique(ctx context.Context, email string) (bool,
 	return count == 0, nil
 }
 
-func (r *UserRepository) Save(ctx context.Context, user *domain.User) (*domain.User, error) {
-	err := r.db.QueryRowContext(
-		ctx,
+func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
+	err := r.tx.QueryRow(
 		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar) 
 							VALUES ($1, $2, $3, $4, $5, $6, $7) 
 							RETURNING id, uuid`,
@@ -81,9 +78,8 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 	return user, nil
 }
 
-func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain.User, error) {
-	row := r.db.QueryRowContext(
-		ctx,
+func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
+	row := r.tx.QueryRow(
 		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND uuid = $1",
 		uuid,
 	)
@@ -110,11 +106,10 @@ func (r *UserRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*domain
 	return &user, nil
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	user := &domain.User{}
 	var googleID sql.NullString
-	err := r.db.QueryRowContext(
-		ctx,
+	err := r.tx.QueryRow(
 		`SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent, google_id FROM users 
 					WHERE deleted_at IS NULL AND status IN ($1, $2) AND LOWER(email) = $3`,
 		domain.UserStatusUnverifiedStr,
@@ -142,11 +137,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	return user, nil
 }
 
-func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
-	rows, err := r.db.QueryContext(
-		ctx,
-		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL",
-	)
+func (r *UserRepository) List() ([]domain.User, error) {
+	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
@@ -193,9 +185,8 @@ func (r *UserRepository) List(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error {
-	res, err := r.db.ExecContext(
-		ctx,
+func (r *UserRepository) VerifiedEmail(email string) error {
+	res, err := r.tx.Exec(
 		"UPDATE users SET email_verified_at = now(), status = $1, updated_at = NOW() WHERE deleted_at IS NULL AND email = $2",
 		domain.UserStatusActive,
 		email,
@@ -218,8 +209,8 @@ func (r *UserRepository) VerifiedEmail(ctx context.Context, email string) error 
 	return nil
 }
 
-func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET welcome_message_sent = true, updated_at = NOW() WHERE id = $1", id)
+func (r *UserRepository) MarkWelcomeMessageSent(id uint64) error {
+	result, err := r.tx.Exec("UPDATE users SET welcome_message_sent = true, updated_at = NOW() WHERE id = $1", id)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
@@ -238,8 +229,8 @@ func (r *UserRepository) MarkWelcomeMessageSent(ctx context.Context, id uint64) 
 	return nil
 }
 
-func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2;", googleID, ID)
+func (r *UserRepository) UpdateGoogleID(id uint64, googleID string) error {
+	result, err := r.tx.Exec("UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2;", googleID, id)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
 
@@ -258,8 +249,8 @@ func (r *UserRepository) UpdateGoogleID(ctx context.Context, ID uint64, googleID
 	return nil
 }
 
-func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET last_login = now(), updated_at = NOW() WHERE id = $1;", ID)
+func (r *UserRepository) UpdateLastLoginTime(id uint64) error {
+	result, err := r.tx.Exec("UPDATE users SET last_login = now(), updated_at = NOW() WHERE id = $1;", id)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
 
@@ -278,12 +269,11 @@ func (r *UserRepository) UpdateLastLoginTime(ctx context.Context, ID uint64) err
 	return nil
 }
 
-func (r *UserRepository) UpdatePassword(ctx context.Context, ID uint64, password string) error {
-	result, err := r.db.ExecContext(
-		ctx,
+func (r *UserRepository) UpdatePassword(id uint64, password string) error {
+	result, err := r.tx.Exec(
 		"UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2;",
 		password,
-		ID,
+		id,
 	)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Failed").Inc()
