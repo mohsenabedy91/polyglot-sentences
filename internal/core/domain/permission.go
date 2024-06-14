@@ -3,6 +3,7 @@ package domain
 type PermissionKeyType string
 
 const (
+	PermissionKeyNone                    PermissionKeyType = "NONE"
 	PermissionKeyCreateUser              PermissionKeyType = "CREATE_USER"
 	PermissionKeyReadUser                PermissionKeyType = "READ_USER"
 	PermissionKeyUpdateUser              PermissionKeyType = "UPDATE_USER"

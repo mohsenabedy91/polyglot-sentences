@@ -28,7 +28,7 @@ type Role struct {
 	Permissions []*Permission
 }
 
-func (r Role) SetKey(key string) {
+func (r *Role) SetKey(key string) {
 	key = helper.ConvertToUpperCase(key)
 	r.Key = RoleKeyType(key)
 }
