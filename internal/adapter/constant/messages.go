@@ -9,8 +9,9 @@ const (
 )
 
 const (
-	RoleSuccessCreated = "role.success.created"
-	RoleSuccessUpdated = "role.success.updated"
+	RoleSuccessCreated         = "role.success.created"
+	RoleSuccessUpdated         = "role.success.updated"
+	RoleSuccessSyncPermissions = "role.success.syncPermissions"
 )
 
 const (

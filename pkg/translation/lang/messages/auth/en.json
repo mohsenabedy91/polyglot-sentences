@@ -11,7 +11,8 @@
   "role": {
     "success": {
       "created": "The Role was successfully created.",
-      "updated": "The Role was successfully updated."
+      "updated": "The Role was successfully updated.",
+      "syncPermissions": "The Permissions was successfully assign."
     }
   },
   "user": {

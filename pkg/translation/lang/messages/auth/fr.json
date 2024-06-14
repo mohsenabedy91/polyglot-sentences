@@ -11,7 +11,8 @@
   "role": {
     "success": {
       "created": "Le rôle a été créé avec succès.",
-      "updated": "Le rôle a été mis à jour avec succès."
+      "updated": "Le rôle a été mis à jour avec succès.",
+      "syncPermissions": "Les autorisations ont été attribuées avec succès."
     }
   },
   "user": {
