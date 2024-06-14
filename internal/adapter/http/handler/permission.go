@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"net/http"
 )
@@ -10,12 +11,14 @@ import (
 // PermissionHandler represents the HTTP handler for auth-related requests
 type PermissionHandler struct {
 	permissionService port.PermissionService
+	uowFactory        func() repository.UnitOfWork
 }
 
 // NewPermissionHandler creates a new PermissionHandler instance
-func NewPermissionHandler(permissionService port.PermissionService) *PermissionHandler {
+func NewPermissionHandler(permissionService port.PermissionService, uowFactory func() repository.UnitOfWork) *PermissionHandler {
 	return &PermissionHandler{
 		permissionService: permissionService,
+		uowFactory:        uowFactory,
 	}
 }
 
@@ -34,13 +37,26 @@ func NewPermissionHandler(permissionService port.PermissionService) *PermissionH
 // @ID get_language_v1_permissions
 // @Router /{language}/v1/permissions [get]
 func (r PermissionHandler) List(ctx *gin.Context) {
-	permissions, err := r.permissionService.List(ctx.Request.Context())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	data := presenter.ToPermissionCollection(permissions)
+	permissions, err := r.permissionService.List(uowFactory)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
 
 	presenter.NewResponse(ctx, nil).Payload(
 		presenter.ToPermissionCollection(permissions),

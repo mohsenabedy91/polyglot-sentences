@@ -5,6 +5,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"net/http"
 )
@@ -12,13 +13,62 @@ import (
 // UserHandler represents the HTTP handler for user-related requests
 type UserHandler struct {
 	userService port.UserService
+	uowFactory  func() repository.UnitOfWork
 }
 
 // NewUserHandler creates a new UserHandler instance
-func NewUserHandler(userSvc port.UserService) *UserHandler {
+func NewUserHandler(userService port.UserService, uowFactory func() repository.UnitOfWork) *UserHandler {
 	return &UserHandler{
-		userService: userSvc,
+		userService: userService,
+		uowFactory:  uowFactory,
 	}
+}
+
+// Profile godoc
+// @Security AuthBearer
+// @Summary Profile
+// @Description Get user Profile based on Authorization
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{data=presenter.User} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID get_language_v1_users_profile
+// @Router /{language}/v1/users/profile [get]
+func (r UserHandler) Profile(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByID(uowFactory, header.UserID)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).ErrorMsg(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	result := presenter.ToUserResource(user)
+
+	presenter.NewResponse(ctx, nil).Payload(result).Echo()
 }
 
 // Create godoc
@@ -44,9 +94,23 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	_, err := r.userService.Create(ctx.Request.Context(), req.ToDomain())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if _, err := r.userService.Create(uowFactory, req.ToDomain()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
 		presenter.NewResponse(ctx, nil).Error(err).Echo()
+		return
+	}
+
+	if err := uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -69,9 +133,24 @@ func (r UserHandler) Create(ctx *gin.Context) {
 // @ID get_language_v1_users
 // @Router /{language}/v1/users [get]
 func (r UserHandler) List(ctx *gin.Context) {
-	users, err := r.userService.List(ctx.Request.Context())
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	users, err := r.userService.List(uowFactory)
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
 		presenter.NewResponse(ctx, nil).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -103,8 +182,23 @@ func (r UserHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	user, err := r.userService.GetByUUID(ctx.Request.Context(), userReq.UUIDStr)
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByUUID(uowFactory, userReq.UUIDStr)
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}

@@ -11,6 +11,7 @@ func (r *Router) NewUserRouter(userHandler handler.UserHandler) *Router {
 	{
 		user := v1.Group("users")
 		{
+			user.GET("profile", userHandler.Profile)
 			user.POST("", userHandler.Create)
 			user.GET("", userHandler.List)
 			user.GET(":userID", userHandler.Get)

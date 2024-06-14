@@ -7,10 +7,9 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -39,6 +38,9 @@ func main() {
 	if err != nil {
 		return
 	}
+	uowFactory := func() repository.UnitOfWork {
+		return repository.NewUnitOfWork(log, postgresDB)
+	}
 
 	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
 	if err != nil {
@@ -49,19 +51,13 @@ func main() {
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
-	userRepo := repository.NewUserRepository(log, postgresDB)
-	userService := userservice.New(log, userRepo)
+	userService := userservice.New(log)
 
-	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
-	roleRepo := repository.NewRoleRepository(log, postgresDB)
-	aclRepo := repository.NewACLRepository(log, postgresDB)
-	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userService)
-
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, uowFactory)
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, *healthHandler)
 	if err != nil {
 		return
 	}

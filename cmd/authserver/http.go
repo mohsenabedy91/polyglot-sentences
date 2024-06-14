@@ -8,7 +8,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
@@ -49,6 +49,9 @@ func main() {
 	if err != nil {
 		return
 	}
+	uowFactory := func() repository.UnitOfWork {
+		return repository.NewUnitOfWork(log, postgresDB)
+	}
 
 	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
 	if err != nil {
@@ -74,23 +77,20 @@ func main() {
 
 	oauthService := oauth.New(log, cfg.Oauth)
 
-	permissionRepo := repository.NewPermissionRepository(log, postgresDB)
-	permissionService := permissionservice.New(log, permissionRepo)
+	permissionService := permissionservice.New(log)
 
-	roleRepo := repository.NewRoleRepository(log, postgresDB)
 	roleCache := roleservice.NewRoleCache(log, cacheDriver)
-	roleService := roleservice.New(log, roleRepo, roleCache)
+	roleService := roleservice.New(log, roleCache)
 
-	aclRepo := repository.NewACLRepository(log, postgresDB)
-	aclService := aclservice.New(log, permissionRepo, roleRepo, aclRepo, userClient)
+	aclService := aclservice.New(log, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
-	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService)
-	roleHandler := handler.NewRoleHandler(roleService)
-	permissionHandler := handler.NewPermissionHandler(permissionService)
+	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
+	roleHandler := handler.NewRoleHandler(roleService, uowFactory)
+	permissionHandler := handler.NewPermissionHandler(permissionService, uowFactory)
 
 	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, aclService, *healthHandler)
+	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, *healthHandler)
 	if err != nil {
 		return
 	}

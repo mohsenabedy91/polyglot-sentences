@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	userpb "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,17 +19,21 @@ import (
 
 type Server struct {
 	userpb.UnimplementedUserServiceServer
-	userService port.UserService
 	cfg         config.UserManagement
-	trans       *translation.Translation
+	userService port.UserService
+	uowFactory  func() repository.UnitOfWork
 }
 
-func NewUserGRPCServer(cfg config.UserManagement, userService port.UserService, trans *translation.Translation) Server {
-	return Server{
+func NewUserGRPCServer(
+	cfg config.UserManagement,
+	userService port.UserService,
+	uowFactory func() repository.UnitOfWork,
+) *Server {
+	return &Server{
 		UnimplementedUserServiceServer: userpb.UnimplementedUserServiceServer{},
-		userService:                    userService,
 		cfg:                            cfg,
-		trans:                          trans,
+		userService:                    userService,
+		uowFactory:                     uowFactory,
 	}
 }
 
@@ -52,8 +56,31 @@ func (r Server) StartUserGRPCServer() (*grpc.Server, error) {
 }
 
 func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*userpb.UserResponse, error) {
-	resp, err := r.userService.GetByUUID(ctx, req.GetUserUUID())
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	resp, err := r.userService.GetByUUID(uowFactory, req.GetUserUUID())
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -76,8 +103,31 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 }
 
 func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (*userpb.UserResponse, error) {
-	resp, err := r.userService.GetByEmail(ctx, req.GetEmail())
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	resp, err := r.userService.GetByEmail(uowFactory, req.GetEmail())
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -103,8 +153,30 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 }
 
 func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequest) (*emptypb.Empty, error) {
-	err := r.userService.IsEmailUnique(ctx, req.GetEmail())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.IsEmailUnique(uowFactory, req.GetEmail()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -116,7 +188,16 @@ func (r Server) IsEmailUnique(ctx context.Context, req *userpb.IsEmailUniqueRequ
 }
 
 func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.UserResponse, error) {
-	resp, err := r.userService.Create(ctx, domain.User{
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	resp, err := r.userService.Create(uowFactory, domain.User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
@@ -126,6 +207,20 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.
 		Status:    domain.ToUserStatus(req.Status),
 	})
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err = uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -151,8 +246,30 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.
 }
 
 func (r Server) VerifiedEmail(ctx context.Context, req *userpb.VerifiedEmailRequest) (*emptypb.Empty, error) {
-	err := r.userService.VerifiedEmail(ctx, req.GetEmail())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.VerifiedEmail(uowFactory, req.GetEmail()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -164,8 +281,30 @@ func (r Server) VerifiedEmail(ctx context.Context, req *userpb.VerifiedEmailRequ
 }
 
 func (r Server) MarkWelcomeMessageSent(ctx context.Context, req *userpb.UpdateWelcomeMessageToSentRequest) (*emptypb.Empty, error) {
-	err := r.userService.MarkWelcomeMessageSent(ctx, req.GetUserId())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.MarkWelcomeMessageSent(uowFactory, req.GetUserId()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -177,8 +316,30 @@ func (r Server) MarkWelcomeMessageSent(ctx context.Context, req *userpb.UpdateWe
 }
 
 func (r Server) UpdateGoogleID(ctx context.Context, req *userpb.UpdateGoogleIDRequest) (*emptypb.Empty, error) {
-	err := r.userService.UpdateGoogleID(ctx, req.GetUserId(), req.GetGoogleId())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.UpdateGoogleID(uowFactory, req.GetUserId(), req.GetGoogleId()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -190,8 +351,30 @@ func (r Server) UpdateGoogleID(ctx context.Context, req *userpb.UpdateGoogleIDRe
 }
 
 func (r Server) UpdateLastLoginTime(ctx context.Context, req *userpb.UpdateLastLoginTimeRequest) (*emptypb.Empty, error) {
-	err := r.userService.UpdateLastLoginTime(ctx, req.GetUserId())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.UpdateLastLoginTime(uowFactory, req.GetUserId()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
@@ -203,8 +386,31 @@ func (r Server) UpdateLastLoginTime(ctx context.Context, req *userpb.UpdateLastL
 }
 
 func (r Server) UpdatePassword(ctx context.Context, req *userpb.UpdatePasswordRequest) (*emptypb.Empty, error) {
-	err := r.userService.UpdatePassword(ctx, req.GetUserId(), req.GetPassword())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := r.userService.UpdatePassword(uowFactory, req.GetUserId(), req.GetPassword()); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			var se *serviceerror.ServiceError
+			if errors.As(err, &se) {
+				return nil, serviceerror.ConvertToGrpcError(se)
+			}
+			return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+		}
+		var se *serviceerror.ServiceError
+		if errors.As(err, &se) {
+			return nil, serviceerror.ConvertToGrpcError(se)
+		}
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		var se *serviceerror.ServiceError
 		if errors.As(err, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)

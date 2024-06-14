@@ -7,6 +7,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
@@ -29,6 +30,7 @@ type AuthHandler struct {
 	queue           *messagebroker.Queue
 	oauthService    oauth.GoogleService
 	aclService      port.ACLService
+	uowFactory      func() repository.UnitOfWork
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -40,6 +42,7 @@ func NewAuthHandler(
 	queue *messagebroker.Queue,
 	oauthService oauth.GoogleService,
 	aclService port.ACLService,
+	uowFactory func() repository.UnitOfWork,
 ) *AuthHandler {
 	return &AuthHandler{
 		otpConfig:       otpConfig,
@@ -49,6 +52,7 @@ func NewAuthHandler(
 		queue:           queue,
 		oauthService:    oauthService,
 		aclService:      aclService,
+		uowFactory:      uowFactory,
 	}
 }
 
@@ -113,7 +117,22 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err = r.aclService.AssignUserRoleToUser(ctx, user.ID); err != nil {
+	uowFactory := r.uowFactory()
+	if err = uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -314,34 +333,6 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 	presenter.NewResponse(ctx, nil).Payload(result).Echo()
 }
 
-// Profile godoc
-// @Security AuthBearer
-// @Summary Profile
-// @Description Get user Profile based on Authorization
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param language path string true "language 2 abbreviations" default(en)
-// @Success 200 {object} presenter.Response{data=presenter.User} "Successful response"
-// @Failure 400 {object} presenter.Error "Failed response"
-// @Failure 401 {object} presenter.Error "Unauthorized"
-// @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_auth_profile
-// @Router /v1/auth/profile [get]
-func (r AuthHandler) Profile(ctx *gin.Context) {
-	userUUID := claim.GetUserUUIDFromGinContext(ctx)
-
-	user, err := r.userClient.GetByUUID(ctx.Request.Context(), userUUID.String())
-	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).ErrorMsg(err).Echo()
-		return
-	}
-
-	result := presenter.ToUserResource(user)
-
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
-}
-
 // Google godoc
 // @Summary Auth Google
 // @Description Register or Login Via Google
@@ -398,7 +389,6 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 	}
 
 	if user == nil {
-		// TODO add transaction if add user role method has error for rollback created user.
 		user, err = r.userClient.Create(ctx.Request.Context(), domain.User{
 			FirstName: googleUserInfo.FirstName,
 			LastName:  googleUserInfo.LastName,
@@ -412,7 +402,22 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			return
 		}
 
-		if err = r.aclService.AssignUserRoleToUser(ctx, user.ID); err != nil {
+		uowFactory := r.uowFactory()
+		if err = uowFactory.BeginTx(ctx); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+			if rErr := uowFactory.Rollback(); rErr != nil {
+				presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+				return
+			}
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		if err = uowFactory.Commit(); err != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 			return
 		}
@@ -604,13 +609,13 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 // @ID post_language_v1_auth_logout
 // @Router /{language}/v1/auth/logout [post]
 func (r AuthHandler) Logout(ctx *gin.Context) {
-	err := r.tokenService.LogoutToken(
-		ctx.Request.Context(),
-		claim.GetJTIFromGinContext(ctx),
-		claim.GetExpFromGinContext(ctx),
-	)
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
 
-	if err != nil {
+	if err := r.tokenService.LogoutToken(ctx.Request.Context(), header.JTI, header.EXP); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}

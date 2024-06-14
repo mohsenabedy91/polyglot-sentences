@@ -5,6 +5,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"net/http"
@@ -13,12 +14,14 @@ import (
 // RoleHandler represents the HTTP handler for auth-related requests
 type RoleHandler struct {
 	roleService port.RoleService
+	uowFactory  func() repository.UnitOfWork
 }
 
 // NewRoleHandler creates a new RoleHandler instance
-func NewRoleHandler(roleService port.RoleService) *RoleHandler {
+func NewRoleHandler(roleService port.RoleService, uowFactory func() repository.UnitOfWork) *RoleHandler {
 	return &RoleHandler{
 		roleService: roleService,
+		uowFactory:  uowFactory,
 	}
 }
 
@@ -45,11 +48,26 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	err := r.roleService.Create(ctx.Request.Context(), domain.Role{
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	role := domain.Role{
 		Title:       req.Title,
 		Description: req.Description,
-	})
-	if err != nil {
+	}
+	if err := r.roleService.Create(uowFactory, role); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -81,8 +99,23 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	role, err := r.roleService.Get(ctx.Request.Context(), userReq.UUIDStr)
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	role, err := r.roleService.Get(uowFactory, userReq.UUIDStr)
 	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -107,13 +140,26 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 // @ID get_language_v1_roles
 // @Router /{language}/v1/roles [get]
 func (r RoleHandler) List(ctx *gin.Context) {
-	roles, err := r.roleService.List(ctx.Request.Context())
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	data := presenter.ToRoleCollection(roles)
+	roles, err := r.roleService.List(ctx.Request.Context(), uowFactory)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
 
 	presenter.NewResponse(ctx, nil).Payload(
 		presenter.ToRoleCollection(roles),
@@ -149,11 +195,26 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	err := r.roleService.Update(ctx.Request.Context(), domain.Role{
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	role := domain.Role{
 		Title:       req.Title,
 		Description: req.Description,
-	}, roleReq.UUIDStr)
-	if err != nil {
+	}
+	if err := r.roleService.Update(ctx.Request.Context(), uowFactory, role, roleReq.UUIDStr); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -185,8 +246,22 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	err := r.roleService.Delete(ctx.Request.Context(), roleReq.UUIDStr)
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := r.roleService.Delete(uowFactory, roleReq.UUIDStr); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err := uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -217,13 +292,26 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 		return
 	}
 
-	rolePermissions, err := r.roleService.GetPermissions(ctx.Request.Context(), roleReq.UUIDStr)
-	if err != nil {
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	data := presenter.ToRoleResource(rolePermissions)
+	rolePermissions, err := r.roleService.GetPermissions(uowFactory, roleReq.UUIDStr)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
 
 	presenter.NewResponse(ctx, nil).Payload(
 		presenter.ToRoleResource(rolePermissions),
