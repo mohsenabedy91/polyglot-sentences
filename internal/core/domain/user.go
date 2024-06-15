@@ -1,6 +1,9 @@
 package domain
 
-import "database/sql"
+import (
+	"database/sql"
+	"strings"
+)
 
 type UserStatusType string
 
@@ -24,15 +27,15 @@ type User struct {
 	Base
 	Modifier
 
-	FirstName string
-	LastName  string
+	FirstName *string
+	LastName  *string
 	Email     string
-	Password  string
-	Avatar    string
+	Password  *string
+	Avatar    *string
 	Status    UserStatusType
 
 	WelcomeMessageSent bool
-	GoogleID           string
+	GoogleID           *string
 }
 
 func (r *User) IsActive() bool {
@@ -76,26 +79,36 @@ func ToUserStatus(status string) UserStatusType {
 }
 
 func (r *User) GetFullName() string {
-	return r.FirstName + " " + r.LastName
+	var firstName string
+	if r.FirstName != nil {
+		firstName = *r.FirstName
+	}
+
+	var lastName string
+	if r.LastName != nil {
+		lastName = *r.LastName
+	}
+
+	return strings.Join([]string{firstName, lastName}, " ")
 }
 
 func (r *User) SetGoogleID(googleID sql.NullString) *User {
 	if googleID.Valid {
-		r.GoogleID = googleID.String
+		r.GoogleID = &googleID.String
 	}
 	return r
 }
 
 func (r *User) SetFirstName(firstName sql.NullString) *User {
 	if firstName.Valid {
-		r.FirstName = firstName.String
+		r.FirstName = &firstName.String
 	}
 	return r
 }
 
 func (r *User) SetLastName(lastName sql.NullString) *User {
 	if lastName.Valid {
-		r.LastName = lastName.String
+		r.LastName = &lastName.String
 	}
 	return r
 }

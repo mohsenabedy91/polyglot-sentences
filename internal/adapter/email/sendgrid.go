@@ -12,7 +12,7 @@ type SendGrid struct {
 	cfg config.SendGrid
 }
 
-func newSendGrid(log logger.Logger, cfg config.SendGrid) *SendGrid {
+func NewSender(log logger.Logger, cfg config.SendGrid) *SendGrid {
 	return &SendGrid{
 		log: log,
 		cfg: cfg,

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
+	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/server"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/repository"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -14,24 +16,26 @@ func main() {
 	cfg := config.GetConfig()
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
+	ctx := context.Background()
 	defer func() {
-		err := postgres.Close()
-		if err != nil {
+		if err := postgres.Close(); err != nil {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	if err := postgres.InitClient(log, cfg); err != nil {
+	postgresDB, err := setup.InitializeDatabase(ctx, log, cfg)
+	if err != nil {
 		return
 	}
-	postgresDB := postgres.Get()
+	uowFactory := func() repository.UnitOfWork {
+		return repository.NewUnitOfWork(log, postgresDB)
+	}
 
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
-	userRepo := repository.NewUserRepository(log, postgresDB)
-	userService := userservice.New(log, userRepo)
+	userService := userservice.New(log)
 
-	s := server.NewUserGRPCServer(cfg.UserManagement, userService, trans)
+	s := server.NewUserGRPCServer(cfg.UserManagement, userService, uowFactory)
 	grpcServer, err := s.StartUserGRPCServer()
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)

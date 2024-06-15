@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
@@ -12,11 +13,12 @@ import (
 )
 
 type Interface[T any] interface {
-	Get(key string) (destination T, err error)
-	Set(key string, value T, expiration time.Duration) (err error)
-	Delete(key string) (err error)
-	FlushAll()
-	Remember(key string, expiration time.Duration, callback func() (T, error)) (T, error)
+	Close()
+	Get(ctx context.Context, key string) (destination T, err error)
+	Set(ctx context.Context, key string, value T, expiration time.Duration) (err error)
+	Delete(ctx context.Context, key string) (err error)
+	FlushAll(ctx context.Context)
+	Remember(ctx context.Context, key string, expiration time.Duration, callback func() (T, error)) (T, error)
 }
 
 type CacheDriver[T any] struct {
@@ -42,7 +44,7 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 
 	if val, err := client.Ping().Result(); err != nil {
 		log.Error(
-			logger.Redis,
+			logger.Cache,
 			logger.RedisPing,
 			fmt.Sprintf("Redis client doesn't connected val: %s, error: %v", val, err.Error()),
 			nil,
@@ -50,7 +52,7 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 		return nil, serviceerror.New(serviceerror.ServiceUnavailable)
 	}
 
-	log.Info(logger.Redis, logger.Startup, "Redis client initialized", nil)
+	log.Info(logger.Cache, logger.Startup, "Redis client initialized", nil)
 
 	return &CacheDriver[T]{
 		log:    log,
@@ -59,23 +61,35 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 	}, nil
 }
 
-func (r *CacheDriver[T]) Get(ctx context.Context, key string) (T, error) {
+func (r *CacheDriver[T]) Close() {
+	err := r.client.Close()
+	if err != nil {
+		r.log.Error(logger.Cache, logger.Redis, err.Error(), nil)
+		return
+	}
+}
+
+func (r *CacheDriver[T]) Get(ctx context.Context, key string) (*T, error) {
 	var destination T
 
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	v, err := r.client.WithContext(ctx).Get(key).Result()
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
-		return destination, serviceerror.NewServerError()
+		if errors.Is(err, redis.Nil) {
+			r.log.Warn(logger.Cache, logger.RedisGet, fmt.Sprintf("Warn Get value: %v", err), nil)
+			return nil, nil
+		}
+
+		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
+		return nil, serviceerror.NewServerError()
 	}
 
-	err = json.Unmarshal([]byte(v), &destination)
-	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
-		return destination, serviceerror.NewServerError()
+	if err = json.Unmarshal([]byte(v), &destination); err != nil {
+		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)
+		return nil, serviceerror.NewServerError()
 	}
 
-	return destination, nil
+	return &destination, nil
 }
 
 func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
@@ -88,12 +102,12 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 
 	data, err := json.Marshal(value)
 	if err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error marshalling value: %v", err), extra)
+		r.log.Error(logger.Cache, logger.RedisSet, fmt.Sprintf("Error marshalling value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
 	if err = r.client.WithContext(ctx).Set(key, data, expiration).Err(); err != nil {
-		r.log.Error(logger.Redis, logger.RedisSet, fmt.Sprintf("Error Set value: %v", err), extra)
+		r.log.Error(logger.Cache, logger.RedisSet, fmt.Sprintf("Error Set value: %v", err), extra)
 		return serviceerror.NewServerError()
 	}
 
@@ -103,7 +117,7 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 func (r *CacheDriver[T]) Delete(ctx context.Context, key string) error {
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	if err := r.client.WithContext(ctx).Del(key).Err(); err != nil {
-		r.log.Error(logger.Redis, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
+		r.log.Error(logger.Cache, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -116,21 +130,21 @@ func (r *CacheDriver[T]) FlushAll(ctx context.Context) {
 	}
 }
 
-func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration time.Duration, callback func() (T, error)) (T, error) {
-	var destination T
+func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration time.Duration, callback func() (*T, error)) (*T, error) {
+	var destination *T
 
 	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
 	destination, err := r.Get(ctx, key)
 	if err != nil {
 
 		if destination, err = callback(); err != nil {
-			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
-			return destination, serviceerror.NewServerError()
+			r.log.Error(logger.Cache, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
+			return nil, serviceerror.NewServerError()
 		}
 
 		if err = r.Set(ctx, key, destination, expiration); err != nil {
-			r.log.Error(logger.Redis, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
-			return destination, serviceerror.NewServerError()
+			r.log.Error(logger.Cache, logger.RedisRemember, fmt.Sprintf("Error Remember value: %v", err), nil)
+			return nil, serviceerror.NewServerError()
 		}
 	}
 	return destination, nil

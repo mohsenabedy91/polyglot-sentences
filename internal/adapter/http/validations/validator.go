@@ -22,6 +22,9 @@ func RegisterValidator(cfg config.Config) error {
 		}, true); err != nil {
 			return err
 		}
+		if err := val.RegisterValidation("role_title", RoleTitle, true); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -78,4 +81,18 @@ func TokenLength(field validator.FieldLevel, length int8) bool {
 	} else {
 		return len(value) == int(length)
 	}
+}
+
+func RoleTitle(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(string); !ok {
+		return false
+	} else {
+		for _, char := range value {
+			if !(unicode.IsLetter(char) && char <= unicode.MaxASCII) && !unicode.IsSpace(char) && !unicode.IsDigit(char) {
+				return false
+			}
+		}
+	}
+
+	return true
 }

@@ -1,24 +1,29 @@
 {
   "errors": {
-    "serverError": "An internal server error occurred. Please try again later.",
-    "serviceIsUnavailable": "The service is currently unavailable. Please try again later.",
-    "permissionDenied": "You don't have permission to do that.",
-    "recordNotFound": "Record not found. The requested resource could not be located.",
-    "unauthorized": "You are not authorized to do that.",
+    "serverError": "We're experiencing some technical difficulties. Please try again later.",
+    "serviceIsUnavailable": "Our service is currently unavailable. Please try again later.",
+    "permissionDenied": "You don't have permission to perform this action.",
+    "recordNotFound": "We couldn't find the resource you requested.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "isNotDeletable": "This item cannot be deleted.",
+    "noRowsEffected": "No rows were affected.",
 
     "userIsBanned": "Your account has been banned. If you believe this is a mistake, please contact support.",
     "userInActive": "Your account is currently inactive. Please contact support for assistance.",
-    "userUnVerified": "Your account is not yet verified. Please check your email for the verification link or contact support if you need help.",
-    "emailRegistered": "This is already an account with {{.email}} email registered. What would you like to do?",
-    "credentialInvalid": "Invalid credential. Please double-check and try again.",
+    "userUnVerified": "Your account is not verified. Please check your email for the verification link or contact support if you need help.",
+    "emailRegistered": "An account with the email {{.email}} is already registered. What would you like to do?",
+    "credentialInvalid": "Invalid credentials. Please double-check and try again.",
     "userLogout": "You have been logged out. Please log in again to continue.",
+    "passwordIsNull": "Invalid credentials. Please use the «Forgot Password» feature to reset your password.",
 
     "invalidOTP": "The One-Time Password (OTP) you entered is invalid. Please try again or request a new OTP.",
     "OTPExpired": "The One-Time Password (OTP) has expired. Please request a new OTP to continue.",
 
     "invalidToken": "Invalid token. Please provide a valid authentication token.",
-    "tokenExpired": "Token has expired. Please obtain a new authentication token.",
+    "tokenExpired": "The token has expired. Please obtain a new authentication token.",
 
-    "invalidRequestBody": "Oops! It seems like there's an issue with the information you provided. Please check your request and try again."
+    "invalidRequestBody": "Oops! There's an issue with the information you provided. Please check your request and try again.",
+
+    "roleExisted": "This role already exists."
   }
 }

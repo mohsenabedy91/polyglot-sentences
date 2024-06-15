@@ -14,6 +14,7 @@
     "timeHourMinute": "The {{.attribute}} must be a valid time format (HH:MM).",
     "password_complexity": "The {{.attribute}} must contain at least one uppercase letter, one lowercase letter, one number and one special character.",
     "eqfield": "The {{.attribute}} must be equal to {{.eqfield}}.",
-    "token_length": "The {{.attribute}} must be a valid."
+    "token_length": "The {{.attribute}} must be a valid.",
+    "role_title": "The {{.attribute}} must be only contain letters and digits."
   }
 }

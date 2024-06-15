@@ -25,8 +25,7 @@ func NewHealthHandler(trans *translation.Translation) *HealthHandler {
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
-// @ID get_v1_health_check
-// @Router /v1/health/check [get]
+// @Router /{language}/v1/health/check [get]
 func (r HealthHandler) Check(ctx *gin.Context) {
 	presenter.NewResponse(ctx, r.trans).Message("iAmWorking").Echo(http.StatusOK)
 }

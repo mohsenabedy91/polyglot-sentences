@@ -13,6 +13,8 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.RecordNotFound:     http.StatusNotFound,
 	serviceerror.PermissionDenied:   http.StatusForbidden,
 	serviceerror.Unauthorized:       http.StatusUnauthorized,
+	serviceerror.IsNotDeletable:     http.StatusForbidden,
+	serviceerror.NoRowsEffected:     http.StatusNotFound,
 	// User
 	serviceerror.UserIsBanned:      http.StatusForbidden,
 	serviceerror.UserInActive:      http.StatusForbidden,
@@ -28,4 +30,6 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.TokenExpired: http.StatusUnauthorized,
 	// Validation
 	serviceerror.InvalidRequestBody: http.StatusBadRequest,
+	// Role
+	serviceerror.RoleExisted: http.StatusConflict,
 }

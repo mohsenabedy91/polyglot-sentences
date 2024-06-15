@@ -2,7 +2,7 @@ package port
 
 import "context"
 
-type OtpService interface {
+type OTPCacheService interface {
 	Set(ctx context.Context, key string, otp string) error
 	Validate(ctx context.Context, key string, otp string) error
 	Used(ctx context.Context, key string) error

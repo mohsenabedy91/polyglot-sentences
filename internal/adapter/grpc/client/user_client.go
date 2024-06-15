@@ -35,8 +35,11 @@ func NewUserClient(log logger.Logger, cfg config.UserManagement) *UserClient {
 	}
 }
 
-func (r UserClient) Close() error {
-	return r.conn.Close()
+func (r UserClient) Close() {
+	if err := r.conn.Close(); err != nil {
+		r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
+	}
+	return
 }
 
 func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {
@@ -52,13 +55,13 @@ func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.Use
 	if resp.String() != "" {
 		return &domain.User{
 			Base: domain.Base{
-				ID:   resp.GetId(),
-				UUID: uuid.MustParse(resp.GetUUID()),
+				ID:   resp.Id,
+				UUID: uuid.MustParse(resp.UUID),
 			},
-			FirstName: resp.GetFirstName(),
-			LastName:  resp.GetLastName(),
-			Email:     resp.GetEmail(),
-			Status:    domain.ToUserStatus(resp.GetStatus()),
+			FirstName: resp.FirstName,
+			LastName:  resp.LastName,
+			Email:     resp.Email,
+			Status:    domain.ToUserStatus(resp.Status),
 		}, nil
 	}
 
@@ -78,16 +81,16 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 	if resp.String() != "" {
 		return &domain.User{
 			Base: domain.Base{
-				ID:   resp.GetId(),
-				UUID: uuid.MustParse(resp.GetUUID()),
+				ID:   resp.Id,
+				UUID: uuid.MustParse(resp.UUID),
 			},
-			FirstName:          resp.GetFirstName(),
-			LastName:           resp.GetLastName(),
-			Email:              resp.GetEmail(),
-			Password:           resp.GetPassword(),
+			FirstName:          resp.FirstName,
+			LastName:           resp.LastName,
+			Email:              resp.Email,
+			Password:           resp.Password,
 			Status:             domain.ToUserStatus(resp.Status),
-			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
-			GoogleID:           resp.GetGoogleId(),
+			WelcomeMessageSent: resp.WelcomeMessageSent,
+			GoogleID:           resp.GoogleId,
 		}, nil
 	}
 
@@ -108,7 +111,6 @@ func (r UserClient) IsEmailUnique(ctx context.Context, email string) error {
 
 func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.User, error) {
 	req := userpb.CreateRequest{
-		UUID:      userParam.UUID.String(),
 		FirstName: userParam.FirstName,
 		LastName:  userParam.LastName,
 		Email:     userParam.Email,
@@ -128,16 +130,16 @@ func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.
 	if resp.String() != "" {
 		return &domain.User{
 			Base: domain.Base{
-				ID:   resp.GetId(),
-				UUID: uuid.MustParse(resp.GetUUID()),
+				ID:   resp.Id,
+				UUID: uuid.MustParse(resp.UUID),
 			},
-			FirstName:          resp.GetFirstName(),
-			LastName:           resp.GetLastName(),
-			Email:              resp.GetEmail(),
-			Password:           resp.GetPassword(),
+			FirstName:          resp.FirstName,
+			LastName:           resp.LastName,
+			Email:              resp.Email,
+			Password:           resp.Password,
 			Status:             domain.ToUserStatus(resp.Status),
-			WelcomeMessageSent: resp.GetWelcomeMessageSent(),
-			GoogleID:           resp.GetGoogleId(),
+			WelcomeMessageSent: resp.WelcomeMessageSent,
+			GoogleID:           resp.GoogleId,
 		}, nil
 	}
 

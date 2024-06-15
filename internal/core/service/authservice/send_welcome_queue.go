@@ -16,7 +16,7 @@ import (
 
 type SendWelcome struct {
 	queue       *messagebroker.Queue
-	emailSender email.Sender
+	emailSender port.EmailSender
 	userClient  port.UserClient
 }
 
@@ -109,7 +109,7 @@ func (r *SendWelcome) Consume(message []byte) error {
 	return err
 }
 
-func (r *SendWelcome) RegisterQueue() {
+func (r *SendWelcome) Register() {
 	go func() {
 		if err := r.queue.Driver.RegisterConsumer(r.Name(), r.Consume); err != nil {
 			r.queue.Log.Error(

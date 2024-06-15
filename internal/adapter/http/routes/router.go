@@ -19,11 +19,11 @@ import (
 
 // Router is a wrapper for HTTP router
 type Router struct {
-	*gin.Engine
-	log   logger.Logger
-	cfg   config.Config
-	trans *translation.Translation
-	cache *redis.CacheDriver[any]
+	Engine *gin.Engine
+	log    logger.Logger
+	cfg    config.Config
+	trans  *translation.Translation
+	cache  *redis.CacheDriver[any]
 }
 
 // NewRouter creates a new HTTP router
@@ -31,8 +31,8 @@ func NewRouter(
 	log logger.Logger,
 	cfg config.Config,
 	trans *translation.Translation,
-	healthHandler handler.HealthHandler,
 	cache *redis.CacheDriver[any],
+	healthHandler handler.HealthHandler,
 ) (*Router, error) {
 
 	// Disable debug mode in production
@@ -50,6 +50,7 @@ func NewRouter(
 	setSwaggerRoutes(router.Group(""), cfg.Swagger)
 
 	if err := validations.RegisterValidator(cfg); err != nil {
+		log.Fatal(logger.Router, logger.Startup, fmt.Sprintf("Failed to setup router, error: %v", err), nil)
 		return nil, err
 	}
 
@@ -60,7 +61,11 @@ func NewRouter(
 	}
 
 	return &Router{
-		router, log, cfg, trans, cache,
+		Engine: router,
+		log:    log,
+		cfg:    cfg,
+		trans:  trans,
+		cache:  cache,
 	}, nil
 }
 

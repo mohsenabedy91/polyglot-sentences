@@ -7,6 +7,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
@@ -22,13 +23,14 @@ import (
 
 // AuthHandler represents the HTTP handler for auth-related requests
 type AuthHandler struct {
-	otpConfig    config.OTP
-	userClient   port.UserClient
-	tokenService port.AuthService
-	otpService   port.OtpService
-	queue        *messagebroker.Queue
-	oauthService oauth.GoogleService
-	aclService   port.ACLService
+	otpConfig       config.OTP
+	userClient      port.UserClient
+	tokenService    port.AuthService
+	otpCacheService port.OTPCacheService
+	queue           *messagebroker.Queue
+	oauthService    oauth.GoogleService
+	aclService      port.ACLService
+	uowFactory      func() repository.UnitOfWork
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -36,23 +38,26 @@ func NewAuthHandler(
 	otpConfig config.OTP,
 	userClient port.UserClient,
 	tokenService port.AuthService,
-	otpService port.OtpService,
+	otpCacheService port.OTPCacheService,
 	queue *messagebroker.Queue,
 	oauthService oauth.GoogleService,
 	aclService port.ACLService,
+	uowFactory func() repository.UnitOfWork,
 ) *AuthHandler {
 	return &AuthHandler{
-		otpConfig:    otpConfig,
-		userClient:   userClient,
-		tokenService: tokenService,
-		otpService:   otpService,
-		queue:        queue,
-		oauthService: oauthService,
-		aclService:   aclService,
+		otpConfig:       otpConfig,
+		userClient:      userClient,
+		tokenService:    tokenService,
+		otpCacheService: otpCacheService,
+		queue:           queue,
+		oauthService:    oauthService,
+		aclService:      aclService,
+		uowFactory:      uowFactory,
 	}
 }
 
 // Register godoc
+// @x-kong {"service": "auth"}
 // @Summary Auth Register
 // @Description Register User
 // @Tags Auth
@@ -64,8 +69,8 @@ func NewAuthHandler(
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_register
-// @Router /v1/auth/register [post]
+// @ID post_language_v1_auth_register
+// @Router /{language}/v1/auth/register [post]
 func (r AuthHandler) Register(ctx *gin.Context) {
 	var req requests.AuthRegister
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -92,7 +97,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	otp := helper.GenerateOTP(r.otpConfig.Digits)
 
-	if err := r.otpService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+	if err := r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -113,7 +118,22 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err = r.aclService.AddUserRole(ctx, user.ID); err != nil {
+	uowFactory := r.uowFactory()
+	if err = uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -130,6 +150,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 }
 
 // EmailOTPResend godoc
+// @x-kong {"service": "auth"}
 // @Summary EmailOTPResend
 // @Description Resend OTP to User via Email
 // @Tags Auth
@@ -141,8 +162,8 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_email_otp_resend
-// @Router /v1/auth/email-otp/resend [post]
+// @ID post_language_v1_auth_email_otp_resend
+// @Router /{language}/v1/auth/email-otp/resend [post]
 func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	var req requests.AuthEmailOTPResend
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -164,7 +185,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 
 	otp := helper.GenerateOTP(r.otpConfig.Digits)
 
-	if err = r.otpService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+	if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -182,8 +203,9 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 }
 
 // EmailOTPVerify godoc
+// @x-kong {"service": "auth"}
 // @Summary EmailOTPVerify
-// @Description Verify User via Email OTP
+// @Description Verify User via Email OTP then logged-in user
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -193,8 +215,8 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_email_otp_verify
-// @Router /v1/auth/email-otp/verify [post]
+// @ID post_language_v1_auth_email_otp_verify
+// @Router /{language}/v1/auth/email-otp/verify [post]
 func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	var req requests.AuthEmailOTPVerify
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -202,7 +224,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 		return
 	}
 
-	if err := r.otpService.Validate(ctx.Request.Context(), req.Email, req.Token); err != nil {
+	if err := r.otpCacheService.Validate(ctx.Request.Context(), req.Email, req.Token); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -233,7 +255,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
-		_ = r.otpService.Used(ctxWithTimeout, req.Email)
+		_ = r.otpCacheService.Used(ctxWithTimeout, req.Email)
 
 		if !user.WelcomeMessageSent {
 			message := authservice.SendWelcomeDto{
@@ -256,6 +278,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 }
 
 // Login godoc
+// @x-kong {"service": "auth"}
 // @Summary Login
 // @Description User based on email and password can log in app
 // @Tags Auth
@@ -267,8 +290,8 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_login
-// @Router /v1/auth/login [post]
+// @ID post_language_v1_auth_login
+// @Router /{language}/v1/auth/login [post]
 func (r AuthHandler) Login(ctx *gin.Context) {
 	var req requests.AuthLogin
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -288,7 +311,37 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	if ok := helper.CheckPasswordHash(req.Password, user.Password); !ok {
+	if user.Password == nil && !user.IsActive() {
+		otp := helper.GenerateOTP(r.otpConfig.Digits)
+
+		if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		// TODO add rate limit
+		message := authservice.SendEmailOTPDto{
+			To:       user.Email,
+			Name:     user.GetFullName(),
+			OTP:      otp,
+			Language: ctx.Param("language"),
+		}
+		authservice.SendEmailOTPEvent(r.queue).Publish(message)
+
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.UserUnVerified),
+		).Echo()
+		return
+	}
+
+	if user.Password == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.PasswordIsNull),
+		).Echo()
+		return
+	}
+
+	if ok := helper.CheckPasswordHash(req.Password, *user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.CredentialInvalid),
 		).Echo()
@@ -314,35 +367,8 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 	presenter.NewResponse(ctx, nil).Payload(result).Echo()
 }
 
-// Profile godoc
-// @Security AuthBearer
-// @Summary Profile
-// @Description Get user Profile based on Authorization
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param language path string true "language 2 abbreviations" default(en)
-// @Success 200 {object} presenter.Response{data=presenter.User} "Successful response"
-// @Failure 400 {object} presenter.Error "Failed response"
-// @Failure 401 {object} presenter.Error "Unauthorized"
-// @Failure 500 {object} presenter.Error "Internal server error"
-// @ID get_v1_auth_profile
-// @Router /v1/auth/profile [get]
-func (r AuthHandler) Profile(ctx *gin.Context) {
-	userUUID := claim.GetUserUUIDFromGinContext(ctx)
-
-	user, err := r.userClient.GetByUUID(ctx.Request.Context(), userUUID.String())
-	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).ErrorMsg(err).Echo()
-		return
-	}
-
-	result := presenter.ToUserResource(user)
-
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
-}
-
 // Google godoc
+// @x-kong {"service": "auth"}
 // @Summary Auth Google
 // @Description Register or Login Via Google
 // @Tags Auth
@@ -355,8 +381,8 @@ func (r AuthHandler) Profile(ctx *gin.Context) {
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_google
-// @Router /v1/auth/google [post]
+// @ID post_language_v1_auth_google
+// @Router /{language}/v1/auth/google [post]
 func (r AuthHandler) Google(ctx *gin.Context) {
 	var req requests.GoogleAuth
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -383,14 +409,14 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 	}
 
 	wg.Wait()
-	if googleErr != nil || googleUserInfo == nil {
+	if googleErr != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.NewServerError(),
 		).Echo()
 		return
 	}
 
-	if user != nil && user.GoogleID != "" && user.GoogleID != googleUserInfo.Id {
+	if user != nil && user.GoogleID != nil && *user.GoogleID != *googleUserInfo.Id {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.Unauthorized),
 		).Echo()
@@ -398,7 +424,6 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 	}
 
 	if user == nil {
-		// TODO add transaction if add user role method has error for rollback created user.
 		user, err = r.userClient.Create(ctx.Request.Context(), domain.User{
 			FirstName: googleUserInfo.FirstName,
 			LastName:  googleUserInfo.LastName,
@@ -412,13 +437,28 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			return
 		}
 
-		if err = r.aclService.AddUserRole(ctx, user.ID); err != nil {
+		uowFactory := r.uowFactory()
+		if err = uowFactory.BeginTx(ctx); err != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
-	} else if user.GoogleID == "" {
-		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, googleUserInfo.Id); err != nil {
+		if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+			if rErr := uowFactory.Rollback(); rErr != nil {
+				presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+				return
+			}
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		if err = uowFactory.Commit(); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+	} else if user.GoogleID == nil {
+		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, *googleUserInfo.Id); err != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 			return
 		}
@@ -453,6 +493,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 }
 
 // ForgetPassword godoc
+// @x-kong {"service": "auth"}
 // @Summary Auth ForgetPassword
 // @Description Forget Password
 // @Tags Auth
@@ -464,8 +505,8 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_forget_password
-// @Router /v1/auth/forget-password [post]
+// @ID post_language_v1_auth_forget_password
+// @Router /{language}/v1/auth/forget-password [post]
 func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 	var req requests.ForgetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -483,7 +524,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 	go func() {
 		defer wg.Done()
 		otp = helper.GenerateOTP(r.otpConfig.Digits)
-		otpSetErr = r.otpService.SetForgetPassword(ctx.Request.Context(), req.Email, otp)
+		otpSetErr = r.otpCacheService.SetForgetPassword(ctx.Request.Context(), req.Email, otp)
 	}()
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
@@ -515,10 +556,11 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 		authservice.SendResetPasswordLinkEvent(r.queue).Publish(message)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthForgetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessForgetPassword).Echo(http.StatusOK)
 }
 
 // ResetPassword godoc
+// @x-kong {"service": "auth"}
 // @Summary Auth ResetPassword
 // @Description Reset Password
 // @Tags Auth
@@ -530,8 +572,8 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID patch_v1_auth_reset_password
-// @Router /v1/auth/reset-password [patch]
+// @ID patch_language_v1_auth_reset_password
+// @Router /{language}/v1/auth/reset-password [patch]
 func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	var req requests.ResetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -551,7 +593,7 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 		hashPassword, hashedErr = helper.HashPassword(req.Password)
 	}()
 
-	if err := r.otpService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
+	if err := r.otpCacheService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
@@ -583,13 +625,14 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		_ = r.otpService.UsedForgetPassword(ctxWithTimeout, req.Email)
+		_ = r.otpCacheService.UsedForgetPassword(ctxWithTimeout, req.Email)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthResetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessResetPassword).Echo(http.StatusOK)
 }
 
 // Logout godoc
+// @x-kong {"service": "auth"}
 // @Security AuthBearer
 // @Summary Logout
 // @Description Logout user based on Authorization value
@@ -601,19 +644,66 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 500 {object} presenter.Error "Internal server error"
-// @ID post_v1_auth_logout
-// @Router /v1/auth/logout [post]
+// @ID post_language_v1_auth_logout
+// @Router /{language}/v1/auth/logout [post]
 func (r AuthHandler) Logout(ctx *gin.Context) {
-	err := r.tokenService.LogoutToken(
-		ctx.Request.Context(),
-		claim.GetJTIFromGinContext(ctx),
-		claim.GetExpFromGinContext(ctx),
-	)
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
 
-	if err != nil {
+	if err := r.tokenService.LogoutToken(ctx.Request.Context(), header.JTI, header.EXP); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthLogout).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessLogout).Echo(http.StatusOK)
+}
+
+func (r AuthHandler) Authorize(ctx *gin.Context) {
+	var req requests.AuthorizeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	userUUID := claim.GetUserUUIDFromGinContext(ctx)
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	isAllowed, userID, err := r.aclService.CheckAccess(ctx.Request.Context(), uowFactory, userUUID, req.RequiredPermissions...)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if err = uowFactory.Commit(); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if !isAllowed {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.PermissionDenied),
+		).Echo()
+		return
+	}
+
+	data := presenter.Authorize{
+		Authorized: isAllowed,
+		JTI:        claim.GetJTIFromGinContext(ctx),
+		EXP:        claim.GetExpFromGinContext(ctx),
+		ID:         userID,
+	}
+
+	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
 }

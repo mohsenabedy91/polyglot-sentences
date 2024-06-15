@@ -1,34 +1,35 @@
 package userservice
 
 import (
-	"context"
 	"github.com/google/uuid"
+	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
 
 // UserService implements port.UserService interface and provides access to the user repository and cache service
 type UserService struct {
-	log      logger.Logger
-	userRepo port.UserRepository
+	log logger.Logger
 }
 
 // New creates a new user service instance
-func New(log logger.Logger, userRepo port.UserRepository) *UserService {
+func New(log logger.Logger) *UserService {
 	return &UserService{
-		log:      log,
-		userRepo: userRepo,
+		log: log,
 	}
 }
 
-func (r UserService) GetByUUID(ctx context.Context, uuidStr string) (user *domain.User, err error) {
-	return r.userRepo.GetByUUID(ctx, uuid.MustParse(uuidStr))
+func (r *UserService) GetByUUID(uow repository.UnitOfWork, uuidStr string) (user *domain.User, err error) {
+	return uow.UserRepository().GetByUUID(uuid.MustParse(uuidStr))
 }
 
-func (r UserService) IsEmailUnique(ctx context.Context, email string) error {
-	isUniqueEmail, err := r.userRepo.IsEmailUnique(ctx, email)
+func (r *UserService) GetByID(uow repository.UnitOfWork, id uint64) (user *domain.User, err error) {
+	return uow.UserRepository().GetByID(id)
+}
+
+func (r *UserService) IsEmailUnique(uow repository.UnitOfWork, email string) error {
+	isUniqueEmail, err := uow.UserRepository().IsEmailUnique(email)
 	if err != nil {
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		return err
@@ -46,37 +47,37 @@ func (r UserService) IsEmailUnique(ctx context.Context, email string) error {
 	return nil
 }
 
-func (r UserService) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	return r.userRepo.GetByEmail(ctx, email)
+func (r *UserService) GetByEmail(uow repository.UnitOfWork, email string) (*domain.User, error) {
+	return uow.UserRepository().GetByEmail(email)
 }
 
-func (r UserService) List(ctx context.Context) ([]domain.User, error) {
-	return r.userRepo.List(ctx)
+func (r *UserService) List(uow repository.UnitOfWork) ([]domain.User, error) {
+	return uow.UserRepository().List()
 }
 
-func (r UserService) Create(ctx context.Context, user domain.User) (*domain.User, error) {
+func (r *UserService) Create(uow repository.UnitOfWork, user domain.User) (*domain.User, error) {
 	if user.Status != domain.UserStatusActive {
 		user.Status = domain.UserStatusUnVerified
 	}
-	return r.userRepo.Save(ctx, &user)
+	return uow.UserRepository().Save(&user)
 }
 
-func (r UserService) VerifiedEmail(ctx context.Context, email string) error {
-	return r.userRepo.VerifiedEmail(ctx, email)
+func (r *UserService) VerifiedEmail(uow repository.UnitOfWork, email string) error {
+	return uow.UserRepository().VerifiedEmail(email)
 }
 
-func (r UserService) MarkWelcomeMessageSent(ctx context.Context, ID uint64) error {
-	return r.userRepo.MarkWelcomeMessageSent(ctx, ID)
+func (r *UserService) MarkWelcomeMessageSent(uow repository.UnitOfWork, id uint64) error {
+	return uow.UserRepository().MarkWelcomeMessageSent(id)
 }
 
-func (r UserService) UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error {
-	return r.userRepo.UpdateGoogleID(ctx, ID, googleID)
+func (r *UserService) UpdateGoogleID(uow repository.UnitOfWork, id uint64, googleID string) error {
+	return uow.UserRepository().UpdateGoogleID(id, googleID)
 }
 
-func (r UserService) UpdateLastLoginTime(ctx context.Context, ID uint64) error {
-	return r.userRepo.UpdateLastLoginTime(ctx, ID)
+func (r *UserService) UpdateLastLoginTime(uow repository.UnitOfWork, id uint64) error {
+	return uow.UserRepository().UpdateLastLoginTime(id)
 }
 
-func (r UserService) UpdatePassword(ctx context.Context, ID uint64, password string) error {
-	return r.userRepo.UpdatePassword(ctx, ID, password)
+func (r *UserService) UpdatePassword(uow repository.UnitOfWork, id uint64, password string) error {
+	return uow.UserRepository().UpdatePassword(id, password)
 }

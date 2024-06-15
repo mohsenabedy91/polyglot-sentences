@@ -1,9 +1,9 @@
 {
   "validation": {
-    "min": "Le {{.attribute}} doit être au moins de {{.min}}.",
+    "min": "Le {{.attribute}} doit être au moins {{.min}}.",
     "max": "Le {{.attribute}} ne doit pas être supérieur à {{.max}}.",
     "required": "Le champ {{.attribute}} est requis.",
-    "email": "Le {{.attribute}} doit être une adresse email valide.",
+    "email": "Le {{.attribute}} doit être une adresse e-mail valide.",
     "unique": "Le {{.attribute}} a déjà été pris.",
     "numeric": "Le {{.attribute}} doit être un nombre.",
     "alpha": "Le {{.attribute}} doit contenir uniquement des lettres.",
@@ -11,9 +11,10 @@
     "dive": "Le {{.attribute}} doit être un {{.index}} valide.",
     "uuid": "Le {{.attribute}} doit être valide.",
     "date": "Le {{.attribute}} doit être au format de date valide (YYYY-MM-DD).",
-    "timeHourMinute": "Le {{.attribute}} doit être au format de l'heure valide (HH:MM).",
+    "timeHourMinute": "Le {{.attribute}} doit être au format de temps valide (HH:MM).",
     "password_complexity": "Le {{.attribute}} doit contenir au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.",
     "eqfield": "Le {{.attribute}} doit être égal à {{.eqfield}}.",
-    "token_length": "Le {{.attribute}} doit être valide."
+    "token_length": "Le {{.attribute}} doit être valide.",
+    "role_title": "Le {{.attribute}} doit contenir uniquement des lettres et des chiffres."
   }
 }

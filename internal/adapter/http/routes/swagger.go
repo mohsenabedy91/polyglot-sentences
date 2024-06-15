@@ -17,7 +17,6 @@ func setSwaggerRoutes(router *gin.RouterGroup, config config.Swagger) {
 	docs.SwaggerInfo.Description = config.Info.Description
 	docs.SwaggerInfo.Version = config.Info.Version
 	docs.SwaggerInfo.Schemes = []string{config.Schemes}
-	docs.SwaggerInfo.BasePath = "/{language}"
 	docs.SwaggerInfo.Host = config.Host
 
 	authorized := router.Group("/", gin.BasicAuth(gin.Accounts{

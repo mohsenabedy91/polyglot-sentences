@@ -1,19 +1,20 @@
 {
   "validation": {
     "min": "يجب أن يكون {{.attribute}} على الأقل {{.min}}.",
-    "max": "يجب ألا يتجاوز {{.attribute}} {{.max}}.",
+    "max": "يجب ألا يكون {{.attribute}} أكبر من {{.max}}.",
     "required": "الحقل {{.attribute}} مطلوب.",
     "email": "يجب أن يكون {{.attribute}} عنوان بريد إلكتروني صالح.",
-    "unique": "لقد تم أخذ {{.attribute}} بالفعل.",
-    "numeric": "يجب أن يكون {{.attribute}} رقمًا.",
+    "unique": "تم استخدام {{.attribute}} من قبل.",
+    "numeric": "يجب أن يكون {{.attribute}} رقماً.",
     "alpha": "يجب أن يحتوي {{.attribute}} على أحرف فقط.",
-    "regex_alpha": "يجب ألا يحتوي {{.attribute}} على أرقام أو أحرف خاصة.",
-    "dive": "يجب أن يكون {{.attribute}} {{.index}} صالحًا.",
-    "uuid": "يجب أن يكون {{.attribute}} معرفًا صالحًا.",
-    "date": "يجب أن يكون {{.attribute}} بتنسيق تاريخ صالح (YYYY-MM-DD).",
-    "timeHourMinute": "يجب أن يكون {{.attribute}} بتنسيق وقت صالح (HH:MM).",
-    "password_complexity": "يجب أن يحتوي {{.attribute}} على حرف كبير واحد على الأقل، وحرف صغير واحد، ورقم واحد وحرف خاص واحد.",
-    "eqfield": "يجب أن يكون {{.attribute}} مساويًا لـ {{.eqfield}}.",
-    "token_length": "يجب أن يكون {{.attribute}} معرفًا صالحًا."
+    "regex_alpha": "يجب أن لا يحتوي {{.attribute}} على أرقام أو أحرف خاصة.",
+    "dive": "يجب أن يكون {{.attribute}} صالحاً كـ {{.index}}.",
+    "uuid": "يجب أن يكون {{.attribute}} صالحاً.",
+    "date": "يجب أن يكون {{.attribute}} بتنسيق تاريخ صحيح (YYYY-MM-DD).",
+    "timeHourMinute": "يجب أن يكون {{.attribute}} بتنسيق وقت صحيح (HH:MM).",
+    "password_complexity": "يجب أن يحتوي {{.attribute}} على حرف كبير واحد على الأقل، وحرف صغير واحد على الأقل، ورقم واحد وحرف خاص واحد.",
+    "eqfield": "يجب أن يكون {{.attribute}} مساوياً لـ {{.eqfield}}.",
+    "token_length": "يجب أن يكون {{.attribute}} صالحاً.",
+    "role_title": "يجب أن يحتوي {{.attribute}} على أحرف وأرقام فقط."
   }
 }

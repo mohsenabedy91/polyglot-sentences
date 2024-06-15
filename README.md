@@ -144,6 +144,10 @@ go tool pprof -http=:2020 goroutine.o
 ```
 if debug mode was true its work
 
+# API Gateway
+There is an API gateway, and we used of `Kong` for management.
+The APIs available on `http://localhost:8000` and for Dashboard you can open with this link:
+[workspaces](http://localhost:8002/default/overview)
 
 # Requirements
 ## Authentication/Authorization:
@@ -155,7 +159,7 @@ protoc --go_out=. --go_opt=paths=source_relative \
 proto/common/error_details.proto
 ```
 ```bash
-protoc --go_out=. --go_opt=paths=source_relative \
+protoc --experimental_allow_proto3_optional --go_out=. --go_opt=paths=source_relative \
 --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 internal/adapter/grpc/proto/user/user.proto
 ```

@@ -6,7 +6,13 @@ import (
 )
 
 // NewAuthRouter creates a new HTTP router
-func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
+func (r *Router) NewAuthRouter(
+	authHandler handler.AuthHandler,
+	roleHandler handler.RoleHandler,
+	permissionHandler handler.PermissionHandler,
+) *Router {
+	r.Engine.POST("authorize", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Authorize)
+
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
 	{
 		auth := v1.Group("auth")
@@ -15,15 +21,32 @@ func (r *Router) NewAuthRouter(authHandler handler.AuthHandler) *Router {
 			auth.POST("email-otp/resend", authHandler.EmailOTPResend)
 			auth.POST("email-otp/verify", authHandler.EmailOTPVerify)
 			auth.POST("login", authHandler.Login)
-			auth.GET("profile", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Profile)
 			auth.POST("google", authHandler.Google)
 			auth.POST("forget-password", authHandler.ForgetPassword)
 			auth.PATCH("reset-password", authHandler.ResetPassword)
-			auth.POST("logout", middlewares.Authentication(r.cfg.Jwt, r.cache), authHandler.Logout)
+			auth.POST("logout", authHandler.Logout)
 		}
+
+		role := v1.Group("roles")
+		{
+			role.POST("", roleHandler.Create)
+			role.GET(":roleID", roleHandler.Get)
+			role.GET("", roleHandler.List)
+			role.PUT(":roleID", roleHandler.Update)
+			role.DELETE(":roleID", roleHandler.Delete)
+
+			role.GET(":roleID/permissions", roleHandler.GetPermissions)
+			role.PUT(":roleID/permissions", roleHandler.SyncPermissions)
+		}
+
+		v1.GET("permissions", permissionHandler.List)
 	}
 
 	return &Router{
-		r.Engine, r.log, r.cfg, r.trans, r.cache,
+		Engine: r.Engine,
+		log:    r.log,
+		cfg:    r.cfg,
+		trans:  r.trans,
+		cache:  r.cache,
 	}
 }

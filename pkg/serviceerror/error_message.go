@@ -9,6 +9,8 @@ var (
 	PermissionDenied   ErrorMessage = "errors.permissionDenied"
 	RecordNotFound     ErrorMessage = "errors.recordNotFound"
 	Unauthorized       ErrorMessage = "errors.unauthorized"
+	IsNotDeletable     ErrorMessage = "errors.isNotDeletable"
+	NoRowsEffected     ErrorMessage = "errors.noRowsEffected"
 
 	// User
 	UserIsBanned      ErrorMessage = "errors.userIsBanned"
@@ -17,6 +19,7 @@ var (
 	EmailRegistered   ErrorMessage = "errors.emailRegistered"
 	CredentialInvalid ErrorMessage = "errors.credentialInvalid"
 	UserLogout        ErrorMessage = "errors.userLogout"
+	PasswordIsNull    ErrorMessage = "errors.passwordIsNull"
 
 	// OTP
 	InvalidOTP ErrorMessage = "errors.invalidOTP"
@@ -28,4 +31,7 @@ var (
 
 	// Validation
 	InvalidRequestBody ErrorMessage = "errors.invalidRequestBody"
+
+	// Role
+	RoleExisted ErrorMessage = "errors.roleExisted"
 )

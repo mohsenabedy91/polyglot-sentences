@@ -26,6 +26,14 @@ func (r *Queue) SetupRabbitMQ(url string, log logger.Logger) error {
 	return nil
 }
 
+func (r *RabbitMQ) Close() {
+	err := r.conn.Close()
+	if err != nil {
+		r.log.Error(logger.Queue, logger.RabbitMQ, err.Error(), nil)
+	}
+	return
+}
+
 func (r *RabbitMQ) Produce(name string, msg interface{}, delaySeconds int64) error {
 	message, err := json.Marshal(msg)
 	if err != nil {
