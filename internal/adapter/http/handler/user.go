@@ -25,6 +25,7 @@ func NewUserHandler(userService port.UserService, uowFactory func() repository.U
 }
 
 // Profile godoc
+// @Security Service[user-management]
 // @Security AuthBearer
 // @Summary Profile
 // @Description Get user Profile based on Authorization
@@ -72,7 +73,9 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 }
 
 // Create godoc
+// @Security Service[user-management]
 // @Security AuthBearer
+// @Security Permissions[CREATE_USER]
 // @Summary Create user
 // @Description Create user
 // @Tags User
@@ -118,7 +121,9 @@ func (r UserHandler) Create(ctx *gin.Context) {
 }
 
 // List godoc
+// @Security Service[user-management]
 // @Security AuthBearer
+// @Security Permissions[READ_USER]
 // @Summary List of user
 // @Description Get list of user
 // @Tags User
@@ -160,7 +165,9 @@ func (r UserHandler) List(ctx *gin.Context) {
 }
 
 // Get godoc
+// @Security Service[user-management]
 // @Security AuthBearer
+// @Security Permissions[READ_USER]
 // @Summary Get User
 // @Description Get User By UUID
 // @Tags User

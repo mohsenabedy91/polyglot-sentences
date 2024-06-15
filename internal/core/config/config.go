@@ -28,6 +28,12 @@ var (
 	config Config
 )
 
+type Kong struct {
+	APIBaseUrl      string
+	SwaggerFilePath string
+	AuthorizeUrl    string
+}
+
 type App struct {
 	ResetPasswordURL   string
 	VerificationURL    string
@@ -151,6 +157,7 @@ type Google struct {
 
 // Config represents the application configuration.
 type Config struct {
+	Kong           Kong
 	App            App
 	Auth           Auth
 	UserManagement UserManagement
@@ -172,6 +179,11 @@ func LoadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("error loading .env file: %v", err)
 	}
+
+	var kong Kong
+	kong.APIBaseUrl = os.Getenv("KONG_API_BASE_URL")
+	kong.SwaggerFilePath = os.Getenv("KONG_SWAGGER_FILE_PATH")
+	kong.AuthorizeUrl = os.Getenv("KONG_AUTHORIZE_URL")
 
 	var app App
 	app.ResetPasswordURL = os.Getenv("RESET_PASSWORD_URL")
@@ -271,6 +283,7 @@ func LoadConfig() (Config, error) {
 	oauth.Google.CallbackURL = os.Getenv("OAUTH_GOOGLE_CALLBACK_URL")
 
 	return Config{
+		Kong:           kong,
 		App:            app,
 		Auth:           auth,
 		Profile:        profile,

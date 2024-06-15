@@ -57,6 +57,7 @@ func NewAuthHandler(
 }
 
 // Register godoc
+// @Security Service[auth]
 // @Summary Auth Register
 // @Description Register User
 // @Tags Auth
@@ -149,6 +150,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 }
 
 // EmailOTPResend godoc
+// @Security Service[auth]
 // @Summary EmailOTPResend
 // @Description Resend OTP to User via Email
 // @Tags Auth
@@ -201,6 +203,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 }
 
 // EmailOTPVerify godoc
+// @Security Service[auth]
 // @Summary EmailOTPVerify
 // @Description Verify User via Email OTP
 // @Tags Auth
@@ -275,6 +278,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 }
 
 // Login godoc
+// @Security Service[auth]
 // @Summary Login
 // @Description User based on email and password can log in app
 // @Tags Auth
@@ -334,6 +338,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 }
 
 // Google godoc
+// @Security Service[auth]
 // @Summary Auth Google
 // @Description Register or Login Via Google
 // @Tags Auth
@@ -458,6 +463,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 }
 
 // ForgetPassword godoc
+// @Security Service[auth]
 // @Summary Auth ForgetPassword
 // @Description Forget Password
 // @Tags Auth
@@ -524,6 +530,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 }
 
 // ResetPassword godoc
+// @Security Service[auth]
 // @Summary Auth ResetPassword
 // @Description Reset Password
 // @Tags Auth
@@ -595,6 +602,7 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 }
 
 // Logout godoc
+// @Security Service[auth]
 // @Security AuthBearer
 // @Summary Logout
 // @Description Logout user based on Authorization value
