@@ -311,6 +311,36 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
+	if user.Password == nil && !user.IsActive() {
+		otp := helper.GenerateOTP(r.otpConfig.Digits)
+
+		if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			return
+		}
+
+		// TODO add rate limit
+		message := authservice.SendEmailOTPDto{
+			To:       user.Email,
+			Name:     user.GetFullName(),
+			OTP:      otp,
+			Language: ctx.Param("language"),
+		}
+		authservice.SendEmailOTPEvent(r.queue).Publish(message)
+
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.UserUnVerified),
+		).Echo()
+		return
+	}
+
+	if user.Password == nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+			serviceerror.New(serviceerror.PasswordIsNull),
+		).Echo()
+		return
+	}
+
 	if ok := helper.CheckPasswordHash(req.Password, *user.Password); !ok {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.CredentialInvalid),

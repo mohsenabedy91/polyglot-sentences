@@ -138,12 +138,12 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	user := &domain.User{}
 	var googleID sql.NullString
 	err := r.tx.QueryRow(
-		`SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent, google_id FROM users 
+		`SELECT id, uuid, first_name, last_name, email, password, welcome_message_sent, google_id, status FROM users 
 					WHERE deleted_at IS NULL AND status IN ($1, $2) AND LOWER(email) = $3`,
 		domain.UserStatusUnverifiedStr,
 		domain.UserStatusActive,
 		strings.ToLower(email),
-	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent, &googleID)
+	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent, &googleID, &user.Status)
 	if err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {

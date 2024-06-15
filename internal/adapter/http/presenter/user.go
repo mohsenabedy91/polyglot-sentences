@@ -5,7 +5,7 @@ import (
 )
 
 type User struct {
-	ID        string  `json:"ID,omitempty" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
+	ID        string  `json:"id,omitempty" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
 	FirstName *string `json:"firstName,omitempty" example:"john"`
 	LastName  *string `json:"lastName,omitempty" example:"doe"`
 	Email     string  `json:"email,omitempty" example:"john.doe@gmail.com"`

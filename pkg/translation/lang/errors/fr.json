@@ -14,6 +14,7 @@
     "emailRegistered": "Un compte avec l'email {{.email}} est déjà enregistré. Que voulez-vous faire ?",
     "credentialInvalid": "Identifiants incorrects. Veuillez vérifier et réessayer.",
     "userLogout": "Vous avez été déconnecté. Veuillez vous reconnecter pour continuer.",
+    "passwordIsNull": "Identifiants invalides. Veuillez utiliser la fonction «Mot de passe oublié» pour réinitialiser votre mot de passe.",
 
     "invalidOTP": "Le mot de passe à usage unique (OTP) que vous avez saisi est invalide. Veuillez réessayer ou demander un nouvel OTP.",
     "OTPExpired": "Le mot de passe à usage unique (OTP) a expiré. Veuillez demander un nouvel OTP pour continuer.",

@@ -19,6 +19,7 @@ var (
 	EmailRegistered   ErrorMessage = "errors.emailRegistered"
 	CredentialInvalid ErrorMessage = "errors.credentialInvalid"
 	UserLogout        ErrorMessage = "errors.userLogout"
+	PasswordIsNull    ErrorMessage = "errors.passwordIsNull"
 
 	// OTP
 	InvalidOTP ErrorMessage = "errors.invalidOTP"

@@ -14,6 +14,7 @@
     "emailRegistered": "An account with the email {{.email}} is already registered. What would you like to do?",
     "credentialInvalid": "Invalid credentials. Please double-check and try again.",
     "userLogout": "You have been logged out. Please log in again to continue.",
+    "passwordIsNull": "Invalid credentials. Please use the «Forgot Password» feature to reset your password.",
 
     "invalidOTP": "The One-Time Password (OTP) you entered is invalid. Please try again or request a new OTP.",
     "OTPExpired": "The One-Time Password (OTP) has expired. Please request a new OTP to continue.",
