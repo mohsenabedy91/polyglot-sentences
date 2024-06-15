@@ -26,9 +26,8 @@ func NewRoleHandler(roleService port.RoleService, uowFactory func() repository.U
 }
 
 // Create godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[CREATE_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[CREATE_ROLE]
 // @Summary Create a Role
 // @Description Create a Role
 // @Tags Role
@@ -78,9 +77,8 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 }
 
 // Get godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[READ_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[READ_ROLE]
 // @Summary Get a Role
 // @Description return a role by role uuid
 // @Tags Role
@@ -130,9 +128,8 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 }
 
 // List godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[READ_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[READ_ROLE]
 // @Summary List of Role
 // @Description return a list of role
 // @Tags Role
@@ -173,9 +170,8 @@ func (r RoleHandler) List(ctx *gin.Context) {
 }
 
 // Update godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[UPDATE_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[UPDATE_ROLE]
 // @Summary Update a Role
 // @Description Update a Role
 // @Tags Role
@@ -231,9 +227,8 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 }
 
 // Delete godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[DELETE_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[DELETE_ROLE]
 // @Summary Delete a Role
 // @Description Delete a Role
 // @Tags Role
@@ -280,9 +275,8 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 }
 
 // GetPermissions godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[READ_ROLE_PERMISSIONS]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[READ_ROLE_PERMISSIONS]
 // @Summary Get Permissions
 // @Description get permissions for a Role
 // @Tags Role
@@ -331,9 +325,8 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 }
 
 // SyncPermissions godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[SYNC_PERMISSIONS_WITH_ROLE]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[SYNC_PERMISSIONS_WITH_ROLE]
 // @Summary Sync Permissions
 // @Description Assign/Remove permissions for a Role
 // @Tags Role

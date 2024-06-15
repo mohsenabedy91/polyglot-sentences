@@ -132,15 +132,19 @@ type Route struct {
 
 // Security represents security settings in Swagger
 type Security struct {
-	Service     []string `json:"Service,omitempty"`
-	AuthBearer  []string `json:"AuthBearer,omitempty"`
-	Permissions []string `json:"Permissions,omitempty"`
+	AuthBearer []string `json:"AuthBearer,omitempty"`
+}
+
+// ExtraKey represents extra values in Swagger
+type ExtraKey struct {
+	Service *string `json:"service,omitempty"`
 }
 
 // Operation represents an operation in Swagger
 type Operation struct {
 	ID       *string    `json:"operationId,omitempty"`
 	Tags     []string   `json:"tags,omitempty"`
+	ExtraKey *ExtraKey  `json:"x-kong,omitempty"`
 	Security []Security `json:"security,omitempty"`
 }
 
@@ -197,25 +201,17 @@ func parseSwaggerRoutes(file []byte) ([]Route, error) {
 			}
 
 			var permissions []string
-			var service *string
 			var isAuthBearer bool
 			for _, security := range operation.Security {
-				if security.Service != nil {
-					service = &security.Service[0]
-				}
 				if security.AuthBearer != nil {
 					isAuthBearer = true
+					permissions = append(permissions, security.AuthBearer...)
 				}
-				permissions = append(permissions, security.Permissions...)
-			}
-
-			if service == nil {
-				continue
 			}
 
 			newRoute := &Route{
 				Name:          *operation.ID,
-				Service:       Service{Name: *service},
+				Service:       Service{Name: *operation.ExtraKey.Service},
 				Method:        strings.ToUpper(method),
 				Path:          path,
 				Permissions:   permissions,
@@ -304,7 +300,7 @@ func preparePluginPath(originalURL string) string {
 }
 
 func isValidOperation(operation Operation) bool {
-	return operation.ID != nil && len(operation.Security) > 0
+	return operation.ID != nil && operation.ExtraKey != nil && operation.ExtraKey.Service != nil
 }
 
 func fetchKongRoutes(ctx context.Context) ([]Route, error) {

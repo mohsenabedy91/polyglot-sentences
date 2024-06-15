@@ -23,9 +23,8 @@ func NewPermissionHandler(permissionService port.PermissionService, uowFactory f
 }
 
 // List godoc
-// @Security Service[auth]
-// @Security AuthBearer
-// @Security Permissions[READ_PERMISSION]
+// @x-kong {"service": "auth"}
+// @Security AuthBearer[READ_PERMISSION]
 // @Summary List of Permission
 // @Description return a list of permission
 // @Tags ACL
