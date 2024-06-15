@@ -205,7 +205,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 // EmailOTPVerify godoc
 // @Security Service[auth]
 // @Summary EmailOTPVerify
-// @Description Verify User via Email OTP
+// @Description Verify User via Email OTP then logged in user
 // @Tags Auth
 // @Accept json
 // @Produce json

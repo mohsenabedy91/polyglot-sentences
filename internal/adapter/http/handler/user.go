@@ -112,6 +112,8 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	// TODO send verify Email
+
 	if err := uowFactory.Commit(); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
