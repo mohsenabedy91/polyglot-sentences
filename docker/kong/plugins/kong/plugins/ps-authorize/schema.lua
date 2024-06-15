@@ -3,9 +3,8 @@ local typedefs = require "kong.db.schema.typedefs"
 local predefined_permissions = {
     "NONE", "CREATE_USER", "READ_USER", "UPDATE_USER", "DELETE_USER",
     "CREATE_ROLE", "READ_ROLE", "UPDATE_ROLE", "DELETE_ROLE",
-    "CREATE_PERMISSION", "READ_PERMISSION", "UPDATE_PERMISSION",
-    "DELETE_PERMISSION", "ASSIGN_ROLES_TO_USER", "READ_USER_ROLES",
-    "ASSIGN_PERMISSIONS_TO_ROLE", "READ_ROLE_PERMISSIONS"
+    "READ_PERMISSION", "SYNC_ROLES_WITH_USER", "READ_USER_ROLES",
+    "SYNC_PERMISSIONS_WITH_ROLE", "READ_ROLE_PERMISSIONS"
 }
 
 local predefined_permissions_description = "Available permissions: " .. table.concat(predefined_permissions, ", ")
@@ -19,7 +18,7 @@ return {
             config = {
                 type = "record",
                 fields = {
-                    { authorize_url = typedefs.url({ default = "http://auth-service/authorize", required = true }) },
+                    { authorize_url = typedefs.url({ default = "http://localhost/authorize", required = true }) },
                     { token_header = typedefs.header_name { default = "Authorization", required = true } },
                     { required_permissions = {
                         type = "array",

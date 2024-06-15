@@ -13,9 +13,9 @@ const (
 	PermissionKeyUpdateRole              PermissionKeyType = "UPDATE_ROLE"
 	PermissionKeyDeleteRole              PermissionKeyType = "DELETE_ROLE"
 	PermissionKeyReadPermission          PermissionKeyType = "READ_PERMISSION"
-	PermissionKeyAssignRolesToUser       PermissionKeyType = "ASSIGN_ROLES_TO_USER"
+	PermissionKeySyncRolesWithUser       PermissionKeyType = "SYNC_ROLES_WITH_USER"
 	PermissionKeyReadUserRoles           PermissionKeyType = "READ_USER_ROLES"
-	PermissionKeyAssignPermissionsToRole PermissionKeyType = "ASSIGN_PERMISSIONS_TO_ROLE"
+	PermissionKeySyncPermissionsWithRole PermissionKeyType = "SYNC_PERMISSIONS_WITH_ROLE"
 	PermissionKeyReadRolePermissions     PermissionKeyType = "READ_ROLE_PERMISSIONS"
 )
 
