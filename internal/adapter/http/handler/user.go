@@ -1,26 +1,35 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"net/http"
+	"os"
 )
 
 // UserHandler represents the HTTP handler for user-related requests
 type UserHandler struct {
 	userService port.UserService
 	uowFactory  func() repository.UnitOfWork
+	minioClient *minio.Client
 }
 
 // NewUserHandler creates a new UserHandler instance
-func NewUserHandler(userService port.UserService, uowFactory func() repository.UnitOfWork) *UserHandler {
+func NewUserHandler(
+	userService port.UserService,
+	uowFactory func() repository.UnitOfWork,
+	minioClient *minio.Client,
+) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		uowFactory:  uowFactory,
+		minioClient: minioClient,
 	}
 }
 
@@ -67,9 +76,9 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	result := presenter.ToUserResource(user)
-
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToUserResource(user),
+	).Echo()
 }
 
 // Create godoc
@@ -97,8 +106,14 @@ func (r UserHandler) Create(ctx *gin.Context) {
 	}
 
 	var req requests.CreateUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	file, fErr := ctx.FormFile("avatar")
+	if fErr != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(fErr).Echo()
 		return
 	}
 
@@ -113,8 +128,25 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	filePath := fmt.Sprintf("/tmp/%s", file.Filename)
+	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
+		presenter.NewResponse(ctx, nil).Error(err).Echo()
+		return
+	}
+
+	defer func(file string) {
+		_ = os.Remove(file)
+	}(filePath)
+
+	url, uploadFileErr := r.minioClient.UploadFile(ctx.Request.Context(), file.Filename, filePath, file.Header.Get("Content-Type"))
+	if uploadFileErr != nil {
+		presenter.NewResponse(ctx, nil).Error(uploadFileErr).Echo()
+		return
+	}
+
 	user := req.ToDomain()
 	user.CreatedBy = header.UserID
+	user.Avatar = &url
 
 	if _, err := r.userService.Create(uowFactory, user); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {

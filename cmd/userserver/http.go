@@ -6,6 +6,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/routes"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
@@ -51,9 +52,14 @@ func main() {
 	trans := translation.NewTranslation(cfg.App.Locale)
 	trans.GetLocalizer(cfg.App.Locale)
 
+	minioClient, err := minio.NewMinioClient(ctx, log, cfg.Minio)
+	if err != nil {
+		return
+	}
+
 	userService := userservice.New(log)
 
-	userHandler := handler.NewUserHandler(userService, uowFactory)
+	userHandler := handler.NewUserHandler(userService, uowFactory, minioClient)
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
