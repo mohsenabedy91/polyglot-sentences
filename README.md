@@ -13,6 +13,8 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 📁polyglot-sentences/
 ├── 📁.github/
 ├── 📁cmd/
+│   ├── 📁apigateway/
+│   │   └── 📄sync_kong.go
 │   ├── 📁authserver/
 │   │   └── 📄http.go
 │   ├── 📁migration/
@@ -71,6 +73,8 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   ├── 📁messagebroker/
 │   │   │   ├── 📄queue.go
 │   │   │   └── 📄rabbitmq.go
+│   │   ├── 📁minio/
+│   │   │   └── 📄client.go
 │   │   └── 📁storage/
 │   │       ├── 📁postgres/
 │   │       │   ├── 📁migrations/
