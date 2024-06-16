@@ -54,8 +54,8 @@ func (r *UserRepository) IsEmailUnique(email string) (bool, error) {
 
 func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 	err := r.tx.QueryRow(
-		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar) 
-							VALUES ($1, $2, $3, $4, $5, $6, $7) 
+		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by) 
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 							RETURNING id, uuid`,
 		user.FirstName,
 		user.LastName,
@@ -64,6 +64,7 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 		user.Status,
 		user.GoogleID,
 		user.Avatar,
+		user.CreatedBy,
 	).Scan(&user.ID, &user.UUID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()

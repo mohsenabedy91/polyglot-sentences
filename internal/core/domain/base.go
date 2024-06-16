@@ -6,8 +6,9 @@ import (
 )
 
 type Modifier struct {
-	CreatedBy uint
-	UpdatedBy uint
+	CreatedBy uint64
+	UpdatedBy uint64
+	DeleteBy  uint64
 }
 
 type Base struct {
@@ -16,6 +17,7 @@ type Base struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt time.Time
 }
 
 type StatusType string

@@ -25,10 +25,11 @@ func NewRoleRepository(log logger.Logger, tx *sql.Tx) *RoleRepository {
 
 func (r *RoleRepository) Create(role domain.Role) error {
 	res, err := r.tx.Exec(
-		`INSERT INTO roles (title, key, description) VALUES ($1, $2, $3)`,
+		`INSERT INTO roles (title, key, description, created_by) VALUES ($1, $2, $3, $4)`,
 		role.Title,
 		role.Key,
 		role.Description,
+		role.CreatedBy,
 	)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "Create", "Failed").Inc()
@@ -116,10 +117,11 @@ func (r *RoleRepository) List() ([]*domain.Role, error) {
 
 func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 	res, err := r.tx.Exec(
-		"UPDATE roles SET title = $1, key = $2, description = $3 WHERE deleted_at IS NULL AND uuid = $4;",
+		"UPDATE roles SET title = $1, key = $2, description = $3, updated_at = now(), updated_by = $4 WHERE deleted_at IS NULL AND uuid = $5;",
 		role.Title,
 		role.Key,
 		role.Description,
+		role.UpdatedBy,
 		uuid,
 	)
 	if err != nil {
@@ -145,10 +147,11 @@ func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 	return nil
 }
 
-func (r *RoleRepository) Delete(uuid uuid.UUID) error {
+func (r *RoleRepository) Delete(uuid uuid.UUID, deletedBy uint64) error {
 	res, err := r.tx.Exec(
-		"UPDATE roles SET deleted_at = now(), key = $1 WHERE is_default = FALSE AND uuid = $2",
+		"UPDATE roles SET deleted_at = now(), key = $1, deleted_by = $2 WHERE is_default = FALSE AND uuid = $3;",
 		uuid,
+		deletedBy,
 		uuid,
 	)
 	if err != nil {

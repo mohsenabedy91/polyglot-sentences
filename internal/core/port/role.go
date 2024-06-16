@@ -12,7 +12,7 @@ type RoleRepository interface {
 	GetByUUID(uuid uuid.UUID) (*domain.Role, error)
 	List() ([]*domain.Role, error)
 	Update(role domain.Role, uuid uuid.UUID) error
-	Delete(uuid uuid.UUID) error
+	Delete(uuid uuid.UUID, deletedBy uint64) error
 
 	ExistKey(key domain.RoleKeyType) (bool, error)
 	GetRoleUser() (domain.Role, error)
@@ -28,7 +28,7 @@ type RoleService interface {
 	Get(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error)
 	List(ctx context.Context, uow repository.UnitOfWork) ([]*domain.Role, error)
 	Update(ctx context.Context, uow repository.UnitOfWork, role domain.Role, uuidStr string) error
-	Delete(uow repository.UnitOfWork, uuidStr string) error
+	Delete(uow repository.UnitOfWork, uuidStr string, deletedBy uint64) error
 
 	GetPermissions(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error)
 	SyncPermissions(uow repository.UnitOfWork, uuidStr string, permissionUUIDStr []string) error

@@ -43,6 +43,12 @@ func NewRoleHandler(roleService port.RoleService, uowFactory func() repository.U
 // @ID post_language_v1_roles
 // @Router /{language}/v1/roles [post]
 func (r RoleHandler) Create(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
 	var req requests.RoleCreate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
@@ -56,6 +62,9 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 	}
 
 	role := domain.Role{
+		Modifier: domain.Modifier{
+			CreatedBy: header.UserID,
+		},
 		Title:       req.Title,
 		Description: req.Description,
 	}
@@ -188,6 +197,12 @@ func (r RoleHandler) List(ctx *gin.Context) {
 // @ID put_language_v1_roles_roleID
 // @Router /{language}/v1/roles/{roleID} [put]
 func (r RoleHandler) Update(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
@@ -206,6 +221,9 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 	}
 
 	role := domain.Role{
+		Modifier: domain.Modifier{
+			UpdatedBy: header.UserID,
+		},
 		Title:       req.Title,
 		Description: req.Description,
 	}
@@ -245,6 +263,12 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 // @ID delete_language_v1_roles_roleID
 // @Router /{language}/v1/roles/{roleID} [delete]
 func (r RoleHandler) Delete(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
@@ -257,7 +281,7 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	if err := r.roleService.Delete(uowFactory, roleReq.UUIDStr); err != nil {
+	if err := r.roleService.Delete(uowFactory, roleReq.UUIDStr, header.UserID); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
 			return

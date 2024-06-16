@@ -90,6 +90,12 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 // @ID post_language_v1_users
 // @Router /{language}/v1/users [post]
 func (r UserHandler) Create(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
 	var req requests.CreateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
@@ -107,7 +113,10 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := r.userService.Create(uowFactory, req.ToDomain()); err != nil {
+	user := req.ToDomain()
+	user.CreatedBy = header.UserID
+
+	if _, err := r.userService.Create(uowFactory, user); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
 			return
