@@ -3,14 +3,17 @@ package handler
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // UserHandler represents the HTTP handler for user-related requests
@@ -113,7 +116,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 
 	file, fErr := ctx.FormFile("avatar")
 	if fErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(fErr).Echo()
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Validation(fErr).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -124,23 +127,17 @@ func (r UserHandler) Create(ctx *gin.Context) {
 	}
 
 	if err := r.userService.IsEmailUnique(uowFactory, req.Email); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	filePath := fmt.Sprintf("/tmp/%s", file.Filename)
-	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
-		presenter.NewResponse(ctx, nil).Error(err).Echo()
-		return
-	}
-
-	defer func(file string) {
-		_ = os.Remove(file)
-	}(filePath)
-
-	url, uploadFileErr := r.minioClient.UploadFile(ctx.Request.Context(), file.Filename, filePath, file.Header.Get("Content-Type"))
+	url, uploadFileErr := r.handleFileUpload(ctx, file)
 	if uploadFileErr != nil {
-		presenter.NewResponse(ctx, nil).Error(uploadFileErr).Echo()
+		presenter.NewResponse(ctx, nil).Error(uploadFileErr).Echo(http.StatusInternalServerError)
 		return
 	}
 
@@ -258,4 +255,25 @@ func (r UserHandler) Get(ctx *gin.Context) {
 	presenter.NewResponse(ctx, nil).Payload(
 		presenter.ToUserResource(user),
 	).Echo()
+}
+
+func (r UserHandler) handleFileUpload(ctx *gin.Context, file *multipart.FileHeader) (string, error) {
+	filePath := fmt.Sprintf("/tmp/%s", file.Filename)
+	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
+		return "", err
+	}
+
+	defer func(name string) {
+		_ = os.Remove(name)
+	}(filePath)
+
+	fileTypeSegment := strings.Split(file.Filename, ".")
+	uniqueFileName := fmt.Sprintf("%s.%s", uuid.New().String(), fileTypeSegment[len(fileTypeSegment)-1])
+
+	url, uploadFileErr := r.minioClient.UploadFile(ctx.Request.Context(), uniqueFileName, filePath, file.Header.Get("Content-Type"))
+	if uploadFileErr != nil {
+		return "", uploadFileErr
+	}
+
+	return url, nil
 }
