@@ -267,6 +267,18 @@ services:
     networks:
       - app_network
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ID}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET}
+    volumes:
+      - minio_data:/data
+    command: server /data
+
 volumes:
   postgres:
   redis:
@@ -277,6 +289,7 @@ volumes:
   logs:
   rabbitmq_data:
   kong_db_data:
+  minio_data:
 
 networks:
   default:

@@ -155,6 +155,14 @@ type Google struct {
 	CallbackURL  string
 }
 
+type Minio struct {
+	Endpoint   string
+	Port       string
+	ID         string
+	Secret     string
+	BucketName string
+}
+
 // Config represents the application configuration.
 type Config struct {
 	Kong           Kong
@@ -171,6 +179,7 @@ type Config struct {
 	RabbitMQ       RabbitMQ
 	SendGrid       SendGrid
 	Oauth          Oauth
+	Minio          Minio
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -282,6 +291,13 @@ func LoadConfig() (Config, error) {
 	oauth.Google.ClientSecret = os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET")
 	oauth.Google.CallbackURL = os.Getenv("OAUTH_GOOGLE_CALLBACK_URL")
 
+	var minio Minio
+	minio.Endpoint = os.Getenv("MINIO_ENDPOINT")
+	minio.Port = os.Getenv("MINIO_PORT")
+	minio.ID = os.Getenv("MINIO_ID")
+	minio.Secret = os.Getenv("MINIO_SECRET")
+	minio.BucketName = os.Getenv("MINIO_BUCKET_NAME")
+
 	return Config{
 		Kong:           kong,
 		App:            app,
@@ -297,6 +313,7 @@ func LoadConfig() (Config, error) {
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,
 		Oauth:          oauth,
+		Minio:          minio,
 	}, nil
 }
 
