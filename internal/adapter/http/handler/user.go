@@ -102,6 +102,11 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	if err := r.userService.IsEmailUnique(uowFactory, req.Email); err != nil {
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
 	if _, err := r.userService.Create(uowFactory, req.ToDomain()); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
