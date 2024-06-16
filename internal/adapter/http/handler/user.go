@@ -91,9 +91,10 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 // @Description Create user
 // @Tags User
 // @Accept json
-// @Produce json
+// @Produce plain
 // @Param language path string true "language 2 abbreviations" default(en)
-// @Param request body requests.CreateUserRequest true "Create user request"
+// @Param request formData requests.CreateUserRequest true "Create user request"
+// @Param avatar formData file true "Avatar image of the user"
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
@@ -114,12 +115,6 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	file, fErr := ctx.FormFile("avatar")
-	if fErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Validation(fErr).Echo(http.StatusUnprocessableEntity)
-		return
-	}
-
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
@@ -135,7 +130,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	url, uploadFileErr := r.handleFileUpload(ctx, file)
+	url, uploadFileErr := r.handleFileUpload(ctx, req.Avatar)
 	if uploadFileErr != nil {
 		presenter.NewResponse(ctx, nil).Error(uploadFileErr).Echo(http.StatusInternalServerError)
 		return
