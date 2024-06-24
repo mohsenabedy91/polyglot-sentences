@@ -12,21 +12,15 @@ import (
 
 var (
 	AcceptLanguage *i18n.Localizer
-	bundle         *i18n.Bundle
+	Bundle         *i18n.Bundle
 )
 
-// Init initializes the localizer with the desired language.
-func init() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return
-	}
+func Initialize(cfg config.App) {
+	Bundle = i18n.NewBundle(language.English)
+	Bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
-	bundle = i18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-
-	root := cfg.App.PathLocale
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	root := cfg.PathLocale
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
 			return err
@@ -34,7 +28,7 @@ func init() {
 
 		// Check if the current path is a JSON file
 		if !info.IsDir() && filepath.Ext(path) == ".json" {
-			if _, err = bundle.LoadMessageFile(path); err != nil {
+			if _, err = Bundle.LoadMessageFile(path); err != nil {
 				fmt.Printf("Failed to load message file %s: %v\n", path, err)
 			}
 		}
@@ -49,25 +43,26 @@ func init() {
 }
 
 type Translation struct {
-	locale string
+	cfg config.App
 }
 
 // Translator is an interface that defines the methods needed to translate messages.
 type Translator interface {
 	GetLocalizer(lang string) *i18n.Localizer
-	Lang(key string, args map[string]interface{}) string
+	Lang(key string, args map[string]interface{}, lang *string) string
 }
 
-func NewTranslation(locale string) *Translation {
+func NewTranslation(cfg config.App) *Translation {
+	Initialize(cfg)
 	return &Translation{
-		locale: locale,
+		cfg: cfg,
 	}
 }
 
 // GetLocalizer initializes the localizer with the desired language.
 func (r *Translation) GetLocalizer(lang string) *i18n.Localizer {
 	if lang == "" {
-		lang = r.locale
+		lang = r.cfg.Locale
 	}
 	tag, err := language.Parse(lang)
 	if err != nil {
@@ -75,7 +70,7 @@ func (r *Translation) GetLocalizer(lang string) *i18n.Localizer {
 		tag = language.English
 	}
 
-	AcceptLanguage = i18n.NewLocalizer(bundle, tag.String())
+	AcceptLanguage = i18n.NewLocalizer(Bundle, tag.String())
 
 	return AcceptLanguage
 }
@@ -93,7 +88,7 @@ func (r *Translation) Lang(key string, args map[string]interface{}, lang *string
 
 	message, err := AcceptLanguage.Localize(cfg)
 	if err != nil {
-		defaultLang := i18n.NewLocalizer(bundle, os.Getenv("TRANSLATION_FALLBACK_LOCALE"))
+		defaultLang := i18n.NewLocalizer(Bundle, r.cfg.FallbackLocale)
 		message, err = defaultLang.Localize(cfg)
 		if err != nil {
 			return key

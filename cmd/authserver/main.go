@@ -65,7 +65,7 @@ func main() {
 	}
 	defer queue.Driver.Close()
 
-	trans := translation.NewTranslation(cfg.App.Locale)
+	trans := translation.NewTranslation(cfg.App)
 	trans.GetLocalizer(cfg.App.Locale)
 
 	userClient := client.NewUserClient(log, cfg.UserManagement)

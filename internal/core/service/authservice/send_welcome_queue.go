@@ -65,7 +65,7 @@ func (r *SendWelcome) Consume(message []byte) error {
 		return err
 	}
 
-	trans := translation.NewTranslation(msg.Language)
+	trans := translation.NewTranslation(r.queue.Config.App)
 	appName := trans.Lang("appName", nil, &msg.Language)
 
 	if strings.TrimSpace(msg.Name) == "" {
