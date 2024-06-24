@@ -26,8 +26,6 @@ func init() {
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
 	root := cfg.App.PathLocale
-	createLocaleDirectory(root)
-
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -103,22 +101,4 @@ func (r *Translation) Lang(key string, args map[string]interface{}, lang *string
 	}
 
 	return message
-}
-
-// createLocaleDirectory create locale directory in root project if not exists
-func createLocaleDirectory(path string) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return
-		}
-	}
-	// if en.json not exists create it
-	if _, err := os.Stat(path + "/en.json"); !os.IsNotExist(err) {
-		return
-	}
-	_, err := os.Create(path + "/en.json")
-	if err != nil {
-		return
-	}
 }
