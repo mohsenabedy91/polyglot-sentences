@@ -85,7 +85,7 @@ func main() {
 	aclService := aclservice.New(log, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
-	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
+	authHandler := handler.NewAuthHandler(cfg, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
 	roleHandler := handler.NewRoleHandler(roleService, uowFactory)
 	permissionHandler := handler.NewPermissionHandler(permissionService, uowFactory)
 

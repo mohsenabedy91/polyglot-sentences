@@ -130,6 +130,10 @@ type Jwt struct {
 	AccessTokenExpireDay time.Duration
 }
 
+type Password struct {
+	BcryptCost int
+}
+
 type OTP struct {
 	ExpireSecond               time.Duration
 	ForgetPasswordExpireSecond time.Duration
@@ -180,6 +184,7 @@ type Config struct {
 	SendGrid       SendGrid
 	Oauth          Oauth
 	Minio          Minio
+	Password       Password
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
@@ -273,6 +278,9 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
+	var password Password
+	password.BcryptCost = getIntEnv("PASSWORD_BCRYPT_COST", 10)
+
 	var otp OTP
 	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
 	otp.ForgetPasswordExpireSecond = time.Duration(getIntEnv("FORGET_PASSWORD_EXPIRE_SECOND", 86400)) * time.Second
@@ -314,6 +322,7 @@ func LoadConfig() (Config, error) {
 		SendGrid:       sendGrid,
 		Oauth:          oauth,
 		Minio:          minio,
+		Password:       password,
 	}, nil
 }
 
