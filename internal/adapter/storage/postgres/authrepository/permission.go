@@ -1,4 +1,4 @@
-package repository
+package authrepository
 
 import (
 	"database/sql"
@@ -118,7 +118,7 @@ func (r *PermissionRepository) List() ([]*domain.Permission, error) {
 }
 
 func (r *PermissionRepository) FilterValidPermissions(uuids []uuid.UUID) ([]uint64, error) {
-	placeholders := strings.Join(helper.MakeSQLPlaceholders(len(uuids)), ",")
+	placeholders := strings.Join(helper.MakeSQLPlaceholders(uint(len(uuids))), ",")
 	args := make([]interface{}, len(uuids))
 	for i, u := range uuids {
 		args[i] = u.String()

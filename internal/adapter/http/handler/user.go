@@ -137,7 +137,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 	}
 
 	user := req.ToDomain()
-	user.CreatedBy = header.UserID
+	user.CreatedBy = &header.UserID
 	user.Avatar = &url
 
 	if _, err := r.userService.Create(uowFactory, user); err != nil {

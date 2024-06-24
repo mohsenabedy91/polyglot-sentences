@@ -6,7 +6,7 @@ import (
 )
 
 type Modifier struct {
-	CreatedBy uint64
+	CreatedBy *uint64
 	UpdatedBy uint64
 	DeleteBy  uint64
 }

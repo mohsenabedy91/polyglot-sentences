@@ -63,7 +63,7 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 
 	role := domain.Role{
 		Modifier: domain.Modifier{
-			CreatedBy: header.UserID,
+			CreatedBy: &header.UserID,
 		},
 		Title:       req.Title,
 		Description: req.Description,

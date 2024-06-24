@@ -270,6 +270,7 @@ services:
   minio:
     image: minio/minio
     container_name: minio
+    restart: always
     ports:
       - "${MINIO_PORT:-9000}:9000"
     environment:

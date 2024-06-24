@@ -19,9 +19,9 @@ func NewSender(log logger.Logger, cfg config.SendGrid) *SendGrid {
 	}
 }
 
-func (s *SendGrid) Send(to string, name string, subject string, body string) error {
+func (r *SendGrid) Send(to string, name string, subject string, body string) error {
 	message := mail.NewV3Mail()
-	message.SetFrom(mail.NewEmail(s.cfg.Name, s.cfg.Address))
+	message.SetFrom(mail.NewEmail(r.cfg.Name, r.cfg.Address))
 	message.Subject = subject
 
 	personalization := mail.NewPersonalization()
@@ -37,14 +37,14 @@ func (s *SendGrid) Send(to string, name string, subject string, body string) err
 
 	extra := map[logger.ExtraKey]interface{}{
 		"To":       to,
-		"Address":  s.cfg.Address,
+		"Address":  r.cfg.Address,
 		"Body":     body,
 		"Response": response,
 	}
 	if err != nil {
-		s.log.Error(logger.SendGrid, logger.SendGridSendEmail, err.Error(), extra)
-		return err
+		r.log.Error(logger.SendGrid, logger.SendGridSendEmail, err.Error(), extra)
+		return serviceerror.New(serviceerror.FailedSendEmail)
 	}
-	s.log.Info(logger.SendGrid, logger.SendGridSendEmail, "Email sent successfully", extra)
+	r.log.Info(logger.SendGrid, logger.SendGridSendEmail, "Email sent successfully", extra)
 	return nil
 }

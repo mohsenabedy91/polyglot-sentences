@@ -7,6 +7,7 @@
     "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
     "isNotDeletable": "Cet élément ne peut pas être supprimé.",
     "noRowsEffected": "Aucune ligne n'a été affectée.",
+    "failedSendEmail": "Échec de l'envoi de l'email. Veuillez réessayer plus tard.",
 
     "userIsBanned": "Votre compte a été banni. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support.",
     "userInActive": "Votre compte est actuellement inactif. Veuillez contacter le support pour obtenir de l'aide.",
