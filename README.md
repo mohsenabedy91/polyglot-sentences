@@ -14,16 +14,15 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 ├── 📁.github/
 ├── 📁cmd/
 │   ├── 📁apigateway/
-│   │   └── 📄sync_kong.go
+│   │   └── 📄main.go
 │   ├── 📁authserver/
-│   │   └── 📄http.go
+│   │   └── 📄main.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
 │   ├── 📁setup/
 │   │   └── 📄setup.go
 │   ├── 📁userserver/
-│   │   ├── 📄grpc.go
-│   │   └── 📄http.go
+│   │   └── 📄main.go
 │   └── 📁worker/
 │       └── 📄main.go
 ├── 📁deploy/
@@ -44,7 +43,10 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   ├── 📁constant/
 │   │   │   └── 📄messages.go
 │   │   ├── 📁email/
-│   │   │   └── 📄sendgrid.go
+│   │   │   ├── 📁mocks/
+│   │   │   │   └── 📄mock_sendgrid.go
+│   │   │   ├── 📄sendgrid.go
+│   │   │   └── 📄sendgrid_test.go
 │   │   ├── 📁grpc/
 │   │   │   ├── 📁client/
 │   │   │   │   └── 📄user_client.go
@@ -85,12 +87,15 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │       │   │   └── 📄202404031147_create_users_table.up.sql
 │   │       │   ├── 📁authrepository/
 │   │       │   │   ├── 📄access_control.go
+│   │       │   │   ├── 📄postgres_test.go
 │   │       │   │   ├── 📄permission.go
 │   │       │   │   ├── 📄role.go
 │   │       │   │   └── 📄unit_of_work.go
 │   │       │   ├── 📁userrepository/
+│   │       │   │   ├── 📄postgres_test.go
 │   │       │   │   ├── 📄unit_of_work.go
-│   │       │   │   └── 📄user.go
+│   │       │   │   ├── 📄user.go
+│   │       │   │   └── 📄user_test.go
 │   │       │   └── 📄db.go
 │   │       └── 📁redis/
 │   │           └── 📄db.go
