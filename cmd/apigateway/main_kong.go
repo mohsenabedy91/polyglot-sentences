@@ -22,7 +22,8 @@ var KongBaseURL string
 func main() {
 	fmt.Println("Starting...")
 
-	cfg := config.GetConfig()
+	configProvider := &config.Config{}
+	cfg := configProvider.GetConfig()
 	KongBaseURL = cfg.Kong.APIBaseUrl
 	AuthorizeURL = cfg.Kong.AuthorizeUrl
 

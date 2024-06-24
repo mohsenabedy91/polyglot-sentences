@@ -26,7 +26,8 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	cfg := config.GetConfig()
+	configProvider := &config.Config{}
+	cfg := configProvider.GetConfig()
 	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
 
 	ctx := context.Background()

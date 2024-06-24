@@ -25,8 +25,9 @@ var upCmd = &cobra.Command{
 	Short: "Run database migrations",
 	Long:  `Run database migrations to update the database schema as per defined migration files.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := config.GetConfig()
-		log := logger.NewLogger("migration", config.Log)
+		configProvider := &config.Config{}
+		cfg := configProvider.GetConfig()
+		log := logger.NewLogger("migration", cfg.Log)
 
 		err := postgres.RunMigrations(log)
 		if err != nil {
@@ -44,8 +45,9 @@ var downCmd = &cobra.Command{
 	Short: "Revert the last database migration",
 	Long:  `Revert the last database migration.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := config.GetConfig()
-		log := logger.NewLogger("migration", config.Log)
+		configProvider := &config.Config{}
+		cfg := configProvider.GetConfig()
+		log := logger.NewLogger("migration", cfg.Log)
 
 		err := postgres.RunDownMigration(log, step)
 		if err != nil {

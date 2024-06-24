@@ -55,8 +55,8 @@ func Close() error {
 }
 
 func getMigrateInstance(ctx context.Context, log logger.Logger) (*migrate.Migrate, error) {
-	// Get the application configuration
-	cfg := config.GetConfig()
+	configProvider := &config.Config{}
+	cfg := configProvider.GetConfig()
 
 	// Initialize the database client
 	if err := InitClient(ctx, log, cfg); err != nil {

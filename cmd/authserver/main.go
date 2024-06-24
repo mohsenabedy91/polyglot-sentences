@@ -33,7 +33,8 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	cfg := config.GetConfig()
+	configProvider := &config.Config{}
+	cfg := configProvider.GetConfig()
 	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
 
 	profiling(cfg.Profile)

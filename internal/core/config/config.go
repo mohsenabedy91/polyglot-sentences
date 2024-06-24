@@ -187,9 +187,14 @@ type Config struct {
 	Password       Password
 }
 
+type Configuration interface {
+	LoadConfig(envPath ...string) (Config, error)
+	GetConfig(envPath ...string) Config
+}
+
 // LoadConfig loads configuration from .env file and populates the Config struct.
-func LoadConfig() (Config, error) {
-	err := godotenv.Load()
+func (r *Config) LoadConfig(envPath ...string) (Config, error) {
+	err := godotenv.Load(envPath...)
 	if err != nil {
 		return Config{}, fmt.Errorf("error loading .env file: %v", err)
 	}
@@ -341,10 +346,10 @@ func getIntEnv(key string, defaultValue int) int {
 	return val
 }
 
-func GetConfig() Config {
+func (r *Config) GetConfig(envPath ...string) Config {
 	once.Do(func() {
 		var err error
-		config, err = LoadConfig()
+		config, err = r.LoadConfig(envPath...)
 		if err != nil {
 			panic(err)
 		}
