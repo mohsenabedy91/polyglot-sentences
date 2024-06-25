@@ -108,7 +108,7 @@ func prepareLogKeys(cat Category, sub SubCategory, extra map[ExtraKey]interface{
 	}
 	extra["category"] = cat
 	extra["subCategory"] = sub
-	return mapToZapParams(extra)
+	return MapToZapParams(extra)
 }
 
 func (r *zapLogger) Debug(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
