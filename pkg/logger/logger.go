@@ -28,12 +28,12 @@ type Logger interface {
 	FatalF(template string, args ...interface{})
 }
 
-type zapLogger struct {
+type ZapLogger struct {
 	config config.Log
 	logger *zap.SugaredLogger
 }
 
-func (r *zapLogger) Init(appName string) {
+func (r *ZapLogger) Init(appName string) {
 	once.Do(func() {
 		fileName := fmt.Sprintf(
 			"%s%s.%s",
@@ -58,13 +58,13 @@ func (r *zapLogger) Init(appName string) {
 		fileCore := zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderConfig),
 			fileWriter,
-			r.getLogLevel(),
+			r.GetLogLevel(),
 		)
 
 		stdoutCore := zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderConfig),
 			stdoutWriter,
-			r.getLogLevel(),
+			r.GetLogLevel(),
 		)
 
 		teeCore := zapcore.NewTee(fileCore, stdoutCore)
@@ -81,7 +81,7 @@ func (r *zapLogger) Init(appName string) {
 }
 
 func NewLogger(appName string, config config.Log) Logger {
-	logger := &zapLogger{config: config}
+	logger := &ZapLogger{config: config}
 	logger.Init(appName)
 	return logger
 }
@@ -94,7 +94,7 @@ var zapLogLevelMapping = map[string]zapcore.Level{
 	"fatal": zapcore.FatalLevel,
 }
 
-func (r *zapLogger) getLogLevel() zapcore.Level {
+func (r *ZapLogger) GetLogLevel() zapcore.Level {
 	level, exists := zapLogLevelMapping[r.config.Level]
 	if !exists {
 		return zapcore.DebugLevel
@@ -102,7 +102,7 @@ func (r *zapLogger) getLogLevel() zapcore.Level {
 	return level
 }
 
-func prepareLogKeys(cat Category, sub SubCategory, extra map[ExtraKey]interface{}) []interface{} {
+func PrepareLogKeys(cat Category, sub SubCategory, extra map[ExtraKey]interface{}) []interface{} {
 	if extra == nil {
 		extra = make(map[ExtraKey]interface{})
 	}
@@ -111,47 +111,47 @@ func prepareLogKeys(cat Category, sub SubCategory, extra map[ExtraKey]interface{
 	return MapToZapParams(extra)
 }
 
-func (r *zapLogger) Debug(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
-	params := prepareLogKeys(cat, sub, extra)
+func (r *ZapLogger) Debug(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
+	params := PrepareLogKeys(cat, sub, extra)
 	r.logger.Debugw(msg, params...)
 }
 
-func (r *zapLogger) DebugF(template string, args ...interface{}) {
+func (r *ZapLogger) DebugF(template string, args ...interface{}) {
 	r.logger.Debugf(template, args...)
 }
 
-func (r *zapLogger) Info(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
-	params := prepareLogKeys(cat, sub, extra)
+func (r *ZapLogger) Info(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
+	params := PrepareLogKeys(cat, sub, extra)
 	r.logger.Infow(msg, params...)
 }
 
-func (r *zapLogger) InfoF(template string, args ...interface{}) {
+func (r *ZapLogger) InfoF(template string, args ...interface{}) {
 	r.logger.Infof(template, args...)
 }
 
-func (r *zapLogger) Warn(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
-	params := prepareLogKeys(cat, sub, extra)
+func (r *ZapLogger) Warn(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
+	params := PrepareLogKeys(cat, sub, extra)
 	r.logger.Warnw(msg, params...)
 }
 
-func (r *zapLogger) WarnF(template string, args ...interface{}) {
+func (r *ZapLogger) WarnF(template string, args ...interface{}) {
 	r.logger.Warnf(template, args...)
 }
 
-func (r *zapLogger) Error(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
-	params := prepareLogKeys(cat, sub, extra)
+func (r *ZapLogger) Error(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
+	params := PrepareLogKeys(cat, sub, extra)
 	r.logger.Errorw(msg, params...)
 }
 
-func (r *zapLogger) ErrorF(template string, args ...interface{}) {
+func (r *ZapLogger) ErrorF(template string, args ...interface{}) {
 	r.logger.Errorf(template, args...)
 }
 
-func (r *zapLogger) Fatal(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
-	params := prepareLogKeys(cat, sub, extra)
+func (r *ZapLogger) Fatal(cat Category, sub SubCategory, msg string, extra map[ExtraKey]interface{}) {
+	params := PrepareLogKeys(cat, sub, extra)
 	r.logger.Fatalw(msg, params...)
 }
 
-func (r *zapLogger) FatalF(template string, args ...interface{}) {
+func (r *ZapLogger) FatalF(template string, args ...interface{}) {
 	r.logger.Fatalf(template, args...)
 }
