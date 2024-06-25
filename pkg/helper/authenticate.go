@@ -23,9 +23,7 @@ func GenerateOTP(digits int8) string {
 	maximum := int(math.Pow(10, float64(digits)) - 1)
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var otp = r.Intn(maximum - minimum)
-	if otp < minimum {
-		otp += minimum
-	}
+	var otp = r.Intn(maximum-minimum) + minimum
+
 	return strconv.Itoa(otp)
 }
