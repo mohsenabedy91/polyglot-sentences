@@ -20,7 +20,7 @@ func ConvertToUpperCase(input string) string {
 	return builder.String()
 }
 
-func MakeSQLPlaceholders(n int) []string {
+func MakeSQLPlaceholders(n uint) []string {
 	placeholders := make([]string, n)
 	for i := range placeholders {
 		placeholders[i] = "$" + strconv.Itoa(i+1)
