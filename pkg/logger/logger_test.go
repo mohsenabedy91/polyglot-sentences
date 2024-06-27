@@ -19,7 +19,7 @@ func teardown() {
 func TestZapLoggerInitialization(t *testing.T) {
 	defer teardown()
 
-	cfg := config.Log{
+	conf := config.Log{
 		FilePath:   fmt.Sprintf("%s/logs", filePath),
 		MaxSize:    1, // 1 MB
 		MaxAge:     7, // 7 days
@@ -27,14 +27,14 @@ func TestZapLoggerInitialization(t *testing.T) {
 		Level:      "debug",
 	}
 
-	log := logger.NewLogger("TestApp", cfg)
+	log := logger.NewLogger("TestApp", conf)
 	require.NotNil(t, log)
 }
 
 func TestZapLoggerMethods(t *testing.T) {
 	defer teardown()
 
-	cfg := config.Log{
+	conf := config.Log{
 		FilePath:   fmt.Sprintf("%s/logs", filePath),
 		MaxSize:    1, // 1 MB
 		MaxAge:     7, // 7 days
@@ -42,7 +42,7 @@ func TestZapLoggerMethods(t *testing.T) {
 		Level:      "debug",
 	}
 
-	log := logger.NewLogger("TestApp", cfg)
+	log := logger.NewLogger("TestApp", conf)
 	require.NotNil(t, log)
 
 	extra := map[logger.ExtraKey]interface{}{
@@ -89,7 +89,7 @@ func TestZapLoggerMethods(t *testing.T) {
 func TestZapLoggerFormatMethods(t *testing.T) {
 	defer teardown()
 
-	cfg := config.Log{
+	conf := config.Log{
 		FilePath:   fmt.Sprintf("%s/logs", filePath),
 		MaxSize:    1, // 1 MB
 		MaxAge:     7, // 7 days
@@ -97,7 +97,7 @@ func TestZapLoggerFormatMethods(t *testing.T) {
 		Level:      "debug",
 	}
 
-	log := logger.NewLogger("TestApp", cfg)
+	log := logger.NewLogger("TestApp", conf)
 	require.NotNil(t, log)
 
 	t.Run("DebugF", func(t *testing.T) {
@@ -139,19 +139,19 @@ func TestZapLoggerFormatMethods(t *testing.T) {
 
 func TestZapLoggerGetLogLevel(t *testing.T) {
 	t.Run("Valid log level", func(t *testing.T) {
-		cfg := config.Log{
+		conf := config.Log{
 			Level: "info",
 		}
-		log := logger.NewLogger("TestApp", cfg)
+		log := logger.NewLogger("TestApp", conf)
 		zapLogger := log.(*logger.ZapLogger)
 		require.Equal(t, zapcore.InfoLevel, zapLogger.GetLogLevel())
 	})
 
 	t.Run("Invalid log level defaults to debug", func(t *testing.T) {
-		cfg := config.Log{
+		conf := config.Log{
 			Level: "invalid",
 		}
-		log := logger.NewLogger("TestApp", cfg)
+		log := logger.NewLogger("TestApp", conf)
 		zapLogger := log.(*logger.ZapLogger)
 		require.Equal(t, zapcore.DebugLevel, zapLogger.GetLogLevel())
 	})

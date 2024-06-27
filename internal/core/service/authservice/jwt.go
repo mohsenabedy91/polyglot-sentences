@@ -15,14 +15,14 @@ import (
 
 type JWTService struct {
 	log      logger.Logger
-	cfg      config.Jwt
+	conf     config.Jwt
 	jwtCache *redis.CacheDriver[string]
 }
 
-func New(log logger.Logger, cfg config.Jwt, cache *redis.CacheDriver[any]) *JWTService {
+func New(log logger.Logger, conf config.Jwt, cache *redis.CacheDriver[any]) *JWTService {
 	return &JWTService{
 		log:      log,
-		cfg:      cfg,
+		conf:     conf,
 		jwtCache: (*redis.CacheDriver[string])(cache),
 	}
 }
@@ -37,7 +37,7 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 
 	mapClaims[config.AuthTokenIssuedAt] = now.Unix()
 
-	accessTokenExpirationHour := r.cfg.AccessTokenExpireDay * (24 * time.Hour)
+	accessTokenExpirationHour := r.conf.AccessTokenExpireDay * (24 * time.Hour)
 	mapClaims[config.AuthTokenExpirationTime] = int(now.Add(accessTokenExpirationHour).Unix())
 
 	go func() {
@@ -55,7 +55,7 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 	jwtString, err := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		mapClaims,
-	).SignedString([]byte(r.cfg.AccessTokenSecret))
+	).SignedString([]byte(r.conf.AccessTokenSecret))
 
 	if err != nil {
 		r.log.Error(logger.JWT, logger.JWTGenerate, err.Error(), nil)

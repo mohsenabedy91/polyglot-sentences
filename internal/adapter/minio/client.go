@@ -11,25 +11,25 @@ import (
 
 type Client struct {
 	log    logger.Logger
-	cfg    config.Minio
+	conf   config.Minio
 	client *minio.Client
 }
 
-func NewMinioClient(ctx context.Context, log logger.Logger, cfg config.Minio) (*Client, error) {
-	endpoint := fmt.Sprintf("%s:%s", cfg.Endpoint, cfg.Port)
+func NewMinioClient(ctx context.Context, log logger.Logger, conf config.Minio) (*Client, error) {
+	endpoint := fmt.Sprintf("%s:%s", conf.Endpoint, conf.Port)
 
 	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.ID, cfg.Secret, ""),
+		Creds:  credentials.NewStaticV4(conf.ID, conf.Secret, ""),
 		Secure: false,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if err = minioClient.MakeBucket(ctx, cfg.BucketName, minio.MakeBucketOptions{}); err != nil {
-		exists, errBucketExists := minioClient.BucketExists(ctx, cfg.BucketName)
+	if err = minioClient.MakeBucket(ctx, conf.BucketName, minio.MakeBucketOptions{}); err != nil {
+		exists, errBucketExists := minioClient.BucketExists(ctx, conf.BucketName)
 		if errBucketExists == nil && exists {
-			log.Warn(logger.Minio, logger.MinioCreateBucket, fmt.Sprintf("We already own %s", cfg.BucketName), nil)
+			log.Warn(logger.Minio, logger.MinioCreateBucket, fmt.Sprintf("We already own %s", conf.BucketName), nil)
 		} else {
 			log.Error(logger.Minio, logger.Startup, err.Error(), nil)
 			return nil, err
@@ -37,17 +37,17 @@ func NewMinioClient(ctx context.Context, log logger.Logger, cfg config.Minio) (*
 
 	}
 
-	log.Info(logger.Minio, logger.Startup, fmt.Sprintf("Successfully created %s", cfg.BucketName), nil)
+	log.Info(logger.Minio, logger.Startup, fmt.Sprintf("Successfully created %s", conf.BucketName), nil)
 
 	return &Client{
 		log:    log,
-		cfg:    cfg,
+		conf:   conf,
 		client: minioClient,
 	}, nil
 }
 
 func (r *Client) UploadFile(ctx context.Context, objectName, filePath, contentType string) (string, error) {
-	_, err := r.client.FPutObject(ctx, r.cfg.BucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
+	_, err := r.client.FPutObject(ctx, r.conf.BucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		r.log.Error(logger.Minio, logger.MinioUpload, err.Error(), map[logger.ExtraKey]interface{}{
 			"objectName":  objectName,
@@ -57,5 +57,5 @@ func (r *Client) UploadFile(ctx context.Context, objectName, filePath, contentTy
 		return "", err
 	}
 
-	return r.client.EndpointURL().String() + "/" + r.cfg.BucketName + "/" + objectName, nil
+	return r.client.EndpointURL().String() + "/" + r.conf.BucketName + "/" + objectName, nil
 }

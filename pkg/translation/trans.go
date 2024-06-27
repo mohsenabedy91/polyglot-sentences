@@ -15,11 +15,11 @@ var (
 	Bundle         *i18n.Bundle
 )
 
-func Initialize(cfg config.App) {
+func Initialize(conf config.App) {
 	Bundle = i18n.NewBundle(language.English)
 	Bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
-	root := cfg.PathLocale
+	root := conf.PathLocale
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -43,7 +43,7 @@ func Initialize(cfg config.App) {
 }
 
 type Translation struct {
-	cfg config.App
+	conf config.App
 }
 
 // Translator is an interface that defines the methods needed to translate messages.
@@ -52,17 +52,17 @@ type Translator interface {
 	Lang(key string, args map[string]interface{}, lang *string) string
 }
 
-func NewTranslation(cfg config.App) *Translation {
-	Initialize(cfg)
+func NewTranslation(conf config.App) *Translation {
+	Initialize(conf)
 	return &Translation{
-		cfg: cfg,
+		conf: conf,
 	}
 }
 
 // GetLocalizer initializes the localizer with the desired language.
 func (r *Translation) GetLocalizer(lang string) *i18n.Localizer {
 	if lang == "" {
-		lang = r.cfg.Locale
+		lang = r.conf.Locale
 	}
 	tag, err := language.Parse(lang)
 	if err != nil {
@@ -77,7 +77,7 @@ func (r *Translation) GetLocalizer(lang string) *i18n.Localizer {
 
 // Lang is a helper function that translates a message.
 func (r *Translation) Lang(key string, args map[string]interface{}, lang *string) string {
-	cfg := &i18n.LocalizeConfig{
+	conf := &i18n.LocalizeConfig{
 		MessageID:    key,
 		TemplateData: args,
 	}
@@ -86,10 +86,10 @@ func (r *Translation) Lang(key string, args map[string]interface{}, lang *string
 		AcceptLanguage = r.GetLocalizer(*lang)
 	}
 
-	message, err := AcceptLanguage.Localize(cfg)
+	message, err := AcceptLanguage.Localize(conf)
 	if err != nil {
-		defaultLang := i18n.NewLocalizer(Bundle, r.cfg.FallbackLocale)
-		message, err = defaultLang.Localize(cfg)
+		defaultLang := i18n.NewLocalizer(Bundle, r.conf.FallbackLocale)
+		message, err = defaultLang.Localize(conf)
 		if err != nil {
 			return key
 		}

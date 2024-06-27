@@ -31,8 +31,8 @@ import (
 // @description "Bearer <your-jwt-token>"
 func main() {
 	configProvider := &config.Config{}
-	cfg := configProvider.GetConfig()
-	log := logger.NewLogger(cfg.UserManagement.Name, cfg.Log)
+	conf := configProvider.GetConfig()
+	log := logger.NewLogger(conf.UserManagement.Name, conf.Log)
 
 	ctx := context.Background()
 	defer func() {
@@ -40,7 +40,7 @@ func main() {
 			log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		}
 	}()
-	postgresDB, err := setup.InitializeDatabase(ctx, log, cfg)
+	postgresDB, err := setup.InitializeDatabase(ctx, log, conf)
 	if err != nil {
 		log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		return
@@ -49,13 +49,13 @@ func main() {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
-	trans := translation.NewTranslation(cfg.App)
-	trans.GetLocalizer(cfg.App.Locale)
+	trans := translation.NewTranslation(conf.App)
+	trans.GetLocalizer(conf.App.Locale)
 
 	userService := userservice.New(log)
 
-	grpcServer := startGRPCServer(cfg, log, userService, uowFactory)
-	httpServer := startHTTPServer(ctx, cfg, log, userService, uowFactory, trans)
+	grpcServer := startGRPCServer(conf, log, userService, uowFactory)
+	httpServer := startHTTPServer(ctx, conf, log, userService, uowFactory, trans)
 
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
@@ -64,16 +64,16 @@ func main() {
 	log.Info(logger.Internal, logger.Shutdown, "Shutdown Servers ...", nil)
 
 	grpcServer.GracefulStop()
-	shutdownHTTPServer(ctx, httpServer, log, cfg)
+	shutdownHTTPServer(ctx, httpServer, log, conf)
 }
 
 func startGRPCServer(
-	cfg config.Config,
+	conf config.Config,
 	log logger.Logger,
 	userService *userservice.UserService,
 	uowFactory func() repository.UnitOfWork,
 ) *grpc.Server {
-	s := server.NewUserGRPCServer(cfg.UserManagement, userService, uowFactory)
+	s := server.NewUserGRPCServer(conf.UserManagement, userService, uowFactory)
 	grpcServer, err := s.StartUserGRPCServer()
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
@@ -86,20 +86,20 @@ func startGRPCServer(
 
 func startHTTPServer(
 	ctx context.Context,
-	cfg config.Config,
+	conf config.Config,
 	log logger.Logger,
 	userService *userservice.UserService,
 	uowFactory func() repository.UnitOfWork,
 	trans *translation.Translation,
 ) *http.Server {
-	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
+	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
 		return nil
 	}
 	defer cacheDriver.Close()
 
-	minioClient, err := minio.NewMinioClient(ctx, log, cfg.Minio)
+	minioClient, err := minio.NewMinioClient(ctx, log, conf.Minio)
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
 		return nil
@@ -109,7 +109,7 @@ func startHTTPServer(
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, *healthHandler)
+	router, err := routes.NewRouter(log, conf, trans, cacheDriver, *healthHandler)
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
 		return nil
@@ -117,7 +117,7 @@ func startHTTPServer(
 
 	router = router.NewUserRouter(*userHandler)
 
-	listenAddr := fmt.Sprintf("%s:%s", cfg.UserManagement.URL, cfg.UserManagement.HTTPPort)
+	listenAddr := fmt.Sprintf("%s:%s", conf.UserManagement.URL, conf.UserManagement.HTTPPort)
 	httpServer := &http.Server{
 		Addr:    listenAddr,
 		Handler: router.Engine.Handler(),
@@ -134,9 +134,9 @@ func shutdownHTTPServer(
 	ctx context.Context,
 	server *http.Server,
 	log logger.Logger,
-	cfg config.Config,
+	conf config.Config,
 ) {
-	timeout := cfg.App.GracefullyShutdown * time.Second
+	timeout := conf.App.GracefullyShutdown * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

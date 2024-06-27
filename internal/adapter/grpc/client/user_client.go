@@ -19,8 +19,8 @@ type UserClient struct {
 	userServiceClient userpb.UserServiceClient
 }
 
-func NewUserClient(log logger.Logger, cfg config.UserManagement) *UserClient {
-	target := fmt.Sprintf("%s:%s", cfg.URL, cfg.GRPCPort)
+func NewUserClient(log logger.Logger, conf config.UserManagement) *UserClient {
+	target := fmt.Sprintf("%s:%s", conf.URL, conf.GRPCPort)
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)

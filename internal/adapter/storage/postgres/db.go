@@ -15,11 +15,11 @@ import (
 
 var dbClient *sql.DB
 
-func InitClient(ctx context.Context, log logger.Logger, cfg config.Config) error {
+func InitClient(ctx context.Context, log logger.Logger, conf config.Config) error {
 	var err error
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
-		cfg.DB.Host, cfg.DB.Port, cfg.DB.Username, cfg.DB.Password,
-		cfg.DB.Name, cfg.DB.Postgres.SSLMode, cfg.DB.Postgres.Timezone)
+		conf.DB.Host, conf.DB.Port, conf.DB.Username, conf.DB.Password,
+		conf.DB.Name, conf.DB.Postgres.SSLMode, conf.DB.Postgres.Timezone)
 
 	if dbClient, err = sql.Open("postgres", dsn); err != nil {
 		log.Error(logger.Database, logger.Startup, fmt.Sprintf("There is an Error in Open DB : %v", err), nil)
@@ -33,9 +33,9 @@ func InitClient(ctx context.Context, log logger.Logger, cfg config.Config) error
 		return err
 	}
 
-	dbClient.SetMaxOpenConns(cfg.DB.Postgres.MaxOpenConnections)
-	dbClient.SetMaxIdleConns(cfg.DB.Postgres.MaxIdleConnections)
-	dbClient.SetConnMaxLifetime(cfg.DB.Postgres.MaxLifetime * time.Minute)
+	dbClient.SetMaxOpenConns(conf.DB.Postgres.MaxOpenConnections)
+	dbClient.SetMaxIdleConns(conf.DB.Postgres.MaxIdleConnections)
+	dbClient.SetConnMaxLifetime(conf.DB.Postgres.MaxLifetime * time.Minute)
 
 	log.Info(logger.Database, logger.Startup, "Database client initialized", nil)
 
@@ -56,10 +56,10 @@ func Close() error {
 
 func getMigrateInstance(ctx context.Context, log logger.Logger) (*migrate.Migrate, error) {
 	configProvider := &config.Config{}
-	cfg := configProvider.GetConfig()
+	conf := configProvider.GetConfig()
 
 	// Initialize the database client
-	if err := InitClient(ctx, log, cfg); err != nil {
+	if err := InitClient(ctx, log, conf); err != nil {
 		return nil, err
 	}
 
@@ -75,7 +75,7 @@ func getMigrateInstance(ctx context.Context, log logger.Logger) (*migrate.Migrat
 	// Create a new migrate instance
 	return migrate.NewWithDatabaseInstance(
 		"file://internal/adapter/storage/postgres/migrations",
-		cfg.DB.Name,
+		conf.DB.Name,
 		dbDriver,
 	)
 }

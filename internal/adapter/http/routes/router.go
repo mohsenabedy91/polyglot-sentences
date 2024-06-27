@@ -21,7 +21,7 @@ import (
 type Router struct {
 	Engine *gin.Engine
 	log    logger.Logger
-	cfg    config.Config
+	conf   config.Config
 	trans  *translation.Translation
 	cache  *redis.CacheDriver[any]
 }
@@ -29,14 +29,14 @@ type Router struct {
 // NewRouter creates a new HTTP router
 func NewRouter(
 	log logger.Logger,
-	cfg config.Config,
+	conf config.Config,
 	trans *translation.Translation,
 	cache *redis.CacheDriver[any],
 	healthHandler handler.HealthHandler,
 ) (*Router, error) {
 
 	// Disable debug mode in production
-	if cfg.App.Env == "production" {
+	if conf.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -47,9 +47,9 @@ func NewRouter(
 	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
-	setSwaggerRoutes(router.Group(""), cfg.Swagger)
+	setSwaggerRoutes(router.Group(""), conf.Swagger)
 
-	if err := validations.RegisterValidator(cfg); err != nil {
+	if err := validations.RegisterValidator(conf); err != nil {
 		log.Fatal(logger.Router, logger.Startup, fmt.Sprintf("Failed to setup router, error: %v", err), nil)
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func NewRouter(
 	return &Router{
 		Engine: router,
 		log:    log,
-		cfg:    cfg,
+		conf:   conf,
 		trans:  trans,
 		cache:  cache,
 	}, nil
