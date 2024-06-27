@@ -3,6 +3,7 @@ module github.com/mohsenabedy91/polyglot-sentences
 go 1.22.3
 
 require (
+	github.com/bxcodec/faker/v4 v4.0.0-beta.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/go-redis/redis v6.15.9+incompatible
