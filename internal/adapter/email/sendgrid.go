@@ -3,25 +3,38 @@ package email
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-type SendGrid struct {
-	log logger.Logger
-	cfg config.SendGrid
+type SendGridClient interface {
+	Send(email *mail.SGMailV3) (*rest.Response, error)
 }
 
-func NewSender(log logger.Logger, cfg config.SendGrid) *SendGrid {
+type SendGrid struct {
+	log    logger.Logger
+	conf   config.SendGrid
+	client SendGridClient
+}
+
+func NewSender(log logger.Logger, conf config.SendGrid) *SendGrid {
+	client := sendgrid.NewSendClient(conf.Key)
 	return &SendGrid{
-		log: log,
-		cfg: cfg,
+		log:    log,
+		conf:   conf,
+		client: client,
 	}
+}
+
+func (r *SendGrid) SetClient(client SendGridClient) {
+	r.client = client
 }
 
 func (r *SendGrid) Send(to string, name string, subject string, body string) error {
 	message := mail.NewV3Mail()
-	message.SetFrom(mail.NewEmail(r.cfg.Name, r.cfg.Address))
+	message.SetFrom(mail.NewEmail(r.conf.Name, r.conf.Address))
 	message.Subject = subject
 
 	personalization := mail.NewPersonalization()
@@ -32,12 +45,11 @@ func (r *SendGrid) Send(to string, name string, subject string, body string) err
 
 	message.AddPersonalizations(personalization)
 
-	client := sendgrid.NewSendClient(s.cfg.Key)
-	response, err := client.Send(message)
+	response, err := r.client.Send(message)
 
 	extra := map[logger.ExtraKey]interface{}{
 		"To":       to,
-		"Address":  r.cfg.Address,
+		"Address":  r.conf.Address,
 		"Body":     body,
 		"Response": response,
 	}
