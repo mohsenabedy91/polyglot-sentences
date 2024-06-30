@@ -9,12 +9,12 @@ type MockConfiguration struct {
 	mock.Mock
 }
 
-func (m *MockConfiguration) LoadConfig(envPath ...string) (config.Config, error) {
-	args := m.Called(envPath)
+func (r *MockConfiguration) LoadConfig(envPath ...string) (config.Config, error) {
+	args := r.Called(envPath)
 	return args.Get(0).(config.Config), args.Error(1)
 }
 
-func (m *MockConfiguration) GetConfig(envPath ...string) config.Config {
-	args := m.Called(envPath)
+func (r *MockConfiguration) GetConfig(envPath ...string) config.Config {
+	args := r.Called(envPath)
 	return args.Get(0).(config.Config)
 }

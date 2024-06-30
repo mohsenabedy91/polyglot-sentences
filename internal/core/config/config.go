@@ -35,9 +35,7 @@ type Kong struct {
 }
 
 type App struct {
-	ResetPasswordURL   string
-	VerificationURL    string
-	SupportEmail       string
+	Name               string
 	Env                string
 	Debug              bool
 	Timezone           string
@@ -45,6 +43,9 @@ type App struct {
 	FallbackLocale     string
 	PathLocale         string
 	GracefullyShutdown time.Duration
+	ResetPasswordURL   string
+	VerificationURL    string
+	SupportEmail       string
 }
 
 type Auth struct {
@@ -205,9 +206,7 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	kong.AuthorizeUrl = os.Getenv("KONG_AUTHORIZE_URL")
 
 	var app App
-	app.ResetPasswordURL = os.Getenv("RESET_PASSWORD_URL")
-	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
-	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
+	app.Name = os.Getenv("APP_NAME")
 	app.Env = os.Getenv("APP_ENV")
 	app.Debug = getBoolEnv("APP_DEBUG")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
@@ -215,6 +214,9 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
+	app.ResetPasswordURL = os.Getenv("APP_RESET_PASSWORD_URL")
+	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
+	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
 
 	var auth Auth
 	auth.Name = os.Getenv("AUTH_NAME")

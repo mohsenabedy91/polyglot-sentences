@@ -21,11 +21,11 @@ type ClientProvider struct {
 	Conf config.Oauth
 }
 
-func (p *ClientProvider) GetClient(ctx context.Context, token *oauth2.Token) *http.Client {
+func (r *ClientProvider) GetClient(ctx context.Context, token *oauth2.Token) *http.Client {
 	oauthConf := oauth2.Config{
-		ClientID:     p.Conf.Google.ClientId,
-		ClientSecret: p.Conf.Google.ClientSecret,
-		RedirectURL:  p.Conf.Google.CallbackURL,
+		ClientID:     r.Conf.Google.ClientId,
+		ClientSecret: r.Conf.Google.ClientSecret,
+		RedirectURL:  r.Conf.Google.CallbackURL,
 		Endpoint:     google.Endpoint,
 	}
 
