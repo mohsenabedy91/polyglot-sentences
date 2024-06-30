@@ -19,26 +19,26 @@ import (
 
 type Server struct {
 	userpb.UnimplementedUserServiceServer
-	cfg         config.UserManagement
+	conf        config.UserManagement
 	userService port.UserService
 	uowFactory  func() repository.UnitOfWork
 }
 
 func NewUserGRPCServer(
-	cfg config.UserManagement,
+	conf config.UserManagement,
 	userService port.UserService,
 	uowFactory func() repository.UnitOfWork,
 ) *Server {
 	return &Server{
 		UnimplementedUserServiceServer: userpb.UnimplementedUserServiceServer{},
-		cfg:                            cfg,
+		conf:                           conf,
 		userService:                    userService,
 		uowFactory:                     uowFactory,
 	}
 }
 
 func (r Server) StartUserGRPCServer() (*grpc.Server, error) {
-	address := fmt.Sprintf("%s:%s", r.cfg.URL, r.cfg.GRPCPort)
+	address := fmt.Sprintf("%s:%s", r.conf.URL, r.conf.GRPCPort)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, err

@@ -1,3 +1,5 @@
+//go:build !test
+
 package main
 
 import (
@@ -33,10 +35,11 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	cfg := config.GetConfig()
-	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
+	configProvider := &config.Config{}
+	conf := configProvider.GetConfig()
+	log := logger.NewLogger(conf.Auth.Name, conf.Log)
 
-	profiling(cfg.Profile)
+	profiling(conf.Profile)
 
 	ctx := context.Background()
 	defer func() {
@@ -45,7 +48,7 @@ func main() {
 		}
 	}()
 
-	postgresDB, err := setup.InitializeDatabase(ctx, log, cfg)
+	postgresDB, err := setup.InitializeDatabase(ctx, log, conf)
 	if err != nil {
 		return
 	}
@@ -53,29 +56,32 @@ func main() {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
-	cacheDriver, err := redis.NewCacheDriver[any](log, cfg)
+	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
 	if err != nil {
 		return
 	}
 	defer cacheDriver.Close()
 
-	queue, err := setup.InitializeQueue(log, cfg)
+	queue, err := setup.InitializeQueue(log, conf)
 	if err != nil {
 		return
 	}
 	defer queue.Driver.Close()
 
-	trans := translation.NewTranslation(cfg.App.Locale)
-	trans.GetLocalizer(cfg.App.Locale)
+	trans := translation.NewTranslation(conf.App)
+	trans.GetLocalizer(conf.App.Locale)
 
-	userClient := client.NewUserClient(log, cfg.UserManagement)
+	userClient := client.NewUserClient(log, conf.UserManagement)
 	defer userClient.Close()
 
-	tokenService := authservice.New(log, cfg.Jwt, cacheDriver)
+	tokenService := authservice.New(log, conf.Jwt, cacheDriver)
 
-	otpCacheService := otpservice.NewOTPCache(log, cfg.OTP, cacheDriver)
+	otpCacheService := otpservice.NewOTPCache(log, conf.OTP, cacheDriver)
 
-	oauthService := oauth.New(log, cfg.Oauth)
+	clientProvider := &oauth.ClientProvider{
+		Conf: conf.Oauth,
+	}
+	oauthService := oauth.New(log, conf.Oauth, clientProvider)
 
 	permissionService := permissionservice.New(log)
 
@@ -85,19 +91,19 @@ func main() {
 	aclService := aclservice.New(log, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
-	authHandler := handler.NewAuthHandler(cfg.OTP, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
+	authHandler := handler.NewAuthHandler(conf, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
 	roleHandler := handler.NewRoleHandler(roleService, uowFactory)
 	permissionHandler := handler.NewPermissionHandler(permissionService, uowFactory)
 
 	// Init router
-	router, err := routes.NewRouter(log, cfg, trans, cacheDriver, *healthHandler)
+	router, err := routes.NewRouter(log, conf, trans, cacheDriver, *healthHandler)
 	if err != nil {
 		return
 	}
 
 	router = router.NewAuthRouter(*authHandler, *roleHandler, *permissionHandler)
 
-	listenAddr := fmt.Sprintf("%s:%s", cfg.Auth.URL, cfg.Auth.Port)
+	listenAddr := fmt.Sprintf("%s:%s", conf.Auth.URL, conf.Auth.Port)
 	server := &http.Server{
 		Addr:    listenAddr,
 		Handler: router.Engine.Handler(),
@@ -115,7 +121,7 @@ func main() {
 
 	log.Info(logger.Internal, logger.Shutdown, "Shutdown Server ...", nil)
 
-	timeout := cfg.App.GracefullyShutdown * time.Second
+	timeout := conf.App.GracefullyShutdown * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -130,10 +136,10 @@ func main() {
 	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
 }
 
-func profiling(cfg config.Profile) {
-	if cfg.Debug {
+func profiling(conf config.Profile) {
+	if conf.Debug {
 		go func() {
-			addr := fmt.Sprintf(":%s", cfg.Port)
+			addr := fmt.Sprintf(":%s", conf.Port)
 			err := http.ListenAndServe(addr, nil)
 			if err != nil {
 				return

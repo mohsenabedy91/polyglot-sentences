@@ -11,6 +11,7 @@ var (
 	Unauthorized       ErrorMessage = "errors.unauthorized"
 	IsNotDeletable     ErrorMessage = "errors.isNotDeletable"
 	NoRowsEffected     ErrorMessage = "errors.noRowsEffected"
+	FailedSendEmail    ErrorMessage = "errors.failedSendEmail"
 
 	// User
 	UserIsBanned      ErrorMessage = "errors.userIsBanned"

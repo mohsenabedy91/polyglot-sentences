@@ -13,13 +13,16 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 📁polyglot-sentences/
 ├── 📁.github/
 ├── 📁cmd/
+│   ├── 📁apigateway/
+│   │   └── 📄main.go
 │   ├── 📁authserver/
-│   │   └── 📄http.go
+│   │   └── 📄main.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
+│   ├── 📁setup/
+│   │   └── 📄setup.go
 │   ├── 📁userserver/
-│   │   ├── 📄grpc.go
-│   │   └── 📄http.go
+│   │   └── 📄main.go
 │   └── 📁worker/
 │       └── 📄main.go
 ├── 📁deploy/
@@ -29,6 +32,7 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   ├── 📁alertmanager/
 │   ├── 📁elk/
 │   ├── 📁grafana/
+│   ├── 📁kong/
 │   └── 📁prometheus/
 ├── 📁docs/
 │   ├── 📄docs.go
@@ -39,16 +43,18 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   ├── 📁constant/
 │   │   │   └── 📄messages.go
 │   │   ├── 📁email/
-│   │   │   ├── 📄sender.go
-│   │   │   └── 📄sendgrid.go
+│   │   │   ├── 📁mocks/
+│   │   │   │   └── 📄mock_sendgrid.go
+│   │   │   ├── 📄sendgrid.go
+│   │   │   └── 📄sendgrid_test.go
 │   │   ├── 📁grpc/
 │   │   │   ├── 📁client/
 │   │   │   │   └── 📄user_client.go
 │   │   │   ├── 📁proto/
-│   │   │   │   ├── 📁user/
-│   │   │   │   │   ├── 📄user.pb.go
-│   │   │   │   │   ├── 📄user.proto
-│   │   │   │   │   └── 📄user_grpc.pb.go
+│   │   │   │   └── 📁user/
+│   │   │   │       ├── 📄user.pb.go
+│   │   │   │       ├── 📄user.proto
+│   │   │   │       └── 📄user_grpc.pb.go
 │   │   │   └── 📁server/
 │   │   │       └── 📄user_server.go
 │   │   ├── 📁http/
@@ -62,6 +68,7 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   │   │   ├── 📄base.go
 │   │   │   │   └── 📄user.go
 │   │   │   ├── 📁request/
+│   │   │   │   ├── 📄base.go
 │   │   │   │   └── 📄user.go
 │   │   │   ├── 📁routes/
 │   │   │   │   ├── 📄router.go
@@ -71,13 +78,24 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   ├── 📁messagebroker/
 │   │   │   ├── 📄queue.go
 │   │   │   └── 📄rabbitmq.go
+│   │   ├── 📁minio/
+│   │   │   └── 📄client.go
 │   │   └── 📁storage/
 │   │       ├── 📁postgres/
 │   │       │   ├── 📁migrations/
 │   │       │   │   ├── 📄202404031147_create_users_table.down.sql
 │   │       │   │   └── 📄202404031147_create_users_table.up.sql
-│   │       │   ├── 📁repository/
-│   │       │   │   └── 📄user.go
+│   │       │   ├── 📁authrepository/
+│   │       │   │   ├── 📄access_control.go
+│   │       │   │   ├── 📄postgres_test.go
+│   │       │   │   ├── 📄permission.go
+│   │       │   │   ├── 📄role.go
+│   │       │   │   └── 📄unit_of_work.go
+│   │       │   ├── 📁userrepository/
+│   │       │   │   ├── 📄postgres_test.go
+│   │       │   │   ├── 📄unit_of_work.go
+│   │       │   │   ├── 📄user.go
+│   │       │   │   └── 📄user_test.go
 │   │       │   └── 📄db.go
 │   │       └── 📁redis/
 │   │           └── 📄db.go
@@ -87,12 +105,32 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │       ├── 📁constant/
 │       │   └── 📄cache.go
 │       ├── 📁domain/
+│       │   ├── 📄access_control.go
 │       │   ├── 📄base.go
+│       │   ├── 📄grammer.go
+│       │   ├── 📄language.go
+│       │   ├── 📄permission.go
+│       │   ├── 📄role.go
+│       │   ├── 📄sentence.go
 │       │   └── 📄user.go
 │       ├── 📁port/
-│       │   ├── 📄message_broker.go
+│       │   ├── 📄access_control.go
+│       │   ├── 📄aut.go
+│       │   ├── 📄email.go
+│       │   ├── 📄event.go
+│       │   ├── 📄otp.go
+│       │   ├── 📄permission.go
+│       │   ├── 📄role.go
 │       │   └── 📄user.go
 │       ├── 📁service/
+│       │   ├── 📁authservice/
+│       │   │   ├── 📄jwt.go
+│       │   │   ├── 📄send_email_otp_queue.go
+│       │   │   ├── 📄send_reset_password_link_queue.go
+│       │   │   └── 📄send_welcome_queue.go
+│       │   ├── 📁roleservice/
+│       │   │   ├── 📄cache.go
+│       │   │   └── 📄role.go
 │       │   └── 📁userservice/
 │       │       └── 📄user.go
 │       └── 📁views/
@@ -108,10 +146,16 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   └── 📄gin.go
 │   ├── 📁helper/
 │   │   ├── 📄authenticate.go
-│   │   └── 📄authenticate_bench_test.go
+│   │   ├── 📄authenticate_bench_test.go
+│   │   └── 📄string.go
 │   ├── 📁logger/
 │   │   ├── 📄const.go
 │   │   └── 📄logger.go
+│   ├── 📁metrics/
+│   │   ├── 📄counters.go
+│   │   └── 📄histograms.go
+│   ├── 📁oauth/
+│   │   └── 📄google.go
 │   ├── 📁serviceerror/
 │   │   ├── 📄error_message.go
 │   │   ├── 📄grpc.go

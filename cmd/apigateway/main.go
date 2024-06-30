@@ -1,3 +1,5 @@
+//go:build !test
+
 package main
 
 import (
@@ -22,9 +24,10 @@ var KongBaseURL string
 func main() {
 	fmt.Println("Starting...")
 
-	cfg := config.GetConfig()
-	KongBaseURL = cfg.Kong.APIBaseUrl
-	AuthorizeURL = cfg.Kong.AuthorizeUrl
+	configProvider := &config.Config{}
+	conf := configProvider.GetConfig()
+	KongBaseURL = conf.Kong.APIBaseUrl
+	AuthorizeURL = conf.Kong.AuthorizeUrl
 
 	ctx, cancel := context.WithTimeout(context.Background(), RequestTimeout)
 	defer cancel()
@@ -44,7 +47,7 @@ func main() {
 		logErrorAndExit("Error fetching Kong services:", err)
 	}
 
-	data, err := os.ReadFile(cfg.Kong.SwaggerFilePath)
+	data, err := os.ReadFile(conf.Kong.SwaggerFilePath)
 	if err != nil {
 		logErrorAndExit("Error reading swagger file:", err)
 	}

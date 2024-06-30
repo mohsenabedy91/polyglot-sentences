@@ -1,6 +1,6 @@
 package logger
 
-func mapToZapParams(keys map[ExtraKey]interface{}) []interface{} {
+func MapToZapParams(keys map[ExtraKey]interface{}) []interface{} {
 	params := make([]interface{}, 0, len(keys))
 	for k, v := range keys {
 		params = append(params, string(k), v)
@@ -35,6 +35,7 @@ const (
 	Facebook        Category = "Facebook"
 	Apple           Category = "Apple"
 	Queue           Category = "Queue"
+	Minio           Category = "Minio"
 )
 
 const (
@@ -105,6 +106,9 @@ const (
 	RabbitMQPublish          SubCategory = "RabbitMQPublish"
 	RabbitMQConsume          SubCategory = "RabbitMQConsume"
 	RabbitMQRegisterConsumer SubCategory = "RabbitMQRegisterConsumer"
+
+	MinioCreateBucket SubCategory = "MinioCreateBucket"
+	MinioUpload       SubCategory = "MinioUpload"
 )
 
 const (

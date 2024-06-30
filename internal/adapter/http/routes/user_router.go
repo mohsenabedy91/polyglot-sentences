@@ -21,7 +21,7 @@ func (r *Router) NewUserRouter(userHandler handler.UserHandler) *Router {
 	return &Router{
 		Engine: r.Engine,
 		log:    r.log,
-		cfg:    r.cfg,
+		conf:   r.conf,
 		trans:  r.trans,
 		cache:  r.cache,
 	}

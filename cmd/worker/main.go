@@ -1,3 +1,5 @@
+//go:build !test
+
 package main
 
 import (
@@ -14,10 +16,11 @@ import (
 )
 
 func main() {
-	cfg := config.GetConfig()
-	log := logger.NewLogger(cfg.Auth.Name, cfg.Log)
+	configProvider := &config.Config{}
+	conf := configProvider.GetConfig()
+	log := logger.NewLogger(conf.Auth.Name, conf.Log)
 
-	queue, err := setup.InitializeQueue(log, cfg)
+	queue, err := setup.InitializeQueue(log, conf)
 	if err != nil {
 		return
 	}
@@ -25,7 +28,7 @@ func main() {
 
 	log.Info(logger.Queue, logger.Startup, fmt.Sprintf("Setup queue successfully"), nil)
 
-	userClient := client.NewUserClient(log, cfg.UserManagement)
+	userClient := client.NewUserClient(log, conf.UserManagement)
 	defer userClient.Close()
 
 	messagebroker.RegisterAllQueues(

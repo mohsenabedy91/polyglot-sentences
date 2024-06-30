@@ -8,6 +8,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
+var AnypbNew = anypb.New
+
 func ConvertToGrpcError(serviceErr *ServiceError) error {
 	st := status.New(codes.Unknown, serviceErr.Error())
 
@@ -22,41 +24,36 @@ func ConvertToGrpcError(serviceErr *ServiceError) error {
 		Attributes: strAttrs,
 	}
 
-	detail, err := anypb.New(customErrorDetail)
+	detail, err := AnypbNew(customErrorDetail)
 	if err != nil {
 		return st.Err()
 	}
 
-	if st, err = st.WithDetails(detail); err != nil {
-		return st.Err()
-	}
+	st, _ = st.WithDetails(detail)
 
 	return st.Err()
 }
 
 func ExtractFromGrpcError(err error) error {
 	st, ok := status.FromError(err)
-	if !ok {
-		return err
+	if ok && st != nil {
+		for _, detail := range st.Details() {
+			anyDetail, _ := detail.(*anypb.Any)
+
+			var customErrorDetail common.CustomErrorDetail
+			_ = anyDetail.UnmarshalTo(&customErrorDetail)
+
+			attrs := make(map[string]interface{})
+			for k, v := range customErrorDetail.Attributes {
+				attrs[k] = v
+			}
+
+			return New(ErrorMessage(customErrorDetail.Message), attrs)
+		}
 	}
 
-	for _, detail := range st.Details() {
-		anyDetail, ok := detail.(*anypb.Any)
-		if !ok {
-			continue
-		}
-
-		var customErrorDetail common.CustomErrorDetail
-		if err = anyDetail.UnmarshalTo(&customErrorDetail); err != nil {
-			continue
-		}
-
-		attrs := make(map[string]interface{})
-		for k, v := range customErrorDetail.Attributes {
-			attrs[k] = v
-		}
-
-		return New(ErrorMessage(customErrorDetail.Message), attrs)
+	if st != nil {
+		return st.Err()
 	}
 
 	return err

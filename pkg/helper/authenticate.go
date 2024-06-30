@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 11)
+func HashPassword(password string, cost int) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	return string(bytes), err
 }
 
@@ -23,9 +23,7 @@ func GenerateOTP(digits int8) string {
 	maximum := int(math.Pow(10, float64(digits)) - 1)
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var otp = r.Intn(maximum - minimum)
-	if otp < minimum {
-		otp += minimum
-	}
+	var otp = r.Intn(maximum-minimum) + minimum
+
 	return strconv.Itoa(otp)
 }

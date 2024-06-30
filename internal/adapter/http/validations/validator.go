@@ -9,7 +9,7 @@ import (
 	"unicode"
 )
 
-func RegisterValidator(cfg config.Config) error {
+func RegisterValidator(conf config.Config) error {
 	if val, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		if err := val.RegisterValidation("regex_alpha", RegexAlpha, true); err != nil {
 			return err
@@ -18,7 +18,7 @@ func RegisterValidator(cfg config.Config) error {
 			return err
 		}
 		if err := val.RegisterValidation("token_length", func(fl validator.FieldLevel) bool {
-			return TokenLength(fl, cfg.OTP.Digits)
+			return TokenLength(fl, conf.OTP.Digits)
 		}, true); err != nil {
 			return err
 		}

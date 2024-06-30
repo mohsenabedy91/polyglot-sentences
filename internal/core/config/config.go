@@ -130,6 +130,10 @@ type Jwt struct {
 	AccessTokenExpireDay time.Duration
 }
 
+type Password struct {
+	BcryptCost int
+}
+
 type OTP struct {
 	ExpireSecond               time.Duration
 	ForgetPasswordExpireSecond time.Duration
@@ -155,6 +159,14 @@ type Google struct {
 	CallbackURL  string
 }
 
+type Minio struct {
+	Endpoint   string
+	Port       string
+	ID         string
+	Secret     string
+	BucketName string
+}
+
 // Config represents the application configuration.
 type Config struct {
 	Kong           Kong
@@ -171,11 +183,18 @@ type Config struct {
 	RabbitMQ       RabbitMQ
 	SendGrid       SendGrid
 	Oauth          Oauth
+	Minio          Minio
+	Password       Password
+}
+
+type Configuration interface {
+	LoadConfig(envPath ...string) (Config, error)
+	GetConfig(envPath ...string) Config
 }
 
 // LoadConfig loads configuration from .env file and populates the Config struct.
-func LoadConfig() (Config, error) {
-	err := godotenv.Load()
+func (r *Config) LoadConfig(envPath ...string) (Config, error) {
+	err := godotenv.Load(envPath...)
 	if err != nil {
 		return Config{}, fmt.Errorf("error loading .env file: %v", err)
 	}
@@ -264,6 +283,9 @@ func LoadConfig() (Config, error) {
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
 
+	var password Password
+	password.BcryptCost = getIntEnv("PASSWORD_BCRYPT_COST", 10)
+
 	var otp OTP
 	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
 	otp.ForgetPasswordExpireSecond = time.Duration(getIntEnv("FORGET_PASSWORD_EXPIRE_SECOND", 86400)) * time.Second
@@ -282,6 +304,13 @@ func LoadConfig() (Config, error) {
 	oauth.Google.ClientSecret = os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET")
 	oauth.Google.CallbackURL = os.Getenv("OAUTH_GOOGLE_CALLBACK_URL")
 
+	var minio Minio
+	minio.Endpoint = os.Getenv("MINIO_ENDPOINT")
+	minio.Port = os.Getenv("MINIO_PORT")
+	minio.ID = os.Getenv("MINIO_ID")
+	minio.Secret = os.Getenv("MINIO_SECRET")
+	minio.BucketName = os.Getenv("MINIO_BUCKET_NAME")
+
 	return Config{
 		Kong:           kong,
 		App:            app,
@@ -297,6 +326,8 @@ func LoadConfig() (Config, error) {
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,
 		Oauth:          oauth,
+		Minio:          minio,
+		Password:       password,
 	}, nil
 }
 
@@ -315,10 +346,10 @@ func getIntEnv(key string, defaultValue int) int {
 	return val
 }
 
-func GetConfig() Config {
+func (r *Config) GetConfig(envPath ...string) Config {
 	once.Do(func() {
 		var err error
-		config, err = LoadConfig()
+		config, err = r.LoadConfig(envPath...)
 		if err != nil {
 			panic(err)
 		}

@@ -1,26 +1,38 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"strings"
 )
 
 // UserHandler represents the HTTP handler for user-related requests
 type UserHandler struct {
 	userService port.UserService
 	uowFactory  func() repository.UnitOfWork
+	minioClient *minio.Client
 }
 
 // NewUserHandler creates a new UserHandler instance
-func NewUserHandler(userService port.UserService, uowFactory func() repository.UnitOfWork) *UserHandler {
+func NewUserHandler(
+	userService port.UserService,
+	uowFactory func() repository.UnitOfWork,
+	minioClient *minio.Client,
+) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		uowFactory:  uowFactory,
+		minioClient: minioClient,
 	}
 }
 
@@ -67,9 +79,9 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	result := presenter.ToUserResource(user)
-
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, nil).Payload(
+		presenter.ToUserResource(user),
+	).Echo()
 }
 
 // Create godoc
@@ -79,9 +91,10 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 // @Description Create user
 // @Tags User
 // @Accept json
-// @Produce json
+// @Produce plain
 // @Param language path string true "language 2 abbreviations" default(en)
-// @Param request body requests.CreateUserRequest true "Create user request"
+// @Param request formData requests.CreateUserRequest true "Create user request"
+// @Param avatar formData file true "Avatar image of the user"
 // @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
@@ -90,8 +103,14 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 // @ID post_language_v1_users
 // @Router /{language}/v1/users [post]
 func (r UserHandler) Create(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
 	var req requests.CreateUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
@@ -102,7 +121,26 @@ func (r UserHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := r.userService.Create(uowFactory, req.ToDomain()); err != nil {
+	if err := r.userService.IsEmailUnique(uowFactory, req.Email); err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	url, uploadFileErr := r.handleFileUpload(ctx, req.Avatar)
+	if uploadFileErr != nil {
+		presenter.NewResponse(ctx, nil).Error(uploadFileErr).Echo(http.StatusInternalServerError)
+		return
+	}
+
+	user := req.ToDomain()
+	user.CreatedBy = &header.UserID
+	user.Avatar = &url
+
+	if _, err := r.userService.Create(uowFactory, user); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
 			return
@@ -212,4 +250,25 @@ func (r UserHandler) Get(ctx *gin.Context) {
 	presenter.NewResponse(ctx, nil).Payload(
 		presenter.ToUserResource(user),
 	).Echo()
+}
+
+func (r UserHandler) handleFileUpload(ctx *gin.Context, file *multipart.FileHeader) (string, error) {
+	filePath := fmt.Sprintf("/tmp/%s", file.Filename)
+	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
+		return "", err
+	}
+
+	defer func(name string) {
+		_ = os.Remove(name)
+	}(filePath)
+
+	fileTypeSegment := strings.Split(file.Filename, ".")
+	uniqueFileName := fmt.Sprintf("%s.%s", uuid.New().String(), fileTypeSegment[len(fileTypeSegment)-1])
+
+	url, uploadFileErr := r.minioClient.UploadFile(ctx.Request.Context(), uniqueFileName, filePath, file.Header.Get("Content-Type"))
+	if uploadFileErr != nil {
+		return "", uploadFileErr
+	}
+
+	return url, nil
 }

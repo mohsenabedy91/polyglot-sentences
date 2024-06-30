@@ -13,6 +13,25 @@ import (
 	"net/http"
 )
 
+type HTTPClientProvider interface {
+	GetClient(ctx context.Context, token *oauth2.Token) *http.Client
+}
+
+type ClientProvider struct {
+	Conf config.Oauth
+}
+
+func (p *ClientProvider) GetClient(ctx context.Context, token *oauth2.Token) *http.Client {
+	oauthConf := oauth2.Config{
+		ClientID:     p.Conf.Google.ClientId,
+		ClientSecret: p.Conf.Google.ClientSecret,
+		RedirectURL:  p.Conf.Google.CallbackURL,
+		Endpoint:     google.Endpoint,
+	}
+
+	return oauthConf.Client(ctx, token)
+}
+
 type GoogleUserInfo struct {
 	Id            *string `json:"id"`
 	Email         string  `json:"email"`
@@ -27,23 +46,17 @@ type GoogleService interface {
 }
 
 type OAuth struct {
-	log    logger.Logger
-	config config.Oauth
+	log            logger.Logger
+	conf           config.Oauth
+	clientProvider HTTPClientProvider
 }
 
-func New(log logger.Logger, config config.Oauth) *OAuth {
-	return &OAuth{config: config, log: log}
+func New(log logger.Logger, config config.Oauth, clientProvider HTTPClientProvider) *OAuth {
+	return &OAuth{conf: config, log: log, clientProvider: clientProvider}
 }
 
 func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (*GoogleUserInfo, error) {
-	var oauthCfg = oauth2.Config{
-		ClientID:     r.config.Google.ClientId,
-		ClientSecret: r.config.Google.ClientSecret,
-		RedirectURL:  r.config.Google.CallbackURL,
-		Endpoint:     google.Endpoint,
-	}
-
-	client := oauthCfg.Client(
+	client := r.clientProvider.GetClient(
 		ctx,
 		&oauth2.Token{
 			AccessToken: accessToken,
@@ -57,9 +70,8 @@ func (r *OAuth) UserGoogleInfo(ctx context.Context, accessToken string) (*Google
 	}
 
 	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-			r.log.Error(logger.Google, logger.ExternalService, err.Error(), nil)
+		if cErr := Body.Close(); cErr != nil {
+			r.log.Error(logger.Google, logger.ExternalService, cErr.Error(), nil)
 		}
 	}(response.Body)
 

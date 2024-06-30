@@ -73,8 +73,8 @@ func (r *Service) Update(ctx context.Context, uow repository.UnitOfWork, role do
 	return uow.RoleRepository().Update(role, uuid.MustParse(uuidStr))
 }
 
-func (r *Service) Delete(uow repository.UnitOfWork, uuidStr string) error {
-	return uow.RoleRepository().Delete(uuid.MustParse(uuidStr))
+func (r *Service) Delete(uow repository.UnitOfWork, uuidStr string, deletedBy uint64) error {
+	return uow.RoleRepository().Delete(uuid.MustParse(uuidStr), deletedBy)
 }
 
 func (r *Service) GetPermissions(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error) {

@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func Authentication(cfg config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
+func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
@@ -27,7 +27,7 @@ func Authentication(cfg config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Han
 		token := authHeaderToken[len("Bearer"):]
 		token = strings.TrimSpace(token)
 
-		validatedToken, err := validationToken(cfg.AccessTokenSecret, token)
+		validatedToken, err := validationToken(conf.AccessTokenSecret, token)
 		if err != nil {
 			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
 			return

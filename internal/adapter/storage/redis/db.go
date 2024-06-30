@@ -23,23 +23,23 @@ type Interface[T any] interface {
 
 type CacheDriver[T any] struct {
 	log    logger.Logger
-	cfg    config.Config
+	conf   config.Config
 	client *redis.Client
 }
 
-func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T], error) {
+func NewCacheDriver[T any](log logger.Logger, conf config.Config) (*CacheDriver[T], error) {
 
 	client := redis.NewClient(&redis.Options{
-		Addr:               fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
-		Password:           cfg.Redis.Password,
-		DB:                 cfg.Redis.DB,
-		DialTimeout:        cfg.Redis.DialTimeout * time.Second,
-		ReadTimeout:        cfg.Redis.ReadTimeout * time.Second,
-		WriteTimeout:       cfg.Redis.WriteTimeout * time.Second,
-		PoolSize:           cfg.Redis.PoolSize,
-		PoolTimeout:        cfg.Redis.PoolTimeout * time.Second,
-		IdleTimeout:        cfg.Redis.IdleTimeout * time.Millisecond,
-		IdleCheckFrequency: cfg.Redis.IdleCheckFrequency * time.Millisecond,
+		Addr:               fmt.Sprintf("%s:%s", conf.Redis.Host, conf.Redis.Port),
+		Password:           conf.Redis.Password,
+		DB:                 conf.Redis.DB,
+		DialTimeout:        conf.Redis.DialTimeout * time.Second,
+		ReadTimeout:        conf.Redis.ReadTimeout * time.Second,
+		WriteTimeout:       conf.Redis.WriteTimeout * time.Second,
+		PoolSize:           conf.Redis.PoolSize,
+		PoolTimeout:        conf.Redis.PoolTimeout * time.Second,
+		IdleTimeout:        conf.Redis.IdleTimeout * time.Millisecond,
+		IdleCheckFrequency: conf.Redis.IdleCheckFrequency * time.Millisecond,
 	})
 
 	if val, err := client.Ping().Result(); err != nil {
@@ -57,7 +57,7 @@ func NewCacheDriver[T any](log logger.Logger, cfg config.Config) (*CacheDriver[T
 	return &CacheDriver[T]{
 		log:    log,
 		client: client,
-		cfg:    cfg,
+		conf:   conf,
 	}, nil
 }
 
@@ -72,7 +72,7 @@ func (r *CacheDriver[T]) Close() {
 func (r *CacheDriver[T]) Get(ctx context.Context, key string) (*T, error) {
 	var destination T
 
-	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
+	key = fmt.Sprintf("%s:%s", r.conf.Redis.Prefix, key)
 	v, err := r.client.WithContext(ctx).Get(key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -93,7 +93,7 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (*T, error) {
 }
 
 func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
+	key = fmt.Sprintf("%s:%s", r.conf.Redis.Prefix, key)
 
 	extra := map[logger.ExtraKey]interface{}{
 		logger.CacheKey:    key,
@@ -115,7 +115,7 @@ func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{},
 }
 
 func (r *CacheDriver[T]) Delete(ctx context.Context, key string) error {
-	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
+	key = fmt.Sprintf("%s:%s", r.conf.Redis.Prefix, key)
 	if err := r.client.WithContext(ctx).Del(key).Err(); err != nil {
 		r.log.Error(logger.Cache, logger.RedisDel, fmt.Sprintf("Error Del value: %v", err), nil)
 		return serviceerror.NewServerError()
@@ -125,7 +125,7 @@ func (r *CacheDriver[T]) Delete(ctx context.Context, key string) error {
 }
 
 func (r *CacheDriver[T]) FlushAll(ctx context.Context) {
-	if r.cfg.App.Debug {
+	if r.conf.App.Debug {
 		r.client.WithContext(ctx).FlushAll()
 	}
 }
@@ -133,7 +133,7 @@ func (r *CacheDriver[T]) FlushAll(ctx context.Context) {
 func (r *CacheDriver[T]) Remember(ctx context.Context, key string, expiration time.Duration, callback func() (*T, error)) (*T, error) {
 	var destination *T
 
-	key = fmt.Sprintf("%s:%s", r.cfg.Redis.Prefix, key)
+	key = fmt.Sprintf("%s:%s", r.conf.Redis.Prefix, key)
 	destination, err := r.Get(ctx, key)
 	if err != nil {
 
