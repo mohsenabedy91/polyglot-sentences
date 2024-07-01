@@ -15,6 +15,22 @@
     "password_complexity": "Le {{.attribute}} doit contenir au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.",
     "eqfield": "Le {{.attribute}} doit être égal à {{.eqfield}}.",
     "token_length": "Le {{.attribute}} doit être valide.",
-    "role_title": "Le {{.attribute}} doit contenir uniquement des lettres et des chiffres."
+    "role_title": "Le {{.attribute}} doit contenir uniquement des lettres et des chiffres.",
+    "oneof": "Le champ {{.attribute}} doit être l'un des suivants : {{.oneof}}."
+  },
+  "attributes": {
+    "UUIDStr": "Identifiant",
+    "FirstName": "Prénom",
+    "LastName": "Nom de famille",
+    "Email": "Email",
+    "Password": "Mot de passe",
+    "ConfirmedPassword": "Mot de passe confirmé",
+    "Gender": "Genre",
+    "Avatar": "Avatar",
+    "Token": "Jeton",
+    "AccessToken": "Jeton d'accès",
+    "Title": "Titre",
+    "Description": "Description",
+    "Permissions": "Permissions"
   }
 }

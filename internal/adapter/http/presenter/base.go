@@ -132,31 +132,36 @@ func (r *Response) Echo(overrideStatusCodes ...int) {
 	r.ctx.AbortWithStatusJSON(statusCode, r.response)
 }
 
-func translate(t *translation.Translation, err error) (validationError []ValidationError) {
+func translate(trans *translation.Translation, err error) (validationErrors []ValidationError) {
 
 	if ok := errors.As(err, &validator.ValidationErrors{}); !ok {
-		validationError = append(validationError, ValidationError{
+		validationErrors = append(validationErrors, ValidationError{
 			Field:   "unknown",
 			Message: err.Error(),
 		})
-		return validationError
+		return validationErrors
 	}
 
-	for _, err := range err.(validator.ValidationErrors) {
-		validationError = append(validationError, ValidationError{
-			Field: err.Field(),
+	for _, validationErr := range err.(validator.ValidationErrors) {
+
+		attribute := trans.Lang(fmt.Sprintf("attributes.%s", validationErr.Field()), nil, nil)
+
+		validationError := ValidationError{
+			Field: validationErr.Field(),
 			Message: func() string {
-				return t.Lang(
-					fmt.Sprintf("validation.%s", err.Tag()),
+				return trans.Lang(
+					fmt.Sprintf("validation.%s", validationErr.Tag()),
 					map[string]interface{}{
-						"attribute": err.Field(),
-						err.Tag():   err.Param(),
+						"attribute":         attribute,
+						validationErr.Tag(): validationErr.Param(),
 					},
 					nil,
 				)
 			}(),
-		})
+		}
+
+		validationErrors = append(validationErrors, validationError)
 	}
 
-	return validationError
+	return validationErrors
 }

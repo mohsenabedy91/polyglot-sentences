@@ -15,6 +15,22 @@
     "password_complexity": "يجب أن يحتوي {{.attribute}} على حرف كبير واحد على الأقل، وحرف صغير واحد على الأقل، ورقم واحد وحرف خاص واحد.",
     "eqfield": "يجب أن يكون {{.attribute}} مساوياً لـ {{.eqfield}}.",
     "token_length": "يجب أن يكون {{.attribute}} صالحاً.",
-    "role_title": "يجب أن يحتوي {{.attribute}} على أحرف وأرقام فقط."
+    "role_title": "يجب أن يحتوي {{.attribute}} على أحرف وأرقام فقط.",
+    "oneof": "يجب أن يكون الحقل {{.attribute}} واحدًا من التالي: {{.oneof}}."
+  },
+  "attributes": {
+    "UUIDStr": "المعرف",
+    "FirstName": "الاسم الأول",
+    "LastName": "اسم العائلة",
+    "Email": "البريد الإلكتروني",
+    "Password": "كلمة المرور",
+    "ConfirmedPassword": "تأكيد كلمة المرور",
+    "Gender": "الجنس",
+    "Avatar": "الصورة الرمزية",
+    "Token": "رمز",
+    "AccessToken": "رمز الوصول",
+    "Title": "العنوان",
+    "Description": "الوصف",
+    "Permissions": "الأذونات"
   }
 }
