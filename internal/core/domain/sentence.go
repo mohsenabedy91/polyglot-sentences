@@ -17,7 +17,3 @@ type Sentence struct {
 	Level   SentenceLevelType
 	Status  StatusType
 }
-
-func (r Sentence) IsActive() bool {
-	return r.Status == StatusActive
-}

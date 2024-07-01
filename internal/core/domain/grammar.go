@@ -7,7 +7,3 @@ type Grammar struct {
 	Title  string
 	Status StatusType
 }
-
-func (r Grammar) IsActive() bool {
-	return r.Status == StatusActive
-}

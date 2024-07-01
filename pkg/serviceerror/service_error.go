@@ -1,9 +1,5 @@
 package serviceerror
 
-import (
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
-)
-
 type Error interface {
 	GetErrorMessage() ErrorMessage
 	GetAttributes() map[string]interface{}
@@ -13,7 +9,6 @@ type Error interface {
 type ServiceError struct {
 	message    ErrorMessage
 	attributes map[string]interface{}
-	trans      *translation.Translation
 }
 
 func New(msg ErrorMessage, attrs ...map[string]interface{}) *ServiceError {

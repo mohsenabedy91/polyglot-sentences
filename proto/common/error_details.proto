@@ -1,9 +1,12 @@
 syntax = "proto3";
 
 package common;
+
+import "google/protobuf/struct.proto";
+
 option go_package = "github.com/mohsenabedy91/polyglot-sentences/proto/common";
 
 message CustomErrorDetail {
   string message = 1;
-  map<string, string> attributes = 2;
+  google.protobuf.Struct attributes = 2;
 }

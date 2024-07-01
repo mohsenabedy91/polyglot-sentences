@@ -88,11 +88,7 @@ func (r *Translation) Lang(key string, args map[string]interface{}, lang *string
 
 	message, err := AcceptLanguage.Localize(conf)
 	if err != nil {
-		defaultLang := i18n.NewLocalizer(Bundle, r.conf.FallbackLocale)
-		message, err = defaultLang.Localize(conf)
-		if err != nil {
-			return key
-		}
+		return key
 	}
 
 	return message

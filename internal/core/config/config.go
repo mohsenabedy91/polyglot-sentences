@@ -35,16 +35,16 @@ type Kong struct {
 }
 
 type App struct {
-	ResetPasswordURL   string
-	VerificationURL    string
-	SupportEmail       string
+	Name               string
 	Env                string
 	Debug              bool
 	Timezone           string
 	Locale             string
-	FallbackLocale     string
 	PathLocale         string
 	GracefullyShutdown time.Duration
+	ResetPasswordURL   string
+	VerificationURL    string
+	SupportEmail       string
 }
 
 type Auth struct {
@@ -139,6 +139,7 @@ type OTP struct {
 	ForgetPasswordExpireSecond time.Duration
 	Digits                     int8
 }
+
 type RabbitMQ struct {
 	URL string
 }
@@ -205,23 +206,23 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	kong.AuthorizeUrl = os.Getenv("KONG_AUTHORIZE_URL")
 
 	var app App
-	app.ResetPasswordURL = os.Getenv("RESET_PASSWORD_URL")
-	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
-	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
+	app.Name = os.Getenv("APP_NAME")
 	app.Env = os.Getenv("APP_ENV")
-	app.Debug = getBoolEnv("APP_DEBUG")
+	app.Debug = getBoolEnv("APP_DEBUG", false)
 	app.Timezone = os.Getenv("APP_TIMEZONE")
 	app.Locale = os.Getenv("APP_LOCALE")
-	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
+	app.ResetPasswordURL = os.Getenv("APP_RESET_PASSWORD_URL")
+	app.VerificationURL = os.Getenv("APP_VERIFICATION_URL")
+	app.SupportEmail = os.Getenv("APP_SUPPORT_EMAIL")
 
 	var auth Auth
 	auth.Name = os.Getenv("AUTH_NAME")
 	auth.Version = os.Getenv("AUTH_VERSION")
 	auth.URL = os.Getenv("AUTH_URL")
 	auth.Port = os.Getenv("AUTH_PORT")
-	auth.Debug = getBoolEnv("AUTH_DEBUG")
+	auth.Debug = getBoolEnv("AUTH_DEBUG", false)
 
 	var userManagement UserManagement
 	userManagement.Name = os.Getenv("USER_MANAGEMENT_NAME")
@@ -229,10 +230,10 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	userManagement.URL = os.Getenv("USER_MANAGEMENT_URL")
 	userManagement.HTTPPort = os.Getenv("USER_MANAGEMENT_HTTP_PORT")
 	userManagement.GRPCPort = os.Getenv("USER_MANAGEMENT_GRPC_PORT")
-	userManagement.Debug = getBoolEnv("USER_MANAGEMENT_DEBUG")
+	userManagement.Debug = getBoolEnv("USER_MANAGEMENT_DEBUG", false)
 
 	var profile Profile
-	profile.Debug = getBoolEnv("PROFILE_DEBUG")
+	profile.Debug = getBoolEnv("PROFILE_DEBUG", false)
 	profile.Port = os.Getenv("PROFILE_PORT")
 
 	var log Log
@@ -248,7 +249,7 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	swagger.Info.Title = os.Getenv("SWAGGER_INFO_TITLE")
 	swagger.Info.Description = os.Getenv("SWAGGER_INFO_DESCRIPTION")
 	swagger.Info.Version = os.Getenv("SWAGGER_INFO_VERSION")
-	swagger.Enable = getBoolEnv("SWAGGER_ENABLE")
+	swagger.Enable = getBoolEnv("SWAGGER_ENABLE", false)
 	swagger.Username = os.Getenv("SWAGGER_USERNAME")
 	swagger.Password = os.Getenv("SWAGGER_PASSWORD")
 
@@ -332,8 +333,11 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 }
 
 // Helper function to convert string environment variable to bool
-func getBoolEnv(key string) bool {
-	val, _ := strconv.ParseBool(os.Getenv(key))
+func getBoolEnv(key string, defaultValue bool) bool {
+	val, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
 	return val
 }
 
@@ -346,6 +350,7 @@ func getIntEnv(key string, defaultValue int) int {
 	return val
 }
 
+// GetConfig loads the configuration once and returns it.
 func (r *Config) GetConfig(envPath ...string) Config {
 	once.Do(func() {
 		var err error
@@ -355,4 +360,10 @@ func (r *Config) GetConfig(envPath ...string) Config {
 		}
 	})
 	return config
+}
+
+// ResetConfig is a helper function to reset the config and once for testing purposes.
+func ResetConfig() {
+	once = sync.Once{}
+	config = Config{}
 }
