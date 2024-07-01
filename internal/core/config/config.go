@@ -40,7 +40,6 @@ type App struct {
 	Debug              bool
 	Timezone           string
 	Locale             string
-	FallbackLocale     string
 	PathLocale         string
 	GracefullyShutdown time.Duration
 	ResetPasswordURL   string
@@ -211,7 +210,6 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	app.Debug = getBoolEnv("APP_DEBUG")
 	app.Timezone = os.Getenv("APP_TIMEZONE")
 	app.Locale = os.Getenv("APP_LOCALE")
-	app.FallbackLocale = os.Getenv("APP_FALLBACK_LOCALE")
 	app.PathLocale = os.Getenv("APP_PATH_LOCALE")
 	app.GracefullyShutdown = time.Duration(getIntEnv("APP_GRACEFULLY_SHUTDOWN", 5))
 	app.ResetPasswordURL = os.Getenv("APP_RESET_PASSWORD_URL")
