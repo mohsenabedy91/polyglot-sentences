@@ -361,3 +361,9 @@ func (r *Config) GetConfig(envPath ...string) Config {
 	})
 	return config
 }
+
+// ResetConfig is a helper function to reset the config and once for testing purposes.
+func ResetConfig() {
+	once = sync.Once{}
+	config = Config{}
+}
