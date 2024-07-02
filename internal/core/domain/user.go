@@ -89,7 +89,8 @@ func (r *User) GetFullName() string {
 		lastName = *r.LastName
 	}
 
-	return strings.Join([]string{firstName, lastName}, " ")
+	fullName := strings.Join([]string{firstName, lastName}, " ")
+	return strings.TrimSpace(fullName)
 }
 
 func (r *User) SetGoogleID(googleID sql.NullString) *User {

@@ -27,3 +27,7 @@ func MakeSQLPlaceholders(n uint) []string {
 	}
 	return placeholders
 }
+
+func StringPtr(str string) *string {
+	return &str
+}

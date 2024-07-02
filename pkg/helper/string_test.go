@@ -2,6 +2,7 @@ package helper_test
 
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -84,6 +85,43 @@ func TestMakeSQLPlaceholders(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := helper.MakeSQLPlaceholders(test.n)
 			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestStringPtr(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          string
+		expectedResult string
+	}{
+		{
+			name:           "Non-empty string",
+			input:          "hello",
+			expectedResult: "hello",
+		},
+		{
+			name:           "Empty string",
+			input:          "",
+			expectedResult: "",
+		},
+		{
+			name:           "Whitespace string",
+			input:          " ",
+			expectedResult: " ",
+		},
+		{
+			name:           "Special characters",
+			input:          "!@#$%^&*()",
+			expectedResult: "!@#$%^&*()",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := helper.StringPtr(tt.input)
+			assert.NotNil(t, result)
+			assert.Equal(t, tt.expectedResult, *result)
 		})
 	}
 }
