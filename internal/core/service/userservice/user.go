@@ -57,7 +57,7 @@ func (r *UserService) List(uow repository.UnitOfWork) ([]domain.User, error) {
 
 func (r *UserService) Create(uow repository.UnitOfWork, user domain.User) (*domain.User, error) {
 	if user.Status != domain.UserStatusActive {
-		user.Status = domain.UserStatusUnVerified
+		user.Status = domain.UserStatusUnverified
 	}
 	return uow.UserRepository().Save(&user)
 }
