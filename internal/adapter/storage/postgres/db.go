@@ -10,6 +10,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"path"
+	"runtime"
 	"time"
 )
 
@@ -72,12 +74,11 @@ func getMigrateInstance(ctx context.Context, log logger.Logger) (*migrate.Migrat
 		return nil, err
 	}
 
+	_, filename, _, _ := runtime.Caller(0)
+	sourceURL := "file://" + path.Join(path.Dir(filename), "migrations")
+
 	// Create a new migrate instance
-	return migrate.NewWithDatabaseInstance(
-		"file://internal/adapter/storage/postgres/migrations",
-		conf.DB.Name,
-		dbDriver,
-	)
+	return migrate.NewWithDatabaseInstance(sourceURL, conf.DB.Name, dbDriver)
 }
 
 func RunMigrations(log logger.Logger) error {
