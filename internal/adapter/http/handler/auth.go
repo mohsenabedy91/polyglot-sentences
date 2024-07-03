@@ -112,7 +112,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	req.Password = hashedPass
 
-	user, err := r.userClient.Create(ctx.Request.Context(), req.ToDomain())
+	user, err := r.userClient.Create(ctx.Request.Context(), req.ToUserDomain())
 	if err != nil {
 		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
 		return

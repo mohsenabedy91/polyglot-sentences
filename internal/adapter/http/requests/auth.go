@@ -10,7 +10,7 @@ type AuthRegister struct {
 	ConfirmedPassword string  `json:"confirmedPassword" binding:"required,eqfield=Password" example:"QWer123!@#"`
 }
 
-func (r AuthRegister) ToDomain() domain.User {
+func (r AuthRegister) ToUserDomain() domain.User {
 	return domain.User{
 		FirstName: r.FirstName,
 		LastName:  r.FirstName,

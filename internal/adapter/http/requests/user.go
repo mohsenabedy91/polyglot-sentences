@@ -12,7 +12,7 @@ type CreateUserRequest struct {
 	Avatar    *multipart.FileHeader `form:"avatar" binding:"required" swaggerignore:"true"`
 }
 
-func (r CreateUserRequest) ToDomain() domain.User {
+func (r CreateUserRequest) ToUserDomain() domain.User {
 	return domain.User{
 		FirstName: r.FirstName,
 		LastName:  r.LastName,
