@@ -184,18 +184,18 @@ func (r *UserRepository) List() ([]domain.User, error) {
 	var users []domain.User
 
 	for rows.Next() {
-		user, err := scanUser(rows)
-		if err != nil {
+		user, scanErr := scanUser(rows)
+		if scanErr != nil {
 
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(scanErr, sql.ErrNoRows) {
 				metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
 
-				r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+				r.log.Warn(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
 				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
-			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			r.log.Error(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
 			return nil, serviceerror.NewServerError()
 		}
 

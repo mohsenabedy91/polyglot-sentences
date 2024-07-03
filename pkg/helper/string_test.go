@@ -117,11 +117,11 @@ func TestStringPtr(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := helper.StringPtr(tt.input)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := helper.StringPtr(test.input)
 			assert.NotNil(t, result)
-			assert.Equal(t, tt.expectedResult, *result)
+			assert.Equal(t, test.expectedResult, *result)
 		})
 	}
 }
