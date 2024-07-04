@@ -54,8 +54,8 @@ func main() {
 
 	userService := userservice.New(log)
 
-	grpcServer := startGRPCServer(conf, log, userService, uowFactory)
 	httpServer := startHTTPServer(ctx, conf, log, userService, uowFactory, trans)
+	grpcServer := startGRPCServer(conf, log, userService, uowFactory)
 
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
@@ -126,7 +126,7 @@ func startHTTPServer(
 		logger.ListeningAddress: httpServer.Addr,
 	})
 
-	go router.Serve(httpServer)
+	router.Serve(httpServer)
 	return httpServer
 }
 

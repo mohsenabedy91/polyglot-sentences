@@ -11,7 +11,7 @@ type LanguageUri struct {
 	Language string `uri:"language" binding:"required"`
 }
 
-func LocaleMiddleware(trans *translation.Translation) gin.HandlerFunc {
+func LocaleMiddleware(trans translation.Translator) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var langUri LanguageUri
 		if err := ctx.ShouldBindUri(&langUri); err != nil {

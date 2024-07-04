@@ -1,4 +1,4 @@
-package mocks
+package email
 
 import (
 	"github.com/sendgrid/rest"

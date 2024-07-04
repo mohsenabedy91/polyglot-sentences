@@ -87,3 +87,40 @@ func TestMakeSQLPlaceholders(t *testing.T) {
 		})
 	}
 }
+
+func TestStringPtr(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          string
+		expectedResult string
+	}{
+		{
+			name:           "Non-empty string",
+			input:          "hello",
+			expectedResult: "hello",
+		},
+		{
+			name:           "Empty string",
+			input:          "",
+			expectedResult: "",
+		},
+		{
+			name:           "Whitespace string",
+			input:          " ",
+			expectedResult: " ",
+		},
+		{
+			name:           "Special characters",
+			input:          "!@#$%^&*()",
+			expectedResult: "!@#$%^&*()",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := helper.StringPtr(test.input)
+			require.NotNil(t, result)
+			require.Equal(t, test.expectedResult, *result)
+		})
+	}
+}

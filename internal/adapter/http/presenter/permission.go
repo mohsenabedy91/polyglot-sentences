@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -11,12 +12,12 @@ type Permission struct {
 	Description *string `json:"description,omitempty" example:"Admin description"`
 }
 
-func preparePermission(permission *domain.Permission) Permission {
-	if permission == nil {
-		return Permission{}
+func PreparePermission(permission *domain.Permission) *Permission {
+	if permission == nil || permission.UUID == uuid.Nil {
+		return nil
 	}
 
-	return Permission{
+	return &Permission{
 		ID:          permission.UUID.String(),
 		Title:       permission.Title,
 		Group:       permission.Group,
@@ -25,10 +26,13 @@ func preparePermission(permission *domain.Permission) Permission {
 }
 
 func ToPermissionCollection(permissions []*domain.Permission) []Permission {
-	result := make([]Permission, len(permissions))
-	for index, permission := range permissions {
-		result[index] = preparePermission(permission)
+	var response []Permission
+	for _, permission := range permissions {
+		result := PreparePermission(permission)
+		if result != nil {
+			response = append(response, *result)
+		}
 	}
 
-	return result
+	return response
 }

@@ -18,8 +18,8 @@ const (
 const (
 	UserStatusUnknown    UserStatusType = UserStatusUnknownStr
 	UserStatusActive     UserStatusType = UserStatusActiveStr
-	UserStatusInActive   UserStatusType = UserStatusInactiveStr
-	UserStatusUnVerified UserStatusType = UserStatusUnverifiedStr
+	UserStatusInactive   UserStatusType = UserStatusInactiveStr
+	UserStatusUnverified UserStatusType = UserStatusUnverifiedStr
 	UserStatusBanned     UserStatusType = UserStatusBannedStr
 )
 
@@ -47,9 +47,9 @@ func (r UserStatusType) String() string {
 	switch r {
 	case UserStatusActive:
 		str = UserStatusActiveStr
-	case UserStatusInActive:
+	case UserStatusInactive:
 		str = UserStatusInactiveStr
-	case UserStatusUnVerified:
+	case UserStatusUnverified:
 		str = UserStatusUnverifiedStr
 	case UserStatusBanned:
 		str = UserStatusBannedStr
@@ -66,9 +66,9 @@ func ToUserStatus(status string) UserStatusType {
 	case UserStatusActiveStr:
 		userStatus = UserStatusActive
 	case UserStatusInactiveStr:
-		userStatus = UserStatusInActive
+		userStatus = UserStatusInactive
 	case UserStatusUnverifiedStr:
-		userStatus = UserStatusUnVerified
+		userStatus = UserStatusUnverified
 	case UserStatusBannedStr:
 		userStatus = UserStatusBanned
 	default:
@@ -89,7 +89,8 @@ func (r *User) GetFullName() string {
 		lastName = *r.LastName
 	}
 
-	return strings.Join([]string{firstName, lastName}, " ")
+	fullName := strings.Join([]string{firstName, lastName}, " ")
+	return strings.TrimSpace(fullName)
 }
 
 func (r *User) SetGoogleID(googleID sql.NullString) *User {

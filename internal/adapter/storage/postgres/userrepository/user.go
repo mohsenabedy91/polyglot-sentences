@@ -166,7 +166,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) List() ([]domain.User, error) {
+func (r *UserRepository) List() ([]*domain.User, error) {
 	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
@@ -181,25 +181,25 @@ func (r *UserRepository) List() ([]domain.User, error) {
 		}
 	}(rows)
 
-	var users []domain.User
+	var users []*domain.User
 
 	for rows.Next() {
-		user, err := scanUser(rows)
-		if err != nil {
+		user, scanErr := scanUser(rows)
+		if scanErr != nil {
 
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(scanErr, sql.ErrNoRows) {
 				metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
 
-				r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+				r.log.Warn(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
 				return nil, serviceerror.New(serviceerror.RecordNotFound)
 			}
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
-			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			r.log.Error(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
 			return nil, serviceerror.NewServerError()
 		}
 
-		users = append(users, user)
+		users = append(users, &user)
 	}
 
 	if err = rows.Err(); err != nil {

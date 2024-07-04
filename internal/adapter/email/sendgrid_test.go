@@ -3,10 +3,8 @@ package email_test
 import (
 	"github.com/bxcodec/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email"
-	emailmocks "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email/mocks"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
-	logmocks "github.com/mohsenabedy91/polyglot-sentences/pkg/logger/mocks"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/sendgrid/rest"
 	"github.com/stretchr/testify/mock"
@@ -15,12 +13,12 @@ import (
 )
 
 func TestSend_Successful(t *testing.T) {
-	mockLogger := new(logmocks.MockLogger)
-	mockClient := new(emailmocks.MockClient)
+	mockLogger := new(logger.MockLogger)
+	mockClient := new(email.MockClient)
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@example.com",
+		Address: "test@google.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -48,12 +46,12 @@ func TestSend_Successful(t *testing.T) {
 }
 
 func TestSend_Failure(t *testing.T) {
-	mockLogger := new(logmocks.MockLogger)
-	mockClient := new(emailmocks.MockClient)
+	mockLogger := new(logger.MockLogger)
+	mockClient := new(email.MockClient)
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@example.com",
+		Address: "test@google.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -80,12 +78,12 @@ func TestSend_Failure(t *testing.T) {
 }
 
 func TestSend_LoggingSuccess(t *testing.T) {
-	mockLogger := new(logmocks.MockLogger)
-	mockClient := new(emailmocks.MockClient)
+	mockLogger := new(logger.MockLogger)
+	mockClient := new(email.MockClient)
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@example.com",
+		Address: "test@google.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -122,12 +120,12 @@ func TestSend_LoggingSuccess(t *testing.T) {
 }
 
 func TestSend_LoggingFailure(t *testing.T) {
-	mockLogger := new(logmocks.MockLogger)
-	mockClient := new(emailmocks.MockClient)
+	mockLogger := new(logger.MockLogger)
+	mockClient := new(email.MockClient)
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@example.com",
+		Address: "test@google.com",
 		Key:     "SG.fake_key",
 	}
 

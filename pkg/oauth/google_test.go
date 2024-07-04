@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	mocklogger "github.com/mohsenabedy91/polyglot-sentences/pkg/logger/mocks"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/stretchr/testify/mock"
@@ -69,11 +69,11 @@ func TestUserGoogleInfo(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@example.com",
+					Email: "user@google.com",
 				})
 			},
 			expectedError: nil,
-			expectedEmail: "user@example.com",
+			expectedEmail: "user@google.com",
 		},
 		{
 			name: "Unsuccessful user info retrieval",
@@ -102,11 +102,11 @@ func TestUserGoogleInfo(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@example.com",
+					Email: "user@google.com",
 				})
 			},
 			expectedError:  nil,
-			expectedEmail:  "user@example.com",
+			expectedEmail:  "user@google.com",
 			closeBodyError: true,
 		},
 		{
@@ -119,7 +119,7 @@ func TestUserGoogleInfo(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockLogger := new(mocklogger.MockLogger)
+			mockLogger := new(logger.MockLogger)
 			mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			mockClientProvider := new(MockHTTPClientProvider)

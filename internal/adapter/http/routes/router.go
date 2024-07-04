@@ -22,7 +22,7 @@ type Router struct {
 	Engine *gin.Engine
 	log    logger.Logger
 	conf   config.Config
-	trans  *translation.Translation
+	trans  translation.Translator
 	cache  *redis.CacheDriver[any]
 }
 
@@ -30,7 +30,7 @@ type Router struct {
 func NewRouter(
 	log logger.Logger,
 	conf config.Config,
-	trans *translation.Translation,
+	trans translation.Translator,
 	cache *redis.CacheDriver[any],
 	healthHandler handler.HealthHandler,
 ) (*Router, error) {

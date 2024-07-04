@@ -51,13 +51,13 @@ func (r *UserService) GetByEmail(uow repository.UnitOfWork, email string) (*doma
 	return uow.UserRepository().GetByEmail(email)
 }
 
-func (r *UserService) List(uow repository.UnitOfWork) ([]domain.User, error) {
+func (r *UserService) List(uow repository.UnitOfWork) ([]*domain.User, error) {
 	return uow.UserRepository().List()
 }
 
 func (r *UserService) Create(uow repository.UnitOfWork, user domain.User) (*domain.User, error) {
 	if user.Status != domain.UserStatusActive {
-		user.Status = domain.UserStatusUnVerified
+		user.Status = domain.UserStatusUnverified
 	}
 	return uow.UserRepository().Save(&user)
 }

@@ -16,7 +16,7 @@ type Response struct {
 	ctx               *gin.Context
 	response          map[string]interface{}
 	statusCodeMapping map[serviceerror.ErrorMessage]int
-	translation       *translation.Translation
+	translation       translation.Translator
 	serviceError      serviceerror.Error
 }
 
@@ -31,7 +31,7 @@ type ValidationError struct {
 
 func NewResponse(
 	ctx *gin.Context,
-	trans *translation.Translation,
+	trans translation.Translator,
 	statusCodeMappings ...map[serviceerror.ErrorMessage]int,
 ) *Response {
 
@@ -47,6 +47,18 @@ func NewResponse(
 		statusCodeMapping: statusCodeMapping,
 		translation:       trans,
 	}
+}
+
+func (r *Response) GetResponse() map[string]interface{} {
+	return r.response
+}
+
+func (r *Response) GetStatusCodeMapping() map[serviceerror.ErrorMessage]int {
+	return r.statusCodeMapping
+}
+
+func (r *Response) GetServiceError() serviceerror.Error {
+	return r.serviceError
 }
 
 func (r *Response) InvalidRequest(err error) *Response {
@@ -68,7 +80,7 @@ func (r *Response) Validation(err error) *Response {
 		return r
 	}
 
-	r.response["validationErrors"] = translate(r.translation, err)
+	r.response["validationErrors"] = Translate(r.translation, err)
 	return r
 }
 
@@ -132,7 +144,7 @@ func (r *Response) Echo(overrideStatusCodes ...int) {
 	r.ctx.AbortWithStatusJSON(statusCode, r.response)
 }
 
-func translate(trans *translation.Translation, err error) (validationErrors []ValidationError) {
+func Translate(trans translation.Translator, err error) (validationErrors []ValidationError) {
 
 	if ok := errors.As(err, &validator.ValidationErrors{}); !ok {
 		validationErrors = append(validationErrors, ValidationError{
