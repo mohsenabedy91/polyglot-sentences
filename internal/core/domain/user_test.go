@@ -5,7 +5,6 @@ import (
 	"github.com/bxcodec/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -232,10 +231,10 @@ func TestUser_SetGoogleID(t *testing.T) {
 			user.SetGoogleID(test.input)
 
 			if test.expectedResult != nil {
-				assert.NotNil(t, user.GoogleID)
-				assert.Equal(t, *test.expectedResult, *user.GoogleID)
+				require.NotNil(t, user.GoogleID)
+				require.Equal(t, *test.expectedResult, *user.GoogleID)
 			} else {
-				assert.Nil(t, user.GoogleID)
+				require.Nil(t, user.GoogleID)
 			}
 		})
 	}
@@ -276,10 +275,10 @@ func TestUser_SetFirstName(t *testing.T) {
 			user.SetFirstName(test.input)
 
 			if test.expectedResult != nil {
-				assert.NotNil(t, user.FirstName)
-				assert.Equal(t, *test.expectedResult, *user.FirstName)
+				require.NotNil(t, user.FirstName)
+				require.Equal(t, *test.expectedResult, *user.FirstName)
 			} else {
-				assert.Nil(t, user.FirstName)
+				require.Nil(t, user.FirstName)
 			}
 		})
 	}
@@ -320,10 +319,10 @@ func TestUser_SetLastName(t *testing.T) {
 			user.SetLastName(test.input)
 
 			if test.expectedResult != nil {
-				assert.NotNil(t, user.LastName)
-				assert.Equal(t, *test.expectedResult, *user.LastName)
+				require.NotNil(t, user.LastName)
+				require.Equal(t, *test.expectedResult, *user.LastName)
 			} else {
-				assert.Nil(t, user.LastName)
+				require.Nil(t, user.LastName)
 			}
 		})
 	}

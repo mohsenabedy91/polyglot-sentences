@@ -69,11 +69,11 @@ func TestUserGoogleInfo(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@example.com",
+					Email: "user@google.com",
 				})
 			},
 			expectedError: nil,
-			expectedEmail: "user@example.com",
+			expectedEmail: "user@google.com",
 		},
 		{
 			name: "Unsuccessful user info retrieval",
@@ -102,11 +102,11 @@ func TestUserGoogleInfo(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@example.com",
+					Email: "user@google.com",
 				})
 			},
 			expectedError:  nil,
-			expectedEmail:  "user@example.com",
+			expectedEmail:  "user@google.com",
 			closeBodyError: true,
 		},
 		{

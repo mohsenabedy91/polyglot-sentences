@@ -2,7 +2,6 @@ package helper_test
 
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -120,8 +119,8 @@ func TestStringPtr(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := helper.StringPtr(test.input)
-			assert.NotNil(t, result)
-			assert.Equal(t, test.expectedResult, *result)
+			require.NotNil(t, result)
+			require.Equal(t, test.expectedResult, *result)
 		})
 	}
 }

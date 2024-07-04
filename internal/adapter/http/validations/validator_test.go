@@ -5,7 +5,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/validations"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,7 +17,7 @@ func TestRegisterValidator(t *testing.T) {
 	}
 
 	registerValidatorErr := validations.RegisterValidator(conf)
-	assert.NoError(t, registerValidatorErr)
+	require.NoError(t, registerValidatorErr)
 
 	v, ok := binding.Validator.Engine().(*validator.Validate)
 	require.True(t, ok)
@@ -83,9 +82,9 @@ func TestRegisterValidator(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := v.Var(test.fieldValue, test.tag)
 			if test.expectedValid {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
@@ -146,9 +145,9 @@ func TestRegexAlpha(t *testing.T) {
 	for _, test := range tests {
 		err := validate.Var(test.input, "regex_alpha")
 		if test.expectedValid {
-			assert.NoError(t, err, "Input: %s", test.input)
+			require.NoError(t, err, "Input: %s", test.input)
 		} else {
-			assert.Error(t, err, "Input: %s", test.input)
+			require.Error(t, err, "Input: %s", test.input)
 		}
 	}
 }
@@ -203,9 +202,9 @@ func TestPasswordComplexity(t *testing.T) {
 	for _, test := range tests {
 		err := validate.Var(test.input, "password_complexity")
 		if test.expectedValid {
-			assert.NoError(t, err, "Input: %s", test.input)
+			require.NoError(t, err, "Input: %s", test.input)
 		} else {
-			assert.Error(t, err, "Input: %s", test.input)
+			require.Error(t, err, "Input: %s", test.input)
 		}
 	}
 }
@@ -270,9 +269,9 @@ func TestTokenLength(t *testing.T) {
 	for _, test := range tests {
 		err := validate.Var(test.input, "token_length")
 		if test.expectedValid {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		} else {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	}
 }
@@ -327,9 +326,9 @@ func TestRoleTitle(t *testing.T) {
 	for _, test := range tests {
 		err := validate.Var(test.input, "role_title")
 		if test.expectedValid {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		} else {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	}
 }
