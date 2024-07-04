@@ -16,6 +16,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ import (
 // AuthHandler represents the HTTP handler for auth-related requests
 type AuthHandler struct {
 	conf            config.Config
+	trans           translation.Translator
 	userClient      port.UserClient
 	tokenService    port.AuthService
 	otpCacheService port.OTPCacheService
@@ -36,6 +38,7 @@ type AuthHandler struct {
 // NewAuthHandler creates a new AuthHandler instance
 func NewAuthHandler(
 	conf config.Config,
+	trans translation.Translator,
 	userClient port.UserClient,
 	tokenService port.AuthService,
 	otpCacheService port.OTPCacheService,
@@ -46,6 +49,7 @@ func NewAuthHandler(
 ) *AuthHandler {
 	return &AuthHandler{
 		conf:            conf,
+		trans:           trans,
 		userClient:      userClient,
 		tokenService:    tokenService,
 		otpCacheService: otpCacheService,
@@ -74,7 +78,7 @@ func NewAuthHandler(
 func (r AuthHandler) Register(ctx *gin.Context) {
 	var req requests.AuthRegister
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -91,20 +95,20 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 	}()
 
 	if err := r.userClient.IsEmailUnique(ctx.Request.Context(), req.Email); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	otp := helper.GenerateOTP(r.conf.OTP.Digits)
 
 	if err := r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	wg.Wait()
 
 	if hashErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.NewServerError(),
 		).Echo()
 		return
@@ -114,27 +118,27 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 
 	user, err := r.userClient.Create(ctx.Request.Context(), req.ToUserDomain())
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err = uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -146,7 +150,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 	}
 	authservice.SendEmailOTPEvent(r.queue).Publish(message)
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessRegisteredUser).Echo(http.StatusCreated)
+	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessRegisteredUser).Echo(http.StatusCreated)
 }
 
 // EmailOTPResend godoc
@@ -167,17 +171,17 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	var req requests.AuthEmailOTPResend
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	if user == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.RecordNotFound),
 		).Echo()
 		return
@@ -186,7 +190,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	otp := helper.GenerateOTP(r.conf.OTP.Digits)
 
 	if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -199,7 +203,7 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	}
 	authservice.SendEmailOTPEvent(r.queue).Publish(message)
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessEmailOTPSent).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessEmailOTPSent).Echo(http.StatusOK)
 }
 
 // EmailOTPVerify godoc
@@ -220,27 +224,27 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 	var req requests.AuthEmailOTPVerify
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	if err := r.otpCacheService.Validate(ctx.Request.Context(), req.Email, req.Token); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := r.userClient.VerifiedEmail(ctx.Request.Context(), req.Email); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	if user == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.RecordNotFound),
 		).Echo()
 		return
@@ -248,7 +252,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 
 	token, err := r.tokenService.GenerateToken(user.UUID.String())
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -274,7 +278,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 
 	result := presenter.ToTokenResource(token)
 
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, r.trans).Payload(result).Echo()
 }
 
 // Login godoc
@@ -295,17 +299,17 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 func (r AuthHandler) Login(ctx *gin.Context) {
 	var req requests.AuthLogin
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	if user == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.RecordNotFound),
 		).Echo()
 		return
@@ -315,7 +319,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		otp := helper.GenerateOTP(r.conf.OTP.Digits)
 
 		if err = r.otpCacheService.Set(ctx.Request.Context(), req.Email, otp); err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
@@ -328,21 +332,21 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		}
 		authservice.SendEmailOTPEvent(r.queue).Publish(message)
 
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.UserUnVerified),
 		).Echo()
 		return
 	}
 
 	if user.Password == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.PasswordIsNull),
 		).Echo()
 		return
 	}
 
 	if ok := helper.CheckPasswordHash(req.Password, *user.Password); !ok {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.CredentialInvalid),
 		).Echo()
 		return
@@ -358,13 +362,13 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 
 	token, err := r.tokenService.GenerateToken(user.UUID.String())
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	result := presenter.ToTokenResource(token)
 
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, r.trans).Payload(result).Echo()
 }
 
 // Google godoc
@@ -386,7 +390,7 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 func (r AuthHandler) Google(ctx *gin.Context) {
 	var req requests.GoogleAuth
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -404,20 +408,20 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	wg.Wait()
 	if googleErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.NewServerError(),
 		).Echo()
 		return
 	}
 
 	if user != nil && user.GoogleID != nil && *user.GoogleID != *googleUserInfo.Id {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.Unauthorized),
 		).Echo()
 		return
@@ -433,33 +437,33 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			Status:    domain.UserStatusActive,
 		})
 		if err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 		uowFactory := r.uowFactory()
 		if err = uowFactory.BeginTx(ctx); err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 		if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
 			if rErr := uowFactory.Rollback(); rErr != nil {
-				presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+				presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 				return
 			}
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 		if err = uowFactory.Commit(); err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 	} else if user.GoogleID == nil {
 		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, *googleUserInfo.Id); err != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
 	}
@@ -483,13 +487,13 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 
 	token, err := r.tokenService.GenerateToken(user.UUID.String())
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	result := presenter.ToTokenResource(token)
 
-	presenter.NewResponse(ctx, nil).Payload(result).Echo()
+	presenter.NewResponse(ctx, r.trans).Payload(result).Echo()
 }
 
 // ForgetPassword godoc
@@ -510,7 +514,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 	var req requests.ForgetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -529,11 +533,11 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 	if user == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.RecordNotFound),
 		).Echo()
 		return
@@ -541,7 +545,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 
 	wg.Wait()
 	if otpSetErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(otpSetErr).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(otpSetErr).Echo()
 		return
 	}
 
@@ -556,7 +560,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 		authservice.SendResetPasswordLinkEvent(r.queue).Publish(message)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessForgetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessForgetPassword).Echo(http.StatusOK)
 }
 
 // ResetPassword godoc
@@ -577,7 +581,7 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	var req requests.ResetPassword
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -594,18 +598,18 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 	}()
 
 	if err := r.otpCacheService.ValidateForgetPassword(ctx.Request.Context(), req.Email, req.Token); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	user, err := r.userClient.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if user == nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.RecordNotFound),
 		).Echo()
 		return
@@ -613,12 +617,12 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 
 	wg.Wait()
 	if hashedErr != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(hashedErr).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(hashedErr).Echo()
 		return
 	}
 
 	if err = r.userClient.UpdatePassword(ctx.Request.Context(), user.ID, hashPassword); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -628,7 +632,7 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 		_ = r.otpCacheService.UsedForgetPassword(ctxWithTimeout, req.Email)
 	}()
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessResetPassword).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessResetPassword).Echo(http.StatusOK)
 }
 
 // Logout godoc
@@ -649,22 +653,22 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 func (r AuthHandler) Logout(ctx *gin.Context) {
 	var header requests.Header
 	if err := ctx.ShouldBindHeader(&header); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	if err := r.tokenService.LogoutToken(ctx.Request.Context(), header.JTI, header.EXP); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.AuthSuccessLogout).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessLogout).Echo(http.StatusOK)
 }
 
 func (r AuthHandler) Authorize(ctx *gin.Context) {
 	var req requests.AuthorizeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -672,27 +676,27 @@ func (r AuthHandler) Authorize(ctx *gin.Context) {
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	isAllowed, userID, err := r.aclService.CheckAccess(ctx.Request.Context(), uowFactory, userUUID, req.RequiredPermissions...)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if !isAllowed {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.PermissionDenied),
 		).Echo()
 		return
@@ -705,5 +709,5 @@ func (r AuthHandler) Authorize(ctx *gin.Context) {
 		ID:         userID,
 	}
 
-	presenter.NewResponse(ctx, nil).Payload(data).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Payload(data).Echo(http.StatusOK)
 }

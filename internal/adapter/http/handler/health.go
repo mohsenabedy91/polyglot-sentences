@@ -8,10 +8,10 @@ import (
 )
 
 type HealthHandler struct {
-	trans *translation.Translation
+	trans translation.Translator
 }
 
-func NewHealthHandler(trans *translation.Translation) *HealthHandler {
+func NewHealthHandler(trans translation.Translator) *HealthHandler {
 	return &HealthHandler{
 		trans: trans,
 	}

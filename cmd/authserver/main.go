@@ -91,9 +91,9 @@ func main() {
 	aclService := aclservice.New(log, userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
-	authHandler := handler.NewAuthHandler(conf, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
-	roleHandler := handler.NewRoleHandler(roleService, uowFactory)
-	permissionHandler := handler.NewPermissionHandler(permissionService, uowFactory)
+	authHandler := handler.NewAuthHandler(conf, trans, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
+	roleHandler := handler.NewRoleHandler(trans, roleService, uowFactory)
+	permissionHandler := handler.NewPermissionHandler(trans, permissionService, uowFactory)
 
 	// Init router
 	router, err := routes.NewRouter(log, conf, trans, cacheDriver, *healthHandler)

@@ -44,7 +44,7 @@ func NewRouter(
 	RegisterPrometheus(log)
 
 	router.Use(middlewares.Prometheus())
-	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
+	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler(trans)))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
 	setSwaggerRoutes(router.Group(""), conf.Swagger)
