@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
+func Authentication(conf config.Jwt, cacheDriver cache.Interface[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
@@ -67,10 +67,9 @@ func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Ha
 	}
 }
 
-func checkLogout(ctx context.Context, cacheDriver *cache.CacheDriver[any], jti string) error {
-	authCache := (*cache.CacheDriver[string])(cacheDriver)
+func checkLogout(ctx context.Context, cacheDriver cache.Interface[any], jti string) error {
 
-	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
+	result, err := cacheDriver.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
 	if err != nil || result == nil {
 		return serviceerror.NewServerError()
 
