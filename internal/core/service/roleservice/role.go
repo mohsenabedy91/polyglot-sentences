@@ -55,15 +55,14 @@ func (r *Service) List(ctx context.Context, uow repository.UnitOfWork) ([]*domai
 
 func (r *Service) Update(ctx context.Context, uow repository.UnitOfWork, role domain.Role, uuidStr string) error {
 
-	cachedRoleKey, err := r.roleCache.Get(ctx, uuidStr)
-	if err != nil {
+	if cachedRoleKey, err := r.roleCache.Get(ctx, uuidStr); err != nil {
 		return err
-	}
-
-	if cachedRoleKey != nil {
-		role.Key = *cachedRoleKey
 	} else {
-		role.SetKey(role.Title)
+		if cachedRoleKey != nil {
+			role.Key = *cachedRoleKey
+		} else {
+			role.SetKey(role.Title)
+		}
 	}
 
 	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
