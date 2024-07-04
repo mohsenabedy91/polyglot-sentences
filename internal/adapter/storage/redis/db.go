@@ -14,11 +14,11 @@ import (
 
 type Interface[T any] interface {
 	Close()
-	Get(ctx context.Context, key string) (destination T, err error)
-	Set(ctx context.Context, key string, value T, expiration time.Duration) (err error)
-	Delete(ctx context.Context, key string) (err error)
+	Get(ctx context.Context, key string) (*T, error)
+	Set(ctx context.Context, key string, value *T, expiration time.Duration) error
+	Delete(ctx context.Context, key string) error
 	FlushAll(ctx context.Context)
-	Remember(ctx context.Context, key string, expiration time.Duration, callback func() (T, error)) (T, error)
+	Remember(ctx context.Context, key string, expiration time.Duration, callback func() (*T, error)) (*T, error)
 }
 
 type CacheDriver[T any] struct {
@@ -92,7 +92,7 @@ func (r *CacheDriver[T]) Get(ctx context.Context, key string) (*T, error) {
 	return &destination, nil
 }
 
-func (r *CacheDriver[T]) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+func (r *CacheDriver[T]) Set(ctx context.Context, key string, value *T, expiration time.Duration) error {
 	key = fmt.Sprintf("%s:%s", r.conf.Redis.Prefix, key)
 
 	extra := map[logger.ExtraKey]interface{}{
