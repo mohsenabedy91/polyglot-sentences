@@ -25,6 +25,6 @@
 
     "invalidRequestBody": "Oops! There's an issue with the information you provided. Please check your request and try again.",
 
-    "roleExisted": "This role already exists."
+    "roleExisted": "The role with enter Title already exists."
   }
 }
