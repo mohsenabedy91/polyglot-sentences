@@ -12,7 +12,7 @@ type UserRepository interface {
 	GetByID(id uint64) (*domain.User, error)
 	IsEmailUnique(email string) (bool, error)
 	GetByEmail(email string) (*domain.User, error)
-	List() ([]domain.User, error)
+	List() ([]*domain.User, error)
 	Save(user *domain.User) (*domain.User, error)
 	VerifiedEmail(email string) error
 	MarkWelcomeMessageSent(id uint64) error
@@ -27,7 +27,7 @@ type UserService interface {
 	GetByID(uow repository.UnitOfWork, id uint64) (*domain.User, error)
 	IsEmailUnique(uow repository.UnitOfWork, email string) error
 	GetByEmail(uow repository.UnitOfWork, email string) (*domain.User, error)
-	List(uow repository.UnitOfWork) ([]domain.User, error)
+	List(uow repository.UnitOfWork) ([]*domain.User, error)
 	Create(uow repository.UnitOfWork, user domain.User) (*domain.User, error)
 	VerifiedEmail(uow repository.UnitOfWork, email string) error
 	MarkWelcomeMessageSent(uow repository.UnitOfWork, id uint64) error

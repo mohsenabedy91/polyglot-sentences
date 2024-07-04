@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -12,8 +13,12 @@ type User struct {
 	Status    string  `json:"status,omitempty" example:"ACTIVE"`
 }
 
-func prepareUser(user domain.User) User {
-	return User{
+func PrepareUser(user *domain.User) *User {
+	if user == nil || user.UUID == uuid.Nil {
+		return nil
+	}
+
+	return &User{
 		ID:        user.UUID.String(),
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -23,19 +28,17 @@ func prepareUser(user domain.User) User {
 }
 
 func ToUserResource(user *domain.User) *User {
-	if user == nil {
-		return nil
-	}
-
-	res := prepareUser(*user)
-	return &res
+	return PrepareUser(user)
 }
 
-func ToUserCollection(users []domain.User) []User {
-	result := make([]User, len(users))
-	for index, user := range users {
-		result[index] = prepareUser(user)
+func ToUserCollection(users []*domain.User) []User {
+	var response []User
+	for _, user := range users {
+		result := PrepareUser(user)
+		if result != nil {
+			response = append(response, *result)
+		}
 	}
 
-	return result
+	return response
 }

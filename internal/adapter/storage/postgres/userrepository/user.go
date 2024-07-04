@@ -166,7 +166,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) List() ([]domain.User, error) {
+func (r *UserRepository) List() ([]*domain.User, error) {
 	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
@@ -181,7 +181,7 @@ func (r *UserRepository) List() ([]domain.User, error) {
 		}
 	}(rows)
 
-	var users []domain.User
+	var users []*domain.User
 
 	for rows.Next() {
 		user, scanErr := scanUser(rows)
@@ -199,7 +199,7 @@ func (r *UserRepository) List() ([]domain.User, error) {
 			return nil, serviceerror.NewServerError()
 		}
 
-		users = append(users, user)
+		users = append(users, &user)
 	}
 
 	if err = rows.Err(); err != nil {
