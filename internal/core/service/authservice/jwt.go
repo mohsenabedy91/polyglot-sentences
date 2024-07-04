@@ -8,6 +8,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"time"
@@ -70,7 +71,7 @@ func (r JWTService) LogoutToken(ctx context.Context, jti string, exp int64) erro
 
 	key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
 
-	if err := r.jwtCache.Set(ctx, key, constant.LogoutRedisValue, expTime.Sub(time.Now())); err != nil {
+	if err := r.jwtCache.Set(ctx, key, helper.StringPtr(constant.LogoutRedisValue), expTime.Sub(time.Now())); err != nil {
 		return err
 	}
 

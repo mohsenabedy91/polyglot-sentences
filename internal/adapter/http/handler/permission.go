@@ -5,18 +5,25 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
 )
 
 // PermissionHandler represents the HTTP handler for auth-related requests
 type PermissionHandler struct {
+	trans             translation.Translator
 	permissionService port.PermissionService
 	uowFactory        func() repository.UnitOfWork
 }
 
 // NewPermissionHandler creates a new PermissionHandler instance
-func NewPermissionHandler(permissionService port.PermissionService, uowFactory func() repository.UnitOfWork) *PermissionHandler {
+func NewPermissionHandler(
+	trans translation.Translator,
+	permissionService port.PermissionService,
+	uowFactory func() repository.UnitOfWork,
+) *PermissionHandler {
 	return &PermissionHandler{
+		trans:             trans,
 		permissionService: permissionService,
 		uowFactory:        uowFactory,
 	}
@@ -40,26 +47,26 @@ func NewPermissionHandler(permissionService port.PermissionService, uowFactory f
 func (r PermissionHandler) List(ctx *gin.Context) {
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	permissions, err := r.permissionService.List(uowFactory)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Payload(
+	presenter.NewResponse(ctx, r.trans).Payload(
 		presenter.ToPermissionCollection(permissions),
 	).Echo(http.StatusOK)
 }

@@ -11,14 +11,15 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"strings"
 )
 
-func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.HandlerFunc {
+func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver cache.Interface[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
-			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
+			presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(
 				serviceerror.New(serviceerror.Unauthorized),
 			).Echo()
 			return
@@ -29,12 +30,12 @@ func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Ha
 
 		validatedToken, err := validationToken(conf.AccessTokenSecret, token)
 		if err != nil {
-			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 		if !validatedToken.Valid {
-			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
+			presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(
 				serviceerror.New(serviceerror.InvalidToken),
 			).Echo()
 			return
@@ -42,12 +43,12 @@ func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Ha
 
 		claims, err := getClaims(validatedToken)
 		if err != nil {
-			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
+			presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(err).Echo()
 			return
 		}
 
 		if claims == nil {
-			presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(
+			presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(
 				serviceerror.NewServerError(),
 			).Echo()
 			return
@@ -55,7 +56,7 @@ func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Ha
 
 		if jti, ok := claims[config.AuthTokenJTI].(string); ok {
 			if err = checkLogout(ctx.Request.Context(), cacheDriver, jti); err != nil {
-				presenter.NewResponse(ctx, nil, handler.StatusCodeMapping).Error(err).Echo()
+				presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(err).Echo()
 				return
 			}
 		}
@@ -67,10 +68,9 @@ func Authentication(conf config.Jwt, cacheDriver *cache.CacheDriver[any]) gin.Ha
 	}
 }
 
-func checkLogout(ctx context.Context, cacheDriver *cache.CacheDriver[any], jti string) error {
-	authCache := (*cache.CacheDriver[string])(cacheDriver)
+func checkLogout(ctx context.Context, cacheDriver cache.Interface[any], jti string) error {
 
-	result, err := authCache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
+	result, err := cacheDriver.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
 	if err != nil || result == nil {
 		return serviceerror.NewServerError()
 

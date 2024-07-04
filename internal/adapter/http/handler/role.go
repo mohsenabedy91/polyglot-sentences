@@ -8,18 +8,25 @@ import (
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
 )
 
 // RoleHandler represents the HTTP handler for auth-related requests
 type RoleHandler struct {
+	trans       translation.Translator
 	roleService port.RoleService
 	uowFactory  func() repository.UnitOfWork
 }
 
 // NewRoleHandler creates a new RoleHandler instance
-func NewRoleHandler(roleService port.RoleService, uowFactory func() repository.UnitOfWork) *RoleHandler {
+func NewRoleHandler(
+	trans translation.Translator,
+	roleService port.RoleService,
+	uowFactory func() repository.UnitOfWork,
+) *RoleHandler {
 	return &RoleHandler{
+		trans:       trans,
 		roleService: roleService,
 		uowFactory:  uowFactory,
 	}
@@ -45,19 +52,19 @@ func NewRoleHandler(roleService port.RoleService, uowFactory func() repository.U
 func (r RoleHandler) Create(ctx *gin.Context) {
 	var header requests.Header
 	if err := ctx.ShouldBindHeader(&header); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	var req requests.RoleCreate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -70,19 +77,19 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 	}
 	if err := r.roleService.Create(uowFactory, role); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.RoleSuccessCreated).Echo(http.StatusCreated)
+	presenter.NewResponse(ctx, r.trans).Message(constant.RoleSuccessCreated).Echo(http.StatusCreated)
 }
 
 // Get godoc
@@ -106,32 +113,32 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 func (r RoleHandler) Get(ctx *gin.Context) {
 	var userReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&userReq); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	role, err := r.roleService.Get(uowFactory, userReq.UUIDStr)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Payload(
+	presenter.NewResponse(ctx, r.trans).Payload(
 		presenter.ToRoleResource(role),
 	).Echo(http.StatusOK)
 }
@@ -154,26 +161,26 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 func (r RoleHandler) List(ctx *gin.Context) {
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	roles, err := r.roleService.List(ctx.Request.Context(), uowFactory)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Payload(
+	presenter.NewResponse(ctx, r.trans).Payload(
 		presenter.ToRoleCollection(roles),
 	).Echo(http.StatusOK)
 }
@@ -199,24 +206,24 @@ func (r RoleHandler) List(ctx *gin.Context) {
 func (r RoleHandler) Update(ctx *gin.Context) {
 	var header requests.Header
 	if err := ctx.ShouldBindHeader(&header); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 	var req requests.RoleUpdate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
@@ -229,19 +236,19 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 	}
 	if err := r.roleService.Update(ctx.Request.Context(), uowFactory, role, roleReq.UUIDStr); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.RoleSuccessUpdated).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.RoleSuccessUpdated).Echo(http.StatusOK)
 }
 
 // Delete godoc
@@ -265,37 +272,37 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 func (r RoleHandler) Delete(ctx *gin.Context) {
 	var header requests.Header
 	if err := ctx.ShouldBindHeader(&header); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := r.roleService.Delete(uowFactory, roleReq.UUIDStr, header.UserID); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Echo(http.StatusNoContent)
+	presenter.NewResponse(ctx, r.trans).Echo(http.StatusNoContent)
 }
 
 // GetPermissions godoc
@@ -318,32 +325,32 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	rolePermissions, err := r.roleService.GetPermissions(uowFactory, roleReq.UUIDStr)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Payload(
+	presenter.NewResponse(ctx, r.trans).Payload(
 		presenter.ToRoleResource(rolePermissions),
 	).Echo(http.StatusOK)
 }
@@ -369,35 +376,35 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 func (r RoleHandler) SyncPermissions(ctx *gin.Context) {
 	var roleReq requests.RoleUUIDUri
 	if err := ctx.ShouldBindUri(&roleReq); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	var req requests.SyncPermissions
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		presenter.NewResponse(ctx, nil).Validation(err).Echo(http.StatusUnprocessableEntity)
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
 		return
 	}
 
 	uowFactory := r.uowFactory()
 	if err := uowFactory.BeginTx(ctx); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := r.roleService.SyncPermissions(uowFactory, roleReq.UUIDStr, req.Permissions); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(rErr).Echo()
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
 		}
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
 	if err := uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, nil, StatusCodeMapping).Error(err).Echo()
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}
 
-	presenter.NewResponse(ctx, nil).Message(constant.RoleSuccessSyncPermissions).Echo(http.StatusOK)
+	presenter.NewResponse(ctx, r.trans).Message(constant.RoleSuccessSyncPermissions).Echo(http.StatusOK)
 }

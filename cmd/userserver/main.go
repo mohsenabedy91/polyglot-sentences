@@ -54,7 +54,7 @@ func main() {
 
 	userService := userservice.New(log)
 
-	httpServer := startHTTPServer(ctx, conf, log, userService, uowFactory, trans)
+	httpServer := startHTTPServer(ctx, log, conf, trans, userService, uowFactory)
 	grpcServer := startGRPCServer(conf, log, userService, uowFactory)
 
 	signalCh := make(chan os.Signal, 1)
@@ -86,11 +86,11 @@ func startGRPCServer(
 
 func startHTTPServer(
 	ctx context.Context,
-	conf config.Config,
 	log logger.Logger,
+	conf config.Config,
+	trans translation.Translator,
 	userService *userservice.UserService,
 	uowFactory func() repository.UnitOfWork,
-	trans *translation.Translation,
 ) *http.Server {
 	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
 	if err != nil {
@@ -105,7 +105,7 @@ func startHTTPServer(
 		return nil
 	}
 
-	userHandler := handler.NewUserHandler(userService, uowFactory, minioClient)
+	userHandler := handler.NewUserHandler(trans, userService, uowFactory, minioClient)
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router

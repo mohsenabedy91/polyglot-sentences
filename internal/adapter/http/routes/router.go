@@ -23,7 +23,7 @@ type Router struct {
 	log    logger.Logger
 	conf   config.Config
 	trans  translation.Translator
-	cache  *redis.CacheDriver[any]
+	cache  redis.Interface[any]
 }
 
 // NewRouter creates a new HTTP router
@@ -31,7 +31,7 @@ func NewRouter(
 	log logger.Logger,
 	conf config.Config,
 	trans translation.Translator,
-	cache *redis.CacheDriver[any],
+	cache redis.Interface[any],
 	healthHandler handler.HealthHandler,
 ) (*Router, error) {
 
@@ -44,7 +44,7 @@ func NewRouter(
 	RegisterPrometheus(log)
 
 	router.Use(middlewares.Prometheus())
-	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler))
+	router.Use(gin.Logger(), gin.CustomRecovery(middlewares.ErrorHandler(trans)))
 	router.Use(middlewares.DefaultStructuredLogger(log))
 
 	setSwaggerRoutes(router.Group(""), conf.Swagger)

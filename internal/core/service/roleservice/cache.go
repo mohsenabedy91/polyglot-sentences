@@ -46,7 +46,7 @@ func (r RoleCacheService) SetBulk(ctx context.Context, items map[string]domain.R
 			logger.CacheSetArg: value,
 		}
 
-		if err := r.roleCache.Set(ctx, key, value, time.Duration(0)); err != nil {
+		if err := r.roleCache.Set(ctx, key, &value, time.Duration(0)); err != nil {
 			r.log.Error(logger.Cache, logger.RedisSet, fmt.Sprintf("Error setting value: %v", err), extra)
 			return serviceerror.NewServerError()
 		}
