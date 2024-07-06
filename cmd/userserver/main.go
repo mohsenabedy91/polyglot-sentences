@@ -14,6 +14,7 @@ import (
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -45,7 +46,7 @@ func main() {
 		log.Fatal(logger.Database, logger.Startup, err.Error(), nil)
 		return
 	}
-	uowFactory := func() repository.UnitOfWork {
+	uowFactory := func() port.UserUnitOfWork {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
@@ -71,7 +72,7 @@ func startGRPCServer(
 	conf config.Config,
 	log logger.Logger,
 	userService *userservice.UserService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.UserUnitOfWork,
 ) *grpc.Server {
 	s := server.NewUserGRPCServer(conf.UserManagement, userService, uowFactory)
 	grpcServer, err := s.StartUserGRPCServer()
@@ -90,7 +91,7 @@ func startHTTPServer(
 	conf config.Config,
 	trans translation.Translator,
 	userService *userservice.UserService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.UserUnitOfWork,
 ) *http.Server {
 	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
 	if err != nil {

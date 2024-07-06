@@ -7,7 +7,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
@@ -32,7 +31,7 @@ type AuthHandler struct {
 	queue           *messagebroker.Queue
 	oauthService    oauth.GoogleService
 	aclService      port.ACLService
-	uowFactory      func() repository.UnitOfWork
+	uowFactory      func() port.AuthUnitOfWork
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -45,7 +44,7 @@ func NewAuthHandler(
 	queue *messagebroker.Queue,
 	oauthService oauth.GoogleService,
 	aclService port.ACLService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.AuthUnitOfWork,
 ) *AuthHandler {
 	return &AuthHandler{
 		conf:            conf,

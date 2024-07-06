@@ -7,15 +7,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
-	cache "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"strings"
 )
 
-func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver cache.Interface[any]) gin.HandlerFunc {
+func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver port.CacheDriver[any]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
@@ -68,7 +68,7 @@ func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver c
 	}
 }
 
-func checkLogout(ctx context.Context, cacheDriver cache.Interface[any], jti string) error {
+func checkLogout(ctx context.Context, cacheDriver port.CacheDriver[any], jti string) error {
 
 	result, err := cacheDriver.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
 	if err != nil || result == nil {

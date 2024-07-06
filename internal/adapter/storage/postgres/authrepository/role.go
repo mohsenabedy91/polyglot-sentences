@@ -98,7 +98,7 @@ func (r *RoleRepository) List() ([]*domain.Role, error) {
 			metrics.DbCall.WithLabelValues("roles", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return nil, err
+			return nil, serviceerror.NewServerError()
 		}
 
 		roles = append(roles, &role)
@@ -108,7 +108,7 @@ func (r *RoleRepository) List() ([]*domain.Role, error) {
 		metrics.DbCall.WithLabelValues("roles", "List", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return nil, err
+		return nil, serviceerror.NewServerError()
 	}
 
 	metrics.DbCall.WithLabelValues("roles", "List", "Success").Inc()
@@ -189,17 +189,17 @@ func (r *RoleRepository) ExistKey(key domain.RoleKeyType) (bool, error) {
 			metrics.DbCall.WithLabelValues("roles", "ExistKey", "Success").Inc()
 
 			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return true, nil
+			return false, nil
 		}
 		metrics.DbCall.WithLabelValues("roles", "ExistKey", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-		return false, serviceerror.NewServerError()
+		return true, serviceerror.NewServerError()
 	}
 
 	metrics.DbCall.WithLabelValues("roles", "ExistKey", "Success").Inc()
 
-	return count == 0, nil
+	return count != 0, nil
 }
 
 func (r *RoleRepository) GetRoleUser() (role domain.Role, err error) {

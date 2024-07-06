@@ -8,7 +8,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"mime/multipart"
@@ -21,7 +20,7 @@ import (
 type UserHandler struct {
 	trans       translation.Translator
 	userService port.UserService
-	uowFactory  func() repository.UnitOfWork
+	uowFactory  func() port.UserUnitOfWork
 	minioClient *minio.Client
 }
 
@@ -29,7 +28,7 @@ type UserHandler struct {
 func NewUserHandler(
 	trans translation.Translator,
 	userService port.UserService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.UserUnitOfWork,
 	minioClient *minio.Client,
 ) *UserHandler {
 	return &UserHandler{

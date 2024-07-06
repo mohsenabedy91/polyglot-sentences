@@ -2,7 +2,6 @@ package port
 
 import (
 	"github.com/google/uuid"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -23,15 +22,15 @@ type UserRepository interface {
 
 // UserService is an interface for interacting with user-related business logic
 type UserService interface {
-	GetByUUID(uow repository.UnitOfWork, uuidStr string) (*domain.User, error)
-	GetByID(uow repository.UnitOfWork, id uint64) (*domain.User, error)
-	IsEmailUnique(uow repository.UnitOfWork, email string) error
-	GetByEmail(uow repository.UnitOfWork, email string) (*domain.User, error)
-	List(uow repository.UnitOfWork) ([]*domain.User, error)
-	Create(uow repository.UnitOfWork, user domain.User) (*domain.User, error)
-	VerifiedEmail(uow repository.UnitOfWork, email string) error
-	MarkWelcomeMessageSent(uow repository.UnitOfWork, id uint64) error
-	UpdateGoogleID(uow repository.UnitOfWork, id uint64, googleID string) error
-	UpdateLastLoginTime(uow repository.UnitOfWork, id uint64) error
-	UpdatePassword(uow repository.UnitOfWork, id uint64, password string) error
+	GetByUUID(uow UserUnitOfWork, uuidStr string) (*domain.User, error)
+	GetByID(uow UserUnitOfWork, id uint64) (*domain.User, error)
+	IsEmailUnique(uow UserUnitOfWork, email string) error
+	GetByEmail(uow UserUnitOfWork, email string) (*domain.User, error)
+	List(uow UserUnitOfWork) ([]*domain.User, error)
+	Create(uow UserUnitOfWork, user domain.User) (*domain.User, error)
+	VerifiedEmail(uow UserUnitOfWork, email string) error
+	MarkWelcomeMessageSent(uow UserUnitOfWork, id uint64) error
+	UpdateGoogleID(uow UserUnitOfWork, id uint64, googleID string) error
+	UpdateLastLoginTime(uow UserUnitOfWork, id uint64) error
+	UpdatePassword(uow UserUnitOfWork, id uint64, password string) error
 }

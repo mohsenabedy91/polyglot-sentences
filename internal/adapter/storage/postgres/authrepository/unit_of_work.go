@@ -3,33 +3,23 @@ package authrepository
 import (
 	"context"
 	"database/sql"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
-
-type UnitOfWork interface {
-	BeginTx(ctx context.Context) error
-	Commit() error
-	Rollback() error
-
-	RoleRepository() *RoleRepository
-	PermissionRepository() *PermissionRepository
-	ACLRepository() *ACLRepository
-	// Add other repositories as needed
-}
 
 type unitOfWork struct {
 	log logger.Logger
 	db  *sql.DB
 	tx  *sql.Tx
 
-	roleRepository       *RoleRepository
-	permissionRepository *PermissionRepository
-	aclRepository        *ACLRepository
+	roleRepository       port.RoleRepository
+	permissionRepository port.PermissionRepository
+	aclRepository        port.ACLRepository
 	// Add other repositories as needed
 }
 
-func NewUnitOfWork(log logger.Logger, db *sql.DB) UnitOfWork {
+func NewUnitOfWork(log logger.Logger, db *sql.DB) port.AuthUnitOfWork {
 	return &unitOfWork{
 		log: log,
 		db:  db,
@@ -74,14 +64,14 @@ func (r *unitOfWork) Rollback() error {
 	return nil
 }
 
-func (r *unitOfWork) RoleRepository() *RoleRepository {
+func (r *unitOfWork) RoleRepository() port.RoleRepository {
 	return r.roleRepository
 }
 
-func (r *unitOfWork) PermissionRepository() *PermissionRepository {
+func (r *unitOfWork) PermissionRepository() port.PermissionRepository {
 	return r.permissionRepository
 }
 
-func (r *unitOfWork) ACLRepository() *ACLRepository {
+func (r *unitOfWork) ACLRepository() port.ACLRepository {
 	return r.aclRepository
 }

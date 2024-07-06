@@ -1,8 +1,8 @@
 package permissionservice
 
 import (
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 )
 
@@ -16,6 +16,6 @@ func New(log logger.Logger) *Service {
 	}
 }
 
-func (r *Service) List(uow repository.UnitOfWork) ([]*domain.Permission, error) {
+func (r *Service) List(uow port.AuthUnitOfWork) ([]*domain.Permission, error) {
 	return uow.PermissionRepository().List()
 }

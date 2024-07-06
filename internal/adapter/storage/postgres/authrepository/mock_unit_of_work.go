@@ -1,0 +1,41 @@
+package authrepository
+
+import (
+	"context"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockUnitOfWork struct {
+	mock.Mock
+}
+
+func (m *MockUnitOfWork) BeginTx(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}
+
+func (m *MockUnitOfWork) Commit() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockUnitOfWork) Rollback() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockUnitOfWork) RoleRepository() port.RoleRepository {
+	args := m.Called()
+	return args.Get(0).(port.RoleRepository)
+}
+
+func (m *MockUnitOfWork) PermissionRepository() port.PermissionRepository {
+	args := m.Called()
+	return args.Get(0).(port.PermissionRepository)
+}
+
+func (m *MockUnitOfWork) ACLRepository() port.ACLRepository {
+	args := m.Called()
+	return args.Get(0).(port.ACLRepository)
+}

@@ -3,7 +3,6 @@ package aclservice
 import (
 	"context"
 	"github.com/google/uuid"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -23,7 +22,7 @@ func New(log logger.Logger, userClient port.UserClient) *ACLService {
 
 func (r ACLService) CheckAccess(
 	ctx context.Context,
-	uow repository.UnitOfWork,
+	uow port.AuthUnitOfWork,
 	userUUID uuid.UUID,
 	requiredPermissions ...domain.PermissionKeyType,
 ) (bool, uint64, error) {
@@ -66,7 +65,7 @@ func (r ACLService) CheckAccess(
 	return false, 0, nil
 }
 
-func (r ACLService) AssignUserRoleToUser(uow repository.UnitOfWork, userID uint64) error {
+func (r ACLService) AssignUserRoleToUser(uow port.AuthUnitOfWork, userID uint64) error {
 	role, err := uow.RoleRepository().GetRoleUser()
 	if err != nil {
 		return err
