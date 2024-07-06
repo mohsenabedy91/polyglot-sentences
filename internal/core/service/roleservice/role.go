@@ -7,6 +7,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"time"
 )
 
 type Service struct {
@@ -21,10 +22,14 @@ func New(log logger.Logger, roleCache port.RoleCache) *Service {
 	}
 }
 
+func (r *Service) SetRoleCache(service port.RoleCache) {
+	r.roleCache = service
+}
+
 func (r *Service) Create(uow port.AuthUnitOfWork, role domain.Role) error {
 	role.SetKey(role.Title)
 
-	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
+	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || exists {
 		return serviceerror.New(serviceerror.RoleExisted)
 	}
 
@@ -37,17 +42,25 @@ func (r *Service) Get(uow port.AuthUnitOfWork, uuidStr string) (*domain.Role, er
 
 func (r *Service) List(ctx context.Context, uow port.AuthUnitOfWork) ([]*domain.Role, error) {
 	roles, err := uow.RoleRepository().List()
-
-	go func() {
-		cacheRoles := make(map[string]domain.RoleKeyType)
-		for _, role := range roles {
-			if role.IsDefault == true {
-				cacheRoles[role.UUID.String()] = role.Key
+	if err == nil {
+		go func() {
+			cacheRoles := make(map[string]domain.RoleKeyType)
+			for _, role := range roles {
+				if role.IsDefault == true {
+					cacheRoles[role.UUID.String()] = role.Key
+				}
 			}
-		}
 
-		_ = r.roleCache.SetBulk(ctx, cacheRoles)
-	}()
+			ctxWithTimeout, cancel := context.WithTimeout(ctx, 6*time.Second)
+			defer cancel()
+
+			if err = r.roleCache.SetBulk(ctxWithTimeout, cacheRoles); err != nil {
+				r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
+					logger.CacheSetArg: cacheRoles,
+				})
+			}
+		}()
+	}
 
 	return roles, err
 }
@@ -64,7 +77,7 @@ func (r *Service) Update(ctx context.Context, uow port.AuthUnitOfWork, role doma
 		}
 	}
 
-	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
+	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || exists {
 		return serviceerror.New(serviceerror.RoleExisted)
 	}
 
