@@ -79,15 +79,14 @@ func (r *Service) GetPermissions(uow port.AuthUnitOfWork, uuidStr string) (*doma
 	return uow.RoleRepository().GetPermissions(uuid.MustParse(uuidStr))
 }
 
-func (r *Service) SyncPermissions(uow port.AuthUnitOfWork, uuidStr string, permissionUUIDStr []string) error {
-
-	permissionUUIDs := make([]uuid.UUID, len(permissionUUIDStr))
-	for i, p := range permissionUUIDStr {
-		parsedUUID, err := uuid.Parse(p)
+func (r *Service) SyncPermissions(uow port.AuthUnitOfWork, uuidStr string, permissionUUIDsStr []string) error {
+	permissionUUIDs := make([]uuid.UUID, len(permissionUUIDsStr))
+	for index, permissionUUIDStr := range permissionUUIDsStr {
+		parsedUUID, err := uuid.Parse(permissionUUIDStr)
 		if err != nil {
 			return serviceerror.New(serviceerror.InvalidRequestBody)
 		}
-		permissionUUIDs[i] = parsedUUID
+		permissionUUIDs[index] = parsedUUID
 	}
 
 	validPermissions, err := uow.PermissionRepository().FilterValidPermissions(permissionUUIDs)
