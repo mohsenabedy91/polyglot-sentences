@@ -5,7 +5,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/constant"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/requests"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -16,14 +15,14 @@ import (
 type RoleHandler struct {
 	trans       translation.Translator
 	roleService port.RoleService
-	uowFactory  func() repository.UnitOfWork
+	uowFactory  func() port.AuthUnitOfWork
 }
 
 // NewRoleHandler creates a new RoleHandler instance
 func NewRoleHandler(
 	trans translation.Translator,
 	roleService port.RoleService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.AuthUnitOfWork,
 ) *RoleHandler {
 	return &RoleHandler{
 		trans:       trans,

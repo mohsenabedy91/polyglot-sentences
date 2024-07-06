@@ -3,7 +3,6 @@ package port
 import (
 	"context"
 	"github.com/google/uuid"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
 
@@ -24,14 +23,14 @@ type RoleRepository interface {
 }
 
 type RoleService interface {
-	Create(uow repository.UnitOfWork, role domain.Role) error
-	Get(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error)
-	List(ctx context.Context, uow repository.UnitOfWork) ([]*domain.Role, error)
-	Update(ctx context.Context, uow repository.UnitOfWork, role domain.Role, uuidStr string) error
-	Delete(uow repository.UnitOfWork, uuidStr string, deletedBy uint64) error
+	Create(uow AuthUnitOfWork, role domain.Role) error
+	Get(uow AuthUnitOfWork, uuidStr string) (*domain.Role, error)
+	List(ctx context.Context, uow AuthUnitOfWork) ([]*domain.Role, error)
+	Update(ctx context.Context, uow AuthUnitOfWork, role domain.Role, uuidStr string) error
+	Delete(uow AuthUnitOfWork, uuidStr string, deletedBy uint64) error
 
-	GetPermissions(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error)
-	SyncPermissions(uow repository.UnitOfWork, uuidStr string, permissionUUIDStr []string) error
+	GetPermissions(uow AuthUnitOfWork, uuidStr string) (*domain.Role, error)
+	SyncPermissions(uow AuthUnitOfWork, uuidStr string, permissionUUIDStr []string) error
 }
 
 type RoleCache interface {

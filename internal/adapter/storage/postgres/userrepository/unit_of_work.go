@@ -3,29 +3,21 @@ package userrepository
 import (
 	"context"
 	"database/sql"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 )
-
-type UnitOfWork interface {
-	BeginTx(ctx context.Context) error
-	Commit() error
-	Rollback() error
-
-	UserRepository() *UserRepository
-	// Add other repositories as needed
-}
 
 type unitOfWork struct {
 	log logger.Logger
 	db  *sql.DB
 	tx  *sql.Tx
 
-	userRepository *UserRepository
+	userRepository port.UserRepository
 	// Add other repositories as needed
 }
 
-func NewUnitOfWork(log logger.Logger, db *sql.DB) UnitOfWork {
+func NewUnitOfWork(log logger.Logger, db *sql.DB) port.UserUnitOfWork {
 	return &unitOfWork{
 		log: log,
 		db:  db,
@@ -67,6 +59,6 @@ func (r *unitOfWork) Rollback() error {
 	return nil
 }
 
-func (r *unitOfWork) UserRepository() *UserRepository {
+func (r *unitOfWork) UserRepository() port.UserRepository {
 	return r.userRepository
 }

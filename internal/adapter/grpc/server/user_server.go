@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	userpb "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
@@ -21,13 +20,13 @@ type Server struct {
 	userpb.UnimplementedUserServiceServer
 	conf        config.UserManagement
 	userService port.UserService
-	uowFactory  func() repository.UnitOfWork
+	uowFactory  func() port.UserUnitOfWork
 }
 
 func NewUserGRPCServer(
 	conf config.UserManagement,
 	userService port.UserService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.UserUnitOfWork,
 ) *Server {
 	return &Server{
 		UnimplementedUserServiceServer: userpb.UnimplementedUserServiceServer{},

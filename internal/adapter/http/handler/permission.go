@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"net/http"
@@ -13,14 +12,14 @@ import (
 type PermissionHandler struct {
 	trans             translation.Translator
 	permissionService port.PermissionService
-	uowFactory        func() repository.UnitOfWork
+	uowFactory        func() port.AuthUnitOfWork
 }
 
 // NewPermissionHandler creates a new PermissionHandler instance
 func NewPermissionHandler(
 	trans translation.Translator,
 	permissionService port.PermissionService,
-	uowFactory func() repository.UnitOfWork,
+	uowFactory func() port.AuthUnitOfWork,
 ) *PermissionHandler {
 	return &PermissionHandler{
 		trans:             trans,

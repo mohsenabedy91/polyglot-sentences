@@ -3,7 +3,6 @@ package roleservice
 import (
 	"context"
 	"github.com/google/uuid"
-	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
@@ -22,7 +21,7 @@ func New(log logger.Logger, roleCache port.RoleCache) *Service {
 	}
 }
 
-func (r *Service) Create(uow repository.UnitOfWork, role domain.Role) error {
+func (r *Service) Create(uow port.AuthUnitOfWork, role domain.Role) error {
 	role.SetKey(role.Title)
 
 	if exists, err := uow.RoleRepository().ExistKey(role.Key); err != nil || !exists {
@@ -32,11 +31,11 @@ func (r *Service) Create(uow repository.UnitOfWork, role domain.Role) error {
 	return uow.RoleRepository().Create(role)
 }
 
-func (r *Service) Get(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error) {
+func (r *Service) Get(uow port.AuthUnitOfWork, uuidStr string) (*domain.Role, error) {
 	return uow.RoleRepository().GetByUUID(uuid.MustParse(uuidStr))
 }
 
-func (r *Service) List(ctx context.Context, uow repository.UnitOfWork) ([]*domain.Role, error) {
+func (r *Service) List(ctx context.Context, uow port.AuthUnitOfWork) ([]*domain.Role, error) {
 	roles, err := uow.RoleRepository().List()
 
 	go func() {
@@ -53,7 +52,7 @@ func (r *Service) List(ctx context.Context, uow repository.UnitOfWork) ([]*domai
 	return roles, err
 }
 
-func (r *Service) Update(ctx context.Context, uow repository.UnitOfWork, role domain.Role, uuidStr string) error {
+func (r *Service) Update(ctx context.Context, uow port.AuthUnitOfWork, role domain.Role, uuidStr string) error {
 
 	if cachedRoleKey, err := r.roleCache.Get(ctx, uuidStr); err != nil {
 		return err
@@ -72,15 +71,15 @@ func (r *Service) Update(ctx context.Context, uow repository.UnitOfWork, role do
 	return uow.RoleRepository().Update(role, uuid.MustParse(uuidStr))
 }
 
-func (r *Service) Delete(uow repository.UnitOfWork, uuidStr string, deletedBy uint64) error {
+func (r *Service) Delete(uow port.AuthUnitOfWork, uuidStr string, deletedBy uint64) error {
 	return uow.RoleRepository().Delete(uuid.MustParse(uuidStr), deletedBy)
 }
 
-func (r *Service) GetPermissions(uow repository.UnitOfWork, uuidStr string) (*domain.Role, error) {
+func (r *Service) GetPermissions(uow port.AuthUnitOfWork, uuidStr string) (*domain.Role, error) {
 	return uow.RoleRepository().GetPermissions(uuid.MustParse(uuidStr))
 }
 
-func (r *Service) SyncPermissions(uow repository.UnitOfWork, uuidStr string, permissionUUIDStr []string) error {
+func (r *Service) SyncPermissions(uow port.AuthUnitOfWork, uuidStr string, permissionUUIDStr []string) error {
 
 	permissionUUIDs := make([]uuid.UUID, len(permissionUUIDStr))
 	for i, p := range permissionUUIDStr {

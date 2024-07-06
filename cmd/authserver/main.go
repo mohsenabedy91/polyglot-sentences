@@ -13,6 +13,7 @@ import (
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/otpservice"
@@ -52,7 +53,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	uowFactory := func() repository.UnitOfWork {
+	uowFactory := func() port.AuthUnitOfWork {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
