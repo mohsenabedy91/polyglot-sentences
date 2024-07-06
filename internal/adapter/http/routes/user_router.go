@@ -19,10 +19,10 @@ func (r *Router) NewUserRouter(userHandler handler.UserHandler) *Router {
 	}
 
 	return &Router{
-		Engine: r.Engine,
-		log:    r.log,
-		conf:   r.conf,
-		trans:  r.trans,
-		cache:  r.cache,
+		Engine:      r.Engine,
+		log:         r.log,
+		conf:        r.conf,
+		trans:       r.trans,
+		cacheDriver: r.cacheDriver,
 	}
 }

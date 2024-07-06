@@ -11,7 +11,7 @@ func (r *Router) NewAuthRouter(
 	roleHandler handler.RoleHandler,
 	permissionHandler handler.PermissionHandler,
 ) *Router {
-	r.Engine.POST("authorize", middlewares.Authentication(r.conf.Jwt, r.trans, r.cache), authHandler.Authorize)
+	r.Engine.POST("authorize", middlewares.Authentication(r.conf.Jwt, r.trans, r.cacheDriver), authHandler.Authorize)
 
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
 	{
@@ -43,10 +43,10 @@ func (r *Router) NewAuthRouter(
 	}
 
 	return &Router{
-		Engine: r.Engine,
-		log:    r.log,
-		conf:   r.conf,
-		trans:  r.trans,
-		cache:  r.cache,
+		Engine:      r.Engine,
+		log:         r.log,
+		conf:        r.conf,
+		trans:       r.trans,
+		cacheDriver: r.cacheDriver,
 	}
 }
