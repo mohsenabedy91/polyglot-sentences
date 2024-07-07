@@ -10,17 +10,17 @@ type MockPermissionRepository struct {
 	mock.Mock
 }
 
-func (m *MockPermissionRepository) GetUserPermissionKeys(userID uint64) ([]domain.PermissionKeyType, error) {
-	args := m.Called(userID)
+func (r *MockPermissionRepository) GetUserPermissionKeys(userID uint64) ([]domain.PermissionKeyType, error) {
+	args := r.Called(userID)
 	return args.Get(0).([]domain.PermissionKeyType), args.Error(1)
 }
 
-func (m *MockPermissionRepository) List() ([]*domain.Permission, error) {
-	args := m.Called()
+func (r *MockPermissionRepository) List() ([]*domain.Permission, error) {
+	args := r.Called()
 	return args.Get(0).([]*domain.Permission), args.Error(1)
 }
 
-func (m *MockPermissionRepository) FilterValidPermissions(uuids []uuid.UUID) ([]uint64, error) {
-	args := m.Called(uuids)
+func (r *MockPermissionRepository) FilterValidPermissions(uuids []uuid.UUID) ([]uint64, error) {
+	args := r.Called(uuids)
 	return args.Get(0).([]uint64), args.Error(1)
 }

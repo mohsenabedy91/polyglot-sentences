@@ -10,50 +10,50 @@ type MockFieldError struct {
 	mock.Mock
 }
 
-func (m *MockFieldError) Tag() string {
-	return m.Called().String(0)
+func (r *MockFieldError) Tag() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) ActualTag() string {
-	return m.Called().String(0)
+func (r *MockFieldError) ActualTag() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) Namespace() string {
-	return m.Called().String(0)
+func (r *MockFieldError) Namespace() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) StructNamespace() string {
-	return m.Called().String(0)
+func (r *MockFieldError) StructNamespace() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) Field() string {
-	return m.Called().String(0)
+func (r *MockFieldError) Field() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) StructField() string {
-	return m.Called().String(0)
+func (r *MockFieldError) StructField() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) Value() interface{} {
-	return m.Called().Get(0)
+func (r *MockFieldError) Value() interface{} {
+	return r.Called().Get(0)
 }
 
-func (m *MockFieldError) Param() string {
-	return m.Called().String(0)
+func (r *MockFieldError) Param() string {
+	return r.Called().String(0)
 }
 
-func (m *MockFieldError) Kind() reflect.Kind {
-	return m.Called().Get(0).(reflect.Kind)
+func (r *MockFieldError) Kind() reflect.Kind {
+	return r.Called().Get(0).(reflect.Kind)
 }
 
-func (m *MockFieldError) Type() reflect.Type {
-	return m.Called().Get(0).(reflect.Type)
+func (r *MockFieldError) Type() reflect.Type {
+	return r.Called().Get(0).(reflect.Type)
 }
 
-func (m *MockFieldError) Translate(ut ut.Translator) string {
-	return m.Called(ut).String(0)
+func (r *MockFieldError) Translate(ut ut.Translator) string {
+	return r.Called(ut).String(0)
 }
 
-func (m *MockFieldError) Error() string {
-	return m.Called().String(0)
+func (r *MockFieldError) Error() string {
+	return r.Called().String(0)
 }
