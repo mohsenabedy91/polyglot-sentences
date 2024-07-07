@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"time"
 )
 
 type AuthService interface {
@@ -24,4 +25,9 @@ type UserClient interface {
 	UpdateGoogleID(ctx context.Context, ID uint64, googleID string) error
 	UpdateLastLoginTime(ctx context.Context, ID uint64) error
 	UpdatePassword(ctx context.Context, ID uint64, password string) error
+}
+
+type AuthCache interface {
+	SetTokenState(ctx context.Context, key string, value string, expiration time.Duration) error
+	GetTokenState(ctx context.Context, key string) (string, error)
 }

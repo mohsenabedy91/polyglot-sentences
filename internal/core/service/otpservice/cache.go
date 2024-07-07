@@ -4,26 +4,24 @@ import (
 	"context"
 	"crypto/subtle"
 	"fmt"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"strings"
 	"time"
 )
 
 type OTPCacheService struct {
-	log       logger.Logger
 	otpConfig config.OTP
-	otpCache  *redis.CacheDriver[TransformOTPState]
+	otpCache  port.OTPCache
 }
 
-func NewOTPCache(log logger.Logger, otpConfig config.OTP, cache *redis.CacheDriver[any]) *OTPCacheService {
-	return &OTPCacheService{
-		log:       log,
+func NewOTPCache(otpConfig config.OTP, cache port.OTPCache) OTPCacheService {
+	return OTPCacheService{
 		otpConfig: otpConfig,
-		otpCache:  (*redis.CacheDriver[TransformOTPState])(cache),
+		otpCache:  cache,
 	}
 }
 
@@ -37,8 +35,7 @@ func (r OTPCacheService) Set(ctx context.Context, key string, otp string) error 
 		otpState.RequestCount++
 		otpState.LastRequest = time.Now().Unix()
 	} else {
-
-		otpState = &TransformOTPState{
+		otpState = &domain.OTP{
 			Value:        otp,
 			Used:         false,
 			RequestCount: 1,
@@ -48,10 +45,6 @@ func (r OTPCacheService) Set(ctx context.Context, key string, otp string) error 
 	}
 
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-			logger.CacheKey:    key,
-			logger.CacheSetArg: otpState,
-		})
 		return serviceerror.NewServerError()
 	}
 
@@ -62,7 +55,7 @@ func (r OTPCacheService) Validate(ctx context.Context, key string, otp string) e
 	key = fmt.Sprintf("%s:%s", constant.RedisOTPPrefix, strings.ToLower(key))
 
 	otpState, err := r.otpCache.Get(ctx, key)
-	if err != nil || otpState.Value == "" {
+	if err != nil || otpState == nil || otpState.Value == "" {
 		return serviceerror.New(serviceerror.InvalidOTP)
 	}
 
@@ -79,9 +72,6 @@ func (r OTPCacheService) Used(ctx context.Context, key string) error {
 	otpState, err := r.otpCache.Get(ctx, key)
 	if err != nil || otpState.Used || otpState.Value == "" {
 		if err != nil {
-			r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-				logger.CacheKey: key,
-			})
 			return serviceerror.NewServerError()
 		}
 
@@ -90,10 +80,6 @@ func (r OTPCacheService) Used(ctx context.Context, key string) error {
 
 	otpState.Used = true
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-			logger.CacheKey:    key,
-			logger.CacheSetArg: otpState,
-		})
 		return serviceerror.NewServerError()
 	}
 
@@ -111,7 +97,7 @@ func (r OTPCacheService) SetForgetPassword(ctx context.Context, key string, otp 
 		otpState.LastRequest = time.Now().Unix()
 	} else {
 
-		otpState = &TransformOTPState{
+		otpState = &domain.OTP{
 			Value:        otp,
 			Used:         false,
 			RequestCount: 1,
@@ -121,10 +107,6 @@ func (r OTPCacheService) SetForgetPassword(ctx context.Context, key string, otp 
 	}
 
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ForgetPasswordExpireSecond); err != nil {
-		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-			logger.CacheKey:    key,
-			logger.CacheSetArg: otpState,
-		})
 		return serviceerror.NewServerError()
 	}
 
@@ -152,9 +134,6 @@ func (r OTPCacheService) UsedForgetPassword(ctx context.Context, key string) err
 	otpState, err := r.otpCache.Get(ctx, key)
 	if err != nil || otpState.Used || otpState.Value == "" {
 		if err != nil {
-			r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-				logger.CacheKey: key,
-			})
 			return serviceerror.NewServerError()
 		}
 
@@ -163,24 +142,8 @@ func (r OTPCacheService) UsedForgetPassword(ctx context.Context, key string) err
 
 	otpState.Used = true
 	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
-		r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-			logger.CacheKey:    key,
-			logger.CacheSetArg: otpState,
-		})
 		return serviceerror.NewServerError()
 	}
 
 	return nil
-}
-
-// ----------------------
-//        DTO
-// ----------------------
-
-type TransformOTPState struct {
-	Value        string
-	Used         bool
-	RequestCount int8
-	CreatedAt    int64
-	LastRequest  int64
 }

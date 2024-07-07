@@ -5,26 +5,25 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"time"
 )
 
 type JWTService struct {
-	log      logger.Logger
-	conf     config.Jwt
-	jwtCache *redis.CacheDriver[string]
+	log   logger.Logger
+	conf  config.Jwt
+	cache port.AuthCache
 }
 
-func New(log logger.Logger, conf config.Jwt, cache *redis.CacheDriver[any]) *JWTService {
+func New(log logger.Logger, conf config.Jwt, cache port.AuthCache) *JWTService {
 	return &JWTService{
-		log:      log,
-		conf:     conf,
-		jwtCache: (*redis.CacheDriver[string])(cache),
+		log:   log,
+		conf:  conf,
+		cache: cache,
 	}
 }
 
@@ -44,13 +43,9 @@ func (r JWTService) GenerateToken(userUUIDStr string) (*string, error) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
+
 		key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
-		err := r.jwtCache.Set(ctxWithTimeout, key, nil, accessTokenExpirationHour)
-		if err != nil {
-			r.log.Error(logger.JWT, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-				logger.CacheKey: jti,
-			})
-		}
+		_ = r.cache.SetTokenState(ctxWithTimeout, key, "", accessTokenExpirationHour)
 	}()
 
 	jwtString, err := jwt.NewWithClaims(
@@ -71,7 +66,7 @@ func (r JWTService) LogoutToken(ctx context.Context, jti string, exp int64) erro
 
 	key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
 
-	if err := r.jwtCache.Set(ctx, key, helper.StringPtr(constant.LogoutRedisValue), expTime.Sub(time.Now())); err != nil {
+	if err := r.cache.SetTokenState(ctx, key, constant.LogoutRedisValue, expTime.Sub(time.Now())); err != nil {
 		return err
 	}
 

@@ -6,16 +6,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockRoleCache struct {
+type MockRoleCacheService struct {
 	mock.Mock
 }
 
-func (r *MockRoleCache) Get(ctx context.Context, key string) (*domain.RoleKeyType, error) {
+func (r *MockRoleCacheService) Get(ctx context.Context, key string) (*domain.RoleKeyType, error) {
 	args := r.Called(ctx, key)
 	return args.Get(0).(*domain.RoleKeyType), args.Error(1)
 }
 
-func (r *MockRoleCache) SetBulk(ctx context.Context, items map[string]domain.RoleKeyType) error {
+func (r *MockRoleCacheService) SetBulk(ctx context.Context, items map[string]domain.RoleKeyType) error {
 	args := r.Called(ctx, items)
 	return args.Error(0)
 }

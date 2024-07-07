@@ -12,6 +12,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/aclservice"
@@ -57,11 +58,15 @@ func main() {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
-	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
+	cache, err := redis.New(log, conf)
 	if err != nil {
 		return
 	}
-	defer cacheDriver.Close()
+	defer func() {
+		if cacheCloseErr := cache.Close(); cacheCloseErr != nil {
+			log.Fatal(logger.Cache, logger.Startup, cacheCloseErr.Error(), nil)
+		}
+	}()
 
 	queue, err := setup.InitializeQueue(log, conf)
 	if err != nil {
@@ -75,9 +80,11 @@ func main() {
 	userClient := client.NewUserClient(log, conf.UserManagement)
 	defer userClient.Close()
 
-	tokenService := authservice.New(log, conf.Jwt, cacheDriver)
+	authCache := authrepository.NewAuthCache(log, conf.Redis, cache)
+	tokenService := authservice.New(log, conf.Jwt, authCache)
 
-	otpCacheService := otpservice.NewOTPCache(log, conf.OTP, cacheDriver)
+	otpCache := authrepository.NewOTPCache(log, conf.Redis, cache)
+	otpCacheService := otpservice.NewOTPCache(conf.OTP, otpCache)
 
 	clientProvider := &oauth.ClientProvider{
 		Conf: conf.Oauth,
@@ -86,8 +93,9 @@ func main() {
 
 	permissionService := permissionservice.New(log)
 
-	roleCache := roleservice.NewRoleCache(log, cacheDriver)
-	roleService := roleservice.New(log, roleCache)
+	roleCache := authrepository.NewRoleCache(log, conf.Redis, cache)
+	roleCacheService := roleservice.NewRoleCacheService(roleCache)
+	roleService := roleservice.New(roleCacheService)
 
 	aclService := aclservice.New(log, userClient)
 
@@ -97,12 +105,12 @@ func main() {
 	permissionHandler := handler.NewPermissionHandler(trans, permissionService, uowFactory)
 
 	// Init router
-	router, err := routes.NewRouter(log, conf, trans, cacheDriver, *healthHandler)
+	router, err := routes.NewRouter(log, conf, trans, *healthHandler)
 	if err != nil {
 		return
 	}
 
-	router = router.NewAuthRouter(*authHandler, *roleHandler, *permissionHandler)
+	router = router.NewAuthRouter(*authHandler, *roleHandler, *permissionHandler, authCache)
 
 	listenAddr := fmt.Sprintf("%s:%s", conf.Auth.URL, conf.Auth.Port)
 	server := &http.Server{

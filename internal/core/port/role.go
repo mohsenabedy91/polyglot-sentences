@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"time"
 )
 
 type RoleRepository interface {
@@ -33,7 +34,12 @@ type RoleService interface {
 	SyncPermissions(uow AuthUnitOfWork, uuidStr string, permissionUUIDStr []string) error
 }
 
-type RoleCache interface {
+type RoleCacheService interface {
 	Get(ctx context.Context, key string) (*domain.RoleKeyType, error)
 	SetBulk(ctx context.Context, items map[string]domain.RoleKeyType) error
+}
+
+type RoleCache interface {
+	Set(ctx context.Context, key string, value *domain.RoleKeyType, expiration time.Duration) error
+	Get(ctx context.Context, key string) (*domain.RoleKeyType, error)
 }
