@@ -7,15 +7,12 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/permissionservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestPermissionService_List(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	var permissions []*domain.Permission
 	for i := 1; i <= 5; i++ {
 		permissions = append(permissions, &domain.Permission{
@@ -34,7 +31,7 @@ func TestPermissionService_List(t *testing.T) {
 
 		mockRepo.On("List").Return(permissions, nil)
 
-		service := permissionservice.New(mockLog)
+		service := permissionservice.New()
 		result, err := service.List(mockUow)
 
 		require.NoError(t, err)
@@ -53,7 +50,7 @@ func TestPermissionService_List(t *testing.T) {
 
 		mockRepo.On("List").Return([]*domain.Permission{}, serviceerror.NewServerError())
 
-		service := permissionservice.New(mockLog)
+		service := permissionservice.New()
 		result, err := service.List(mockUow)
 
 		require.Error(t, err)

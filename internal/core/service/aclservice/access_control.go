@@ -5,17 +5,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 )
 
 type ACLService struct {
-	log        logger.Logger
 	userClient port.UserClient
 }
 
-func New(log logger.Logger, userClient port.UserClient) *ACLService {
+func New(userClient port.UserClient) *ACLService {
 	return &ACLService{
-		log:        log,
 		userClient: userClient,
 	}
 }
@@ -29,13 +26,11 @@ func (r ACLService) CheckAccess(
 
 	user, err := r.userClient.GetByUUID(ctx, userUUID.String())
 	if err != nil {
-		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, 0, err
 	}
 
 	roleKeys, err := uow.RoleRepository().GetRoleKeys(user.ID)
 	if err != nil {
-		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, 0, err
 	}
 
@@ -47,7 +42,6 @@ func (r ACLService) CheckAccess(
 
 	permissionKeys, err := uow.PermissionRepository().GetUserPermissionKeys(user.ID)
 	if err != nil {
-		r.log.Error(logger.Authorization, logger.DatabaseSelect, err.Error(), nil)
 		return false, 0, err
 	}
 

@@ -91,13 +91,13 @@ func main() {
 	}
 	oauthService := oauth.New(log, conf.Oauth, clientProvider)
 
-	permissionService := permissionservice.New(log)
+	permissionService := permissionservice.New()
 
 	roleCache := authrepository.NewRoleCache(log, conf.Redis, cache)
 	roleCacheService := roleservice.NewRoleCacheService(roleCache)
 	roleService := roleservice.New(roleCacheService)
 
-	aclService := aclservice.New(log, userClient)
+	aclService := aclservice.New(userClient)
 
 	healthHandler := handler.NewHealthHandler(trans)
 	authHandler := handler.NewAuthHandler(conf, trans, userClient, tokenService, otpCacheService, queue, oauthService, aclService, uowFactory)
