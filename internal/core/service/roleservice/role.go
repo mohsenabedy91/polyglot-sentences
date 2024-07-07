@@ -5,24 +5,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"time"
 )
 
 type Service struct {
-	log       logger.Logger
-	roleCache port.RoleCache
+	roleCache port.RoleCacheService
 }
 
-func New(log logger.Logger, roleCache port.RoleCache) *Service {
+func New(roleCache port.RoleCacheService) *Service {
 	return &Service{
-		log:       log,
 		roleCache: roleCache,
 	}
 }
 
-func (r *Service) SetRoleCache(service port.RoleCache) {
+func (r *Service) SetRoleCache(service port.RoleCacheService) {
 	r.roleCache = service
 }
 
@@ -54,11 +51,7 @@ func (r *Service) List(ctx context.Context, uow port.AuthUnitOfWork) ([]*domain.
 			ctxWithTimeout, cancel := context.WithTimeout(ctx, 6*time.Second)
 			defer cancel()
 
-			if err = r.roleCache.SetBulk(ctxWithTimeout, cacheRoles); err != nil {
-				r.log.Error(logger.Cache, logger.RedisSet, err.Error(), map[logger.ExtraKey]interface{}{
-					logger.CacheSetArg: cacheRoles,
-				})
-			}
+			_ = r.roleCache.SetBulk(ctxWithTimeout, cacheRoles)
 		}()
 	}
 

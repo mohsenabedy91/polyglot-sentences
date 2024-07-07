@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver port.CacheDriver[any]) gin.HandlerFunc {
+func Authentication(conf config.Jwt, trans translation.Translator, cache port.AuthCache) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeaderToken := ctx.Request.Header.Get(config.AuthorizationHeaderKey)
 		if authHeaderToken == "" || len(authHeaderToken) < len("Bearer") {
@@ -55,7 +55,7 @@ func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver p
 		}
 
 		if jti, ok := claims[config.AuthTokenJTI].(string); ok {
-			if err = checkLogout(ctx.Request.Context(), cacheDriver, jti); err != nil {
+			if err = checkLogout(ctx.Request.Context(), cache, jti); err != nil {
 				presenter.NewResponse(ctx, trans, handler.StatusCodeMapping).Error(err).Echo()
 				return
 			}
@@ -68,13 +68,11 @@ func Authentication(conf config.Jwt, trans translation.Translator, cacheDriver p
 	}
 }
 
-func checkLogout(ctx context.Context, cacheDriver port.CacheDriver[any], jti string) error {
-
-	result, err := cacheDriver.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
-	if err != nil || result == nil {
+func checkLogout(ctx context.Context, cache port.AuthCache, jti string) error {
+	result, err := cache.GetTokenState(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
+	if err != nil {
 		return serviceerror.NewServerError()
-
-	} else if *result == constant.LogoutRedisValue {
+	} else if result == constant.LogoutRedisValue {
 		return serviceerror.New(serviceerror.UserLogout)
 	}
 

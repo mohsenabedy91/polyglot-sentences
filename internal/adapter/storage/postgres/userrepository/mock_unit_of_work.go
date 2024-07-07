@@ -10,22 +10,22 @@ type MockUnitOfWork struct {
 	mock.Mock
 }
 
-func (m *MockUnitOfWork) BeginTx(ctx context.Context) error {
-	args := m.Called(ctx)
+func (r *MockUnitOfWork) BeginTx(ctx context.Context) error {
+	args := r.Called(ctx)
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) Commit() error {
-	args := m.Called()
+func (r *MockUnitOfWork) Commit() error {
+	args := r.Called()
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) Rollback() error {
-	args := m.Called()
+func (r *MockUnitOfWork) Rollback() error {
+	args := r.Called()
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) UserRepository() port.UserRepository {
-	args := m.Called()
+func (r *MockUnitOfWork) UserRepository() port.UserRepository {
+	args := r.Called()
 	return args.Get(0).(port.UserRepository)
 }

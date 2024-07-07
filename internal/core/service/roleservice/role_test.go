@@ -6,8 +6,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/roleservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
-	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
@@ -22,8 +20,6 @@ import (
 var wg sync.WaitGroup
 
 func TestRoleService_Create(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	role := domain.Role{
 		Base: domain.Base{
@@ -41,7 +37,7 @@ func TestRoleService_Create(t *testing.T) {
 		mockRepo.On("ExistKey", role.Key).Return(false, nil)
 		mockRepo.On("Create", role).Return(nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.Create(mockUow, role)
 
 		require.NoError(t, err)
@@ -56,7 +52,7 @@ func TestRoleService_Create(t *testing.T) {
 
 		mockRepo.On("ExistKey", role.Key).Return(true, nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.Create(mockUow, role)
 
 		require.Error(t, err)
@@ -67,8 +63,6 @@ func TestRoleService_Create(t *testing.T) {
 }
 
 func TestRoleService_Get(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	role := &domain.Role{
 		Base: domain.Base{
@@ -85,7 +79,7 @@ func TestRoleService_Get(t *testing.T) {
 
 		mockRepo.On("GetByUUID", roleID).Return(role, nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		result, err := service.Get(mockUow, roleID.String())
 
 		require.NoError(t, err)
@@ -101,7 +95,7 @@ func TestRoleService_Get(t *testing.T) {
 
 		mockRepo.On("GetByUUID", roleID).Return(&domain.Role{}, serviceerror.New(serviceerror.RecordNotFound))
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		result, err := service.Get(mockUow, roleID.String())
 
 		require.Error(t, err)
@@ -113,8 +107,6 @@ func TestRoleService_Get(t *testing.T) {
 }
 
 func TestRoleService_List(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	defaultRole := &domain.Role{
 		Base: domain.Base{
@@ -144,21 +136,21 @@ func TestRoleService_List(t *testing.T) {
 		roles := []*domain.Role{defaultRole, nonDefaultRole}
 		mockRepo.On("List").Return(roles, nil)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 
 		wg.Add(1)
-		mockRoleCache.On("SetBulk", mock.Anything, mock.Anything).
+		mockRoleCacheService.On("SetBulk", mock.Anything, mock.Anything).
 			Run(func(args mock.Arguments) {
 				defer wg.Done()
 				cacheRoles := args.Get(1).(map[string]domain.RoleKeyType)
-				assert.Equal(t, defaultRole.Key, cacheRoles[defaultRole.UUID.String()])
+				require.Equal(t, defaultRole.Key, cacheRoles[defaultRole.UUID.String()])
 				_, exists := cacheRoles[nonDefaultRole.UUID.String()]
-				assert.False(t, exists)
+				require.False(t, exists)
 			}).
 			Return(nil)
 
-		service := roleservice.New(mockLog, mockRoleCache)
-		service.SetRoleCache(mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
+		service.SetRoleCache(mockRoleCacheService)
 
 		result, err := service.List(ctx, mockUow)
 
@@ -168,7 +160,7 @@ func TestRoleService_List(t *testing.T) {
 		require.Equal(t, roles, result)
 
 		mockRepo.AssertExpectations(t)
-		mockRoleCache.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 
 	t.Run("List error", func(t *testing.T) {
@@ -178,7 +170,7 @@ func TestRoleService_List(t *testing.T) {
 
 		mockRepo.On("List").Return([]*domain.Role{}, serviceerror.NewServerError())
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		result, err := service.List(ctx, mockUow)
 
 		require.Error(t, err)
@@ -196,19 +188,17 @@ func TestRoleService_List(t *testing.T) {
 		roles := []*domain.Role{defaultRole}
 		mockRepo.On("List").Return(roles, nil)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 
 		wg.Add(1)
-		mockRoleCache.On("SetBulk", mock.Anything, mock.Anything).
+		mockRoleCacheService.On("SetBulk", mock.Anything, mock.Anything).
 			Run(func(args mock.Arguments) {
 				defer wg.Done()
 			}).
 			Return(serviceerror.NewServerError())
 
-		mockLog.On("Error", logger.Cache, logger.RedisSet, mock.Anything, mock.Anything).Return()
-
-		service := roleservice.New(mockLog, mockRoleCache)
-		service.SetRoleCache(mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
+		service.SetRoleCache(mockRoleCacheService)
 		result, err := service.List(ctx, mockUow)
 
 		wg.Wait()
@@ -217,14 +207,11 @@ func TestRoleService_List(t *testing.T) {
 		require.Equal(t, roles, result)
 
 		mockRepo.AssertExpectations(t)
-		mockRoleCache.AssertExpectations(t)
-		mockLog.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 }
 
 func TestRoleService_Update(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	role := domain.Role{
 		Base: domain.Base{
@@ -244,17 +231,17 @@ func TestRoleService_Update(t *testing.T) {
 		mockRepo.On("ExistKey", role.Key).Return(false, nil)
 		mockRepo.On("Update", role, roleID).Return(nil)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 		var roleKey = &role.Key
-		mockRoleCache.On("Get", ctx, roleID.String()).Return(roleKey, nil)
+		mockRoleCacheService.On("Get", ctx, roleID.String()).Return(roleKey, nil)
 
-		service := roleservice.New(mockLog, mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
 		err := service.Update(ctx, mockUow, role, roleID.String())
 
 		require.NoError(t, err)
 
 		mockRepo.AssertExpectations(t)
-		mockRoleCache.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 
 	t.Run("Update success cache return nil", func(t *testing.T) {
@@ -265,17 +252,17 @@ func TestRoleService_Update(t *testing.T) {
 		mockRepo.On("ExistKey", role.Key).Return(false, nil)
 		mockRepo.On("Update", role, roleID).Return(nil)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 		var roleKey *domain.RoleKeyType
-		mockRoleCache.On("Get", ctx, roleID.String()).Return(roleKey, nil)
+		mockRoleCacheService.On("Get", ctx, roleID.String()).Return(roleKey, nil)
 
-		service := roleservice.New(mockLog, mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
 		err := service.Update(ctx, mockUow, role, roleID.String())
 
 		require.NoError(t, err)
 
 		mockRepo.AssertExpectations(t)
-		mockRoleCache.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 
 	t.Run("Update failed key exist", func(t *testing.T) {
@@ -285,18 +272,18 @@ func TestRoleService_Update(t *testing.T) {
 
 		mockRepo.On("ExistKey", role.Key).Return(true, nil)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 		var roleKey *domain.RoleKeyType
-		mockRoleCache.On("Get", ctx, roleID.String()).Return(roleKey, nil)
+		mockRoleCacheService.On("Get", ctx, roleID.String()).Return(roleKey, nil)
 
-		service := roleservice.New(mockLog, mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
 		err := service.Update(ctx, mockUow, role, roleID.String())
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.RoleExisted, err.(*serviceerror.ServiceError).GetErrorMessage())
 
 		mockRepo.AssertExpectations(t)
-		mockRoleCache.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 
 	t.Run("Update failed cache error", func(t *testing.T) {
@@ -304,23 +291,21 @@ func TestRoleService_Update(t *testing.T) {
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
-		mockRoleCache := new(roleservice.MockRoleCache)
+		mockRoleCacheService := new(roleservice.MockRoleCacheService)
 		var roleKey *domain.RoleKeyType
-		mockRoleCache.On("Get", ctx, roleID.String()).Return(roleKey, serviceerror.New(serviceerror.RecordNotFound))
+		mockRoleCacheService.On("Get", ctx, roleID.String()).Return(roleKey, serviceerror.New(serviceerror.RecordNotFound))
 
-		service := roleservice.New(mockLog, mockRoleCache)
+		service := roleservice.New(mockRoleCacheService)
 		err := service.Update(ctx, mockUow, role, roleID.String())
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 
-		mockRoleCache.AssertExpectations(t)
+		mockRoleCacheService.AssertExpectations(t)
 	})
 }
 
 func TestRoleService_Delete(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 
 	t.Run("Delete success", func(t *testing.T) {
@@ -330,7 +315,7 @@ func TestRoleService_Delete(t *testing.T) {
 
 		mockRepo.On("Delete", roleID, uint64(1)).Return(nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.Delete(mockUow, roleID.String(), uint64(1))
 
 		require.NoError(t, err)
@@ -345,7 +330,7 @@ func TestRoleService_Delete(t *testing.T) {
 
 		mockRepo.On("Delete", roleID, uint64(1)).Return(serviceerror.New(serviceerror.IsNotDeletable))
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.Delete(mockUow, roleID.String(), uint64(1))
 
 		require.Error(t, err)
@@ -356,8 +341,6 @@ func TestRoleService_Delete(t *testing.T) {
 }
 
 func TestService_GetPermissions(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	role := &domain.Role{
 		Base: domain.Base{
@@ -374,7 +357,7 @@ func TestService_GetPermissions(t *testing.T) {
 
 		mockRepo.On("GetPermissions", roleID).Return(role, nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		result, err := service.GetPermissions(mockUow, roleID.String())
 
 		require.NoError(t, err)
@@ -390,7 +373,7 @@ func TestService_GetPermissions(t *testing.T) {
 
 		mockRepo.On("GetPermissions", roleID).Return(&domain.Role{}, serviceerror.New(serviceerror.RecordNotFound))
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		result, err := service.GetPermissions(mockUow, roleID.String())
 
 		require.Error(t, err)
@@ -402,8 +385,6 @@ func TestService_GetPermissions(t *testing.T) {
 }
 
 func TestService_SyncPermissions(t *testing.T) {
-	mockLog := new(logger.MockLogger)
-
 	roleID := uuid.New()
 	role := &domain.Role{
 		Base: domain.Base{
@@ -444,7 +425,7 @@ func TestService_SyncPermissions(t *testing.T) {
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
 		mockRoleRepo.On("SyncPermissions", role.ID, validPermissionIDs).Return(nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.NoError(t, err)
@@ -458,7 +439,7 @@ func TestService_SyncPermissions(t *testing.T) {
 
 		permissionUUIDStr := []string{"invalid-uuid"}
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.Error(t, err)
@@ -481,7 +462,7 @@ func TestService_SyncPermissions(t *testing.T) {
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return([]uint64{}, serviceerror.NewServerError())
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.Error(t, err)
@@ -506,7 +487,7 @@ func TestService_SyncPermissions(t *testing.T) {
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, "invalid-uuid", permissionUUIDStr)
 
 		require.Error(t, err)
@@ -534,7 +515,7 @@ func TestService_SyncPermissions(t *testing.T) {
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
 		mockRoleRepo.On("GetByUUID", roleID).Return(&domain.Role{}, serviceerror.New(serviceerror.RecordNotFound))
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.Error(t, err)
@@ -564,7 +545,7 @@ func TestService_SyncPermissions(t *testing.T) {
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
 		mockRoleRepo.On("SyncPermissions", role.ID, validPermissionIDs).Return(serviceerror.NewServerError())
 
-		service := roleservice.New(mockLog, nil)
+		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.Error(t, err)

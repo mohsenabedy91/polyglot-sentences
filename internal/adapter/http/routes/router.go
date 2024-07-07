@@ -8,7 +8,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/validations"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/metrics"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
@@ -19,11 +18,10 @@ import (
 
 // Router is a wrapper for HTTP router
 type Router struct {
-	Engine      *gin.Engine
-	log         logger.Logger
-	conf        config.Config
-	trans       translation.Translator
-	cacheDriver port.CacheDriver[any]
+	Engine *gin.Engine
+	log    logger.Logger
+	conf   config.Config
+	trans  translation.Translator
 }
 
 // NewRouter creates a new HTTP router
@@ -31,7 +29,6 @@ func NewRouter(
 	log logger.Logger,
 	conf config.Config,
 	trans translation.Translator,
-	cacheDriver port.CacheDriver[any],
 	healthHandler handler.HealthHandler,
 ) (*Router, error) {
 
@@ -61,11 +58,10 @@ func NewRouter(
 	}
 
 	return &Router{
-		Engine:      router,
-		log:         log,
-		conf:        conf,
-		trans:       trans,
-		cacheDriver: cacheDriver,
+		Engine: router,
+		log:    log,
+		conf:   conf,
+		trans:  trans,
 	}, nil
 }
 

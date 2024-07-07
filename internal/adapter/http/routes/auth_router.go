@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/middlewares"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 )
 
 // NewAuthRouter creates a new HTTP router
@@ -10,8 +11,9 @@ func (r *Router) NewAuthRouter(
 	authHandler handler.AuthHandler,
 	roleHandler handler.RoleHandler,
 	permissionHandler handler.PermissionHandler,
+	authCache port.AuthCache,
 ) *Router {
-	r.Engine.POST("authorize", middlewares.Authentication(r.conf.Jwt, r.trans, r.cacheDriver), authHandler.Authorize)
+	r.Engine.POST("authorize", middlewares.Authentication(r.conf.Jwt, r.trans, authCache), authHandler.Authorize)
 
 	v1 := r.Engine.Group(":language/v1", middlewares.LocaleMiddleware(r.trans))
 	{
@@ -43,10 +45,9 @@ func (r *Router) NewAuthRouter(
 	}
 
 	return &Router{
-		Engine:      r.Engine,
-		log:         r.log,
-		conf:        r.conf,
-		trans:       r.trans,
-		cacheDriver: r.cacheDriver,
+		Engine: r.Engine,
+		log:    r.log,
+		conf:   r.conf,
+		trans:  r.trans,
 	}
 }

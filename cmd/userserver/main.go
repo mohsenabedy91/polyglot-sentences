@@ -12,7 +12,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
@@ -93,13 +92,6 @@ func startHTTPServer(
 	userService *userservice.UserService,
 	uowFactory func() port.UserUnitOfWork,
 ) *http.Server {
-	cacheDriver, err := redis.NewCacheDriver[any](log, conf)
-	if err != nil {
-		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
-		return nil
-	}
-	defer cacheDriver.Close()
-
 	minioClient, err := minio.NewMinioClient(ctx, log, conf.Minio)
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
@@ -110,7 +102,7 @@ func startHTTPServer(
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router
-	router, err := routes.NewRouter(log, conf, trans, cacheDriver, *healthHandler)
+	router, err := routes.NewRouter(log, conf, trans, *healthHandler)
 	if err != nil {
 		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
 		return nil

@@ -10,32 +10,32 @@ type MockUnitOfWork struct {
 	mock.Mock
 }
 
-func (m *MockUnitOfWork) BeginTx(ctx context.Context) error {
-	args := m.Called(ctx)
+func (r *MockUnitOfWork) BeginTx(ctx context.Context) error {
+	args := r.Called(ctx)
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) Commit() error {
-	args := m.Called()
+func (r *MockUnitOfWork) Commit() error {
+	args := r.Called()
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) Rollback() error {
-	args := m.Called()
+func (r *MockUnitOfWork) Rollback() error {
+	args := r.Called()
 	return args.Error(0)
 }
 
-func (m *MockUnitOfWork) RoleRepository() port.RoleRepository {
-	args := m.Called()
+func (r *MockUnitOfWork) RoleRepository() port.RoleRepository {
+	args := r.Called()
 	return args.Get(0).(port.RoleRepository)
 }
 
-func (m *MockUnitOfWork) PermissionRepository() port.PermissionRepository {
-	args := m.Called()
+func (r *MockUnitOfWork) PermissionRepository() port.PermissionRepository {
+	args := r.Called()
 	return args.Get(0).(port.PermissionRepository)
 }
 
-func (m *MockUnitOfWork) ACLRepository() port.ACLRepository {
-	args := m.Called()
+func (r *MockUnitOfWork) ACLRepository() port.ACLRepository {
+	args := r.Called()
 	return args.Get(0).(port.ACLRepository)
 }
