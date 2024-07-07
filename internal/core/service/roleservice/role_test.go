@@ -7,7 +7,6 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/roleservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
@@ -151,9 +150,9 @@ func TestRoleService_List(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				defer wg.Done()
 				cacheRoles := args.Get(1).(map[string]domain.RoleKeyType)
-				assert.Equal(t, defaultRole.Key, cacheRoles[defaultRole.UUID.String()])
+				require.Equal(t, defaultRole.Key, cacheRoles[defaultRole.UUID.String()])
 				_, exists := cacheRoles[nonDefaultRole.UUID.String()]
-				assert.False(t, exists)
+				require.False(t, exists)
 			}).
 			Return(nil)
 
