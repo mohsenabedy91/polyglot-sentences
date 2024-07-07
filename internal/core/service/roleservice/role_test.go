@@ -2,8 +2,10 @@ package roleservice_test
 
 import (
 	"context"
+	"github.com/bxcodec/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/roleservice"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,7 +21,7 @@ import (
 
 var wg sync.WaitGroup
 
-func TestService_Create(t *testing.T) {
+func TestRoleService_Create(t *testing.T) {
 	mockLog := new(logger.MockLogger)
 
 	roleID := uuid.New()
@@ -33,7 +35,6 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Create success", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -50,7 +51,6 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Create role exists error", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -66,7 +66,7 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
-func TestService_Get(t *testing.T) {
+func TestRoleService_Get(t *testing.T) {
 	mockLog := new(logger.MockLogger)
 
 	roleID := uuid.New()
@@ -80,7 +80,6 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("Get success", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -91,12 +90,12 @@ func TestService_Get(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, role, result)
+
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Get error", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -108,11 +107,12 @@ func TestService_Get(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 		require.Equal(t, &domain.Role{}, result)
+
 		mockRepo.AssertExpectations(t)
 	})
 }
 
-func TestService_List(t *testing.T) {
+func TestRoleService_List(t *testing.T) {
 	mockLog := new(logger.MockLogger)
 
 	roleID := uuid.New()
@@ -159,12 +159,14 @@ func TestService_List(t *testing.T) {
 
 		service := roleservice.New(mockLog, mockRoleCache)
 		service.SetRoleCache(mockRoleCache)
+
 		result, err := service.List(ctx, mockUow)
 
 		wg.Wait()
 
 		require.NoError(t, err)
 		require.Equal(t, roles, result)
+
 		mockRepo.AssertExpectations(t)
 		mockRoleCache.AssertExpectations(t)
 	})
@@ -213,13 +215,14 @@ func TestService_List(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, roles, result)
+
 		mockRepo.AssertExpectations(t)
 		mockRoleCache.AssertExpectations(t)
 		mockLog.AssertExpectations(t)
 	})
 }
 
-func TestService_Update(t *testing.T) {
+func TestRoleService_Update(t *testing.T) {
 	mockLog := new(logger.MockLogger)
 
 	roleID := uuid.New()
@@ -235,7 +238,6 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Update success", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -257,7 +259,6 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Update success cache return nil", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -279,7 +280,6 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Update failed key exist", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -295,12 +295,12 @@ func TestService_Update(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, serviceerror.RoleExisted, err.(*serviceerror.ServiceError).GetErrorMessage())
 
+		mockRepo.AssertExpectations(t)
 		mockRoleCache.AssertExpectations(t)
 	})
 
-	t.Run("Update cache error", func(t *testing.T) {
+	t.Run("Update failed cache error", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -318,14 +318,13 @@ func TestService_Update(t *testing.T) {
 	})
 }
 
-func TestService_Delete(t *testing.T) {
+func TestRoleService_Delete(t *testing.T) {
 	mockLog := new(logger.MockLogger)
 
 	roleID := uuid.New()
 
 	t.Run("Delete success", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -335,12 +334,12 @@ func TestService_Delete(t *testing.T) {
 		err := service.Delete(mockUow, roleID.String(), uint64(1))
 
 		require.NoError(t, err)
+
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Delete error", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -370,7 +369,6 @@ func TestService_GetPermissions(t *testing.T) {
 
 	t.Run("GetPermissions success", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -381,12 +379,12 @@ func TestService_GetPermissions(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, role, result)
+
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("GetPermissions error", func(t *testing.T) {
 		mockRepo := new(authrepository.MockRoleRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRepo)
 
@@ -415,27 +413,32 @@ func TestService_SyncPermissions(t *testing.T) {
 		Key:   "ADMIN",
 	}
 
+	var permissions []domain.Permission
+	for i := 1; i <= 5; i++ {
+		permissions = append(permissions, domain.Permission{
+			Base: domain.Base{
+				UUID: uuid.New(),
+				ID:   uint64(i),
+			},
+			Title: helper.StringPtr(faker.Word()),
+		})
+	}
+
 	t.Run("SyncPermissions success", func(t *testing.T) {
 		mockRoleRepo := new(authrepository.MockRoleRepository)
 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRoleRepo)
 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
 
-		permissionUUIDStr := []string{
-			uuid.New().String(),
-			uuid.New().String(),
-			uuid.New().String(),
+		var permissionUUIDStr []string
+		var permissionUUIDs []uuid.UUID
+		var validPermissionIDs []uint64
+		for _, permission := range permissions {
+			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.ID)
 		}
-
-		permissionUUIDs := []uuid.UUID{
-			uuid.MustParse(permissionUUIDStr[0]),
-			uuid.MustParse(permissionUUIDStr[1]),
-			uuid.MustParse(permissionUUIDStr[2]),
-		}
-
-		validPermissionIDs := []uint64{1, 2, 3}
 
 		mockRoleRepo.On("GetByUUID", roleID).Return(role, nil)
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
@@ -445,6 +448,7 @@ func TestService_SyncPermissions(t *testing.T) {
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
 
 		require.NoError(t, err)
+
 		mockRoleRepo.AssertExpectations(t)
 		mockPermissionRepo.AssertExpectations(t)
 	})
@@ -464,21 +468,15 @@ func TestService_SyncPermissions(t *testing.T) {
 	t.Run("SyncPermissions FilterValidPermissions error", func(t *testing.T) {
 		mockRoleRepo := new(authrepository.MockRoleRepository)
 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRoleRepo)
 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
 
-		permissionUUIDStr := []string{
-			uuid.New().String(),
-			uuid.New().String(),
-			uuid.New().String(),
-		}
-
-		permissionUUIDs := []uuid.UUID{
-			uuid.MustParse(permissionUUIDStr[0]),
-			uuid.MustParse(permissionUUIDStr[1]),
-			uuid.MustParse(permissionUUIDStr[2]),
+		var permissionUUIDStr []string
+		var permissionUUIDs []uuid.UUID
+		for _, permission := range permissions {
+			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.UUID)
 		}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return([]uint64{}, serviceerror.NewServerError())
@@ -488,57 +486,50 @@ func TestService_SyncPermissions(t *testing.T) {
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockPermissionRepo.AssertExpectations(t)
 	})
 
 	t.Run("SyncPermissions invalid role UUID error", func(t *testing.T) {
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-
 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
 
-		permissionUUIDStr := []string{
-			uuid.New().String(),
-			uuid.New().String(),
-			uuid.New().String(),
+		var permissionUUIDStr []string
+		var permissionUUIDs []uuid.UUID
+		var validPermissionIDs []uint64
+		for _, permission := range permissions {
+			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.ID)
 		}
-
-		permissionUUIDs := []uuid.UUID{
-			uuid.MustParse(permissionUUIDStr[0]),
-			uuid.MustParse(permissionUUIDStr[1]),
-			uuid.MustParse(permissionUUIDStr[2]),
-		}
-
-		validPermissionIDs := []uint64{1, 2, 3}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
+
 		service := roleservice.New(mockLog, nil)
 		err := service.SyncPermissions(mockUow, "invalid-uuid", permissionUUIDStr)
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.InvalidRequestBody, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockPermissionRepo.AssertExpectations(t)
 	})
 
 	t.Run("SyncPermissions GetByUUID error", func(t *testing.T) {
 		mockRoleRepo := new(authrepository.MockRoleRepository)
 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRoleRepo)
 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
 
-		permissionUUIDStr := []string{
-			uuid.New().String(),
-			uuid.New().String(),
-			uuid.New().String(),
+		var permissionUUIDStr []string
+		var permissionUUIDs []uuid.UUID
+		var validPermissionIDs []uint64
+		for _, permission := range permissions {
+			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.ID)
 		}
-
-		permissionUUIDs := []uuid.UUID{
-			uuid.MustParse(permissionUUIDStr[0]),
-			uuid.MustParse(permissionUUIDStr[1]),
-			uuid.MustParse(permissionUUIDStr[2]),
-		}
-
-		validPermissionIDs := []uint64{1, 2, 3}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
 		mockRoleRepo.On("GetByUUID", roleID).Return(&domain.Role{}, serviceerror.New(serviceerror.RecordNotFound))
@@ -549,30 +540,25 @@ func TestService_SyncPermissions(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 
-		mockRoleRepo.AssertExpectations(t) // TODO add this for all
+		mockPermissionRepo.AssertExpectations(t)
+		mockRoleRepo.AssertExpectations(t)
 	})
 
 	t.Run("SyncPermissions SyncPermissions error", func(t *testing.T) {
 		mockRoleRepo := new(authrepository.MockRoleRepository)
 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-
 		mockUow := new(authrepository.MockUnitOfWork)
 		mockUow.On("RoleRepository").Return(mockRoleRepo)
 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
 
-		permissionUUIDStr := []string{
-			uuid.New().String(),
-			uuid.New().String(),
-			uuid.New().String(),
+		var permissionUUIDStr []string
+		var permissionUUIDs []uuid.UUID
+		var validPermissionIDs []uint64
+		for _, permission := range permissions {
+			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.ID)
 		}
-
-		permissionUUIDs := []uuid.UUID{
-			uuid.MustParse(permissionUUIDStr[0]),
-			uuid.MustParse(permissionUUIDStr[1]),
-			uuid.MustParse(permissionUUIDStr[2]),
-		}
-
-		validPermissionIDs := []uint64{1, 2, 3}
 
 		mockRoleRepo.On("GetByUUID", roleID).Return(role, nil)
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
@@ -583,72 +569,8 @@ func TestService_SyncPermissions(t *testing.T) {
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockPermissionRepo.AssertExpectations(t)
+		mockRoleRepo.AssertExpectations(t)
 	})
 }
-
-// func TestService_SyncPermissions(t *testing.T) {
-// 	mockLog := new(logger.MockLogger)
-//
-// 	roleID := uuid.New()
-// 	role := &domain.Role{
-// 		Base: domain.Base{
-// 			UUID: roleID,
-// 		},
-// 		Title: "Admin",
-// 		Key:   "ADMIN",
-// 	}
-//
-// 	t.Run("SyncPermissions success", func(t *testing.T) {
-// 		mockRoleRepo := new(authrepository.MockRoleRepository)
-// 		mockPermissionRepo := new(authrepository.MockPermissionRepository)
-//
-// 		mockUow := new(authrepository.MockUnitOfWork)
-// 		mockUow.On("RoleRepository").Return(mockRoleRepo)
-// 		mockUow.On("PermissionRepository").Return(mockPermissionRepo)
-//
-// 		permissionUUIDStr := []string{
-// 			uuid.New().String(),
-// 			uuid.New().String(),
-// 			uuid.New().String(),
-// 		}
-//
-// 		var permissionIDs = make(map[string]uint64)
-// 		permissionIDs[permissionUUIDStr[0]] = 1
-// 		permissionIDs[permissionUUIDStr[1]] = 2
-// 		permissionIDs[permissionUUIDStr[2]] = 3
-//
-// 		permissionUUIDs := []uuid.UUID{
-// 			uuid.MustParse(permissionUUIDStr[0]),
-// 			uuid.MustParse(permissionUUIDStr[1]),
-// 			uuid.MustParse(permissionUUIDStr[2]),
-// 		}
-//
-// 		validPermissionIDs := []uint64{permissionIDs[permissionUUIDStr[0]], permissionIDs[permissionUUIDStr[1]], permissionIDs[permissionUUIDStr[2]]}
-//
-// 		mockRoleRepo.On("GetByUUID", roleID).Return(role, nil)
-// 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
-// 		mockRoleRepo.On("SyncPermissions", role.ID, validPermissionIDs).Return(nil)
-//
-// 		service := roleservice.New(mockLog, nil)
-// 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
-//
-// 		require.NoError(t, err)
-// 		mockRoleRepo.AssertExpectations(t)
-// 		mockPermissionRepo.AssertExpectations(t)
-// 	})
-//
-// 	t.Run("SyncPermissions invalid UUID error", func(t *testing.T) {
-// 		mockRepo := new(authrepository.MockRoleRepository)
-//
-// 		mockUow := new(authrepository.MockUnitOfWork)
-// 		mockUow.On("RoleRepository").Return(mockRepo)
-//
-// 		permissionUUIDStr := []string{"invalid-uuid"}
-//
-// 		service := roleservice.New(mockLog, nil)
-// 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
-//
-// 		require.Error(t, err)
-// 		require.Equal(t, serviceerror.InvalidRequestBody, err.(*serviceerror.ServiceError).GetErrorMessage())
-// 	})
-// }
