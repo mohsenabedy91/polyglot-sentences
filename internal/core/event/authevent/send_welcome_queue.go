@@ -1,7 +1,8 @@
-package authservice
+package authevent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email"
@@ -10,52 +11,56 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/translation"
 	"html/template"
+	"strings"
 )
 
-type SendEmailOTP struct {
+type SendWelcome struct {
 	queue       *messagebroker.Queue
 	emailSender port.EmailSender
+	userClient  port.UserClient
 }
 
-var sendEmailOTPInstance *SendEmailOTP
+var sendWelcomeInstance *SendWelcome
 
-const delaySendEmailOTPSeconds int64 = 0
+const DelaySendWelcomeSeconds int64 = 60
+const SendWelcomeName = "send_welcome"
 
-type SendEmailOTPDto struct {
+type SendWelcomeDto struct {
+	UserID   uint64 `json:"userID"`
 	To       string `json:"to"`
 	Name     string `json:"name"`
-	OTP      string `json:"otp"`
 	Language string `json:"language"`
 }
 
-func SendEmailOTPEvent(queue *messagebroker.Queue) *SendEmailOTP {
-	if sendEmailOTPInstance == nil {
-		sendEmailOTPInstance = &SendEmailOTP{
+func NewSendWelcome(queue *messagebroker.Queue, userClient port.UserClient) *SendWelcome {
+	if sendWelcomeInstance == nil {
+		sendWelcomeInstance = &SendWelcome{
 			queue:       queue,
 			emailSender: email.NewSender(queue.Log, queue.Config.SendGrid),
+			userClient:  userClient,
 		}
 	}
 
-	return sendEmailOTPInstance
+	return sendWelcomeInstance
 }
 
-func (r *SendEmailOTP) Name() string {
-	return "send_email_otp"
+func (r *SendWelcome) Name() string {
+	return SendWelcomeName
 }
 
-func (r *SendEmailOTP) Publish(msg interface{}) {
+func (r *SendWelcome) Publish(message interface{}) {
 
-	if err := r.queue.Driver.Produce(r.Name(), msg, delaySendEmailOTPSeconds); err != nil {
+	if err := r.queue.Driver.Produce(r.Name(), message, DelaySendWelcomeSeconds); err != nil {
 		return
 	}
-	r.queue.Log.Info(logger.Queue, logger.RabbitMQPublish, fmt.Sprintf("published successfully to queue: %s", msg), nil)
+	r.queue.Log.Info(logger.Queue, logger.RabbitMQPublish, fmt.Sprintf("published successfully to queue: %s", message), nil)
 }
 
-func (r *SendEmailOTP) Consume(message []byte) error {
+func (r *SendWelcome) Consume(message []byte) error {
 	extra := map[logger.ExtraKey]interface{}{
 		logger.Body: string(message),
 	}
-	var msg SendEmailOTPDto
+	var msg SendWelcomeDto
 	if err := json.Unmarshal(message, &msg); err != nil {
 		r.queue.Log.Error(logger.Queue, logger.RabbitMQConsume, fmt.Sprintf("Error unmarshalling message, error: %v", err), extra)
 		return err
@@ -64,18 +69,21 @@ func (r *SendEmailOTP) Consume(message []byte) error {
 	trans := translation.NewTranslation(r.queue.Config.App)
 	appName := trans.Lang("appName", nil, &msg.Language)
 
+	if strings.TrimSpace(msg.Name) == "" {
+		msg.Name = trans.Lang("user", nil, &msg.Language)
+	}
+
 	emailBuffer := new(bytes.Buffer)
-	parseFiles, err := template.ParseFiles("internal/core/views/email/base.html", "internal/core/views/email/auth/verify_email.html")
+	parseFiles, err := template.ParseFiles("internal/core/views/email/base.html", "internal/core/views/email/auth/welcome.html")
 	if err != nil {
 		r.queue.Log.Error(logger.Email, logger.SendEmail, err.Error(), nil)
 		return err
 	}
 
-	body := template.HTML(trans.Lang("email.verifyEmail.body", map[string]interface{}{
-		"username":        msg.Name,
-		"app":             appName,
-		"otp":             msg.OTP,
-		"verificationUrl": r.queue.Config.App.VerificationURL + msg.OTP,
+	body := template.HTML(trans.Lang("email.welcome.body", map[string]interface{}{
+		"username":     msg.Name,
+		"supportEmail": r.queue.Config.App.SupportEmail,
+		"app":          appName,
 	}, &msg.Language))
 
 	data := map[string]interface{}{
@@ -88,16 +96,21 @@ func (r *SendEmailOTP) Consume(message []byte) error {
 		return err
 	}
 
-	subject := trans.Lang("email.verifyEmail.subject", map[string]interface{}{
+	subject := trans.Lang("email.welcome.subject", map[string]interface{}{
 		"app": appName,
 	}, &msg.Language)
 
-	err = r.emailSender.Send(msg.To, msg.Name, subject, emailBuffer.String())
+	err = r.emailSender.Send(msg.To, msg.Name, subject, string(body))
+	if err == nil {
+		if updateErr := r.userClient.MarkWelcomeMessageSent(context.Background(), msg.UserID); updateErr != nil {
+			r.queue.Log.Error(logger.Email, logger.SendEmail, updateErr.Error(), nil)
+		}
+	}
 
 	return err
 }
 
-func (r *SendEmailOTP) Register() {
+func (r *SendWelcome) Register() {
 	go func() {
 		if err := r.queue.Driver.RegisterConsumer(r.Name(), r.Consume); err != nil {
 			r.queue.Log.Error(

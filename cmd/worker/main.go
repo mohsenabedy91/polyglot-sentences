@@ -8,7 +8,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/event/authevent"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 	"os"
 	"os/signal"
@@ -31,10 +31,10 @@ func main() {
 	userClient := client.NewUserClient(log, conf.UserManagement)
 	defer userClient.Close()
 
-	messagebroker.RegisterAllQueues(
-		authservice.SendEmailOTPEvent(queue),
-		authservice.SendWelcomeEvent(queue, userClient),
-		authservice.SendResetPasswordLinkEvent(queue),
+	messagebroker.RegisterEvents(
+		authevent.NewSendEmailOTP(queue),
+		authevent.NewSendWelcome(queue, userClient),
+		authevent.NewSendResetPasswordLink(queue),
 		// add new queues here
 		// ...
 	)
