@@ -98,6 +98,10 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │       │   │   └── 📄user_test.go
 │   │       │   └── 📄db.go
 │   │       └── 📁redis/
+│   │           ├── 📁authrepository/
+│   │           │   ├── 📄auth.go
+│   │           │   ├── 📄otp.go
+│   │           │   └── 📄role.go
 │   │           └── 📄db.go
 │   └── 📁core/
 │       ├── 📁config/
@@ -113,6 +117,11 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │       │   ├── 📄role.go
 │       │   ├── 📄sentence.go
 │       │   └── 📄user.go
+│       ├── 📁event/
+│       │   └── 📁authevent/
+│       │       ├── 📄send_email_otp_queue.go
+│       │       ├── 📄send_reset_password_link_queue.go
+│       │       └── 📄send_welcome_queue.go
 │       ├── 📁port/
 │       │   ├── 📄access_control.go
 │       │   ├── 📄aut.go
@@ -124,10 +133,7 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │       │   └── 📄user.go
 │       ├── 📁service/
 │       │   ├── 📁authservice/
-│       │   │   ├── 📄jwt.go
-│       │   │   ├── 📄send_email_otp_queue.go
-│       │   │   ├── 📄send_reset_password_link_queue.go
-│       │   │   └── 📄send_welcome_queue.go
+│       │   │   └── 📄jwt.go
 │       │   ├── 📁roleservice/
 │       │   │   ├── 📄cache.go
 │       │   │   └── 📄role.go

@@ -81,7 +81,7 @@ func main() {
 	defer userClient.Close()
 
 	authCache := authrepository.NewAuthCache(log, conf.Redis, cache)
-	tokenService := authservice.New(log, conf.Jwt, authCache)
+	tokenService := authservice.New(log, conf.Jwt, authCache, nil, nil)
 
 	otpCache := authrepository.NewOTPCache(log, conf.Redis, cache)
 	otpCacheService := otpservice.NewOTPCache(conf.OTP, otpCache)

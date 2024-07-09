@@ -1,8 +1,8 @@
 package port
 
-type EventQueue interface {
+type Event interface {
 	Name() string
-	Publish(msg interface{})
+	Publish(message interface{})
 	Consume(message []byte) error
 	Register()
 }

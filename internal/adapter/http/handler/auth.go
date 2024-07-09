@@ -9,8 +9,8 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/event/authevent"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
-	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/authservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/claim"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/oauth"
@@ -141,13 +141,13 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	message := authservice.SendEmailOTPDto{
+	message := authevent.SendEmailOTPDto{
 		To:       user.Email,
 		Name:     user.GetFullName(),
 		OTP:      otp,
 		Language: ctx.Param("language"),
 	}
-	authservice.SendEmailOTPEvent(r.queue).Publish(message)
+	authevent.NewSendEmailOTP(r.queue).Publish(message)
 
 	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessRegisteredUser).Echo(http.StatusCreated)
 }
@@ -194,13 +194,13 @@ func (r AuthHandler) EmailOTPResend(ctx *gin.Context) {
 	}
 
 	// TODO add rate limit
-	message := authservice.SendEmailOTPDto{
+	message := authevent.SendEmailOTPDto{
 		To:       user.Email,
 		Name:     user.GetFullName(),
 		OTP:      otp,
 		Language: ctx.Param("language"),
 	}
-	authservice.SendEmailOTPEvent(r.queue).Publish(message)
+	authevent.NewSendEmailOTP(r.queue).Publish(message)
 
 	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessEmailOTPSent).Echo(http.StatusOK)
 }
@@ -261,13 +261,13 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 		_ = r.otpCacheService.Used(ctxWithTimeout, req.Email)
 
 		if !user.WelcomeMessageSent {
-			message := authservice.SendWelcomeDto{
+			message := authevent.SendWelcomeDto{
 				UserID:   user.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
 			}
-			authservice.SendWelcomeEvent(r.queue, r.userClient).Publish(message)
+			authevent.NewSendWelcome(r.queue, r.userClient).Publish(message)
 		}
 
 		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
@@ -323,13 +323,13 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		}
 
 		// TODO add rate limit
-		message := authservice.SendEmailOTPDto{
+		message := authevent.SendEmailOTPDto{
 			To:       user.Email,
 			Name:     user.GetFullName(),
 			OTP:      otp,
 			Language: ctx.Param("language"),
 		}
-		authservice.SendEmailOTPEvent(r.queue).Publish(message)
+		authevent.NewSendEmailOTP(r.queue).Publish(message)
 
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.UserUnVerified),
@@ -471,13 +471,13 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if !user.WelcomeMessageSent {
-			message := authservice.SendWelcomeDto{
+			message := authevent.SendWelcomeDto{
 				UserID:   user.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
 			}
-			authservice.SendWelcomeEvent(r.queue, r.userClient).Publish(message)
+			authevent.NewSendWelcome(r.queue, r.userClient).Publish(message)
 		}
 		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
 			return
@@ -550,13 +550,13 @@ func (r AuthHandler) ForgetPassword(ctx *gin.Context) {
 
 	go func() {
 		// TODO add rate limit
-		message := authservice.SendResetPasswordLinkDto{
+		message := authevent.SendResetPasswordLinkDto{
 			To:       user.Email,
 			Name:     user.GetFullName(),
 			OTP:      otp,
 			Language: ctx.Param("language"),
 		}
-		authservice.SendResetPasswordLinkEvent(r.queue).Publish(message)
+		authevent.NewSendResetPasswordLink(r.queue).Publish(message)
 	}()
 
 	presenter.NewResponse(ctx, r.trans).Message(constant.AuthSuccessForgetPassword).Echo(http.StatusOK)

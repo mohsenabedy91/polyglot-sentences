@@ -140,8 +140,10 @@ func (r OTPCacheService) UsedForgetPassword(ctx context.Context, key string) err
 		return nil
 	}
 
+	requestTime := time.Unix(otpState.LastRequest, 0)
+	expiryTime := requestTime.Add(r.otpConfig.ForgetPasswordExpireSecond)
 	otpState.Used = true
-	if err = r.otpCache.Set(ctx, key, otpState, r.otpConfig.ExpireSecond); err != nil {
+	if err = r.otpCache.Set(ctx, key, otpState, expiryTime.Sub(time.Now())); err != nil {
 		return serviceerror.NewServerError()
 	}
 

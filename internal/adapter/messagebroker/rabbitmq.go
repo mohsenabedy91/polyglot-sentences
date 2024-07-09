@@ -12,23 +12,20 @@ type RabbitMQ struct {
 	log  logger.Logger
 }
 
-func (r *Queue) SetupRabbitMQ(url string, log logger.Logger) error {
+func NewRabbitMQ(url string, log logger.Logger) (*RabbitMQ, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	r.Driver = &RabbitMQ{
+	return &RabbitMQ{
 		conn: conn,
 		log:  log,
-	}
-
-	return nil
+	}, nil
 }
 
 func (r *RabbitMQ) Close() {
-	err := r.conn.Close()
-	if err != nil {
+	if err := r.conn.Close(); err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQ, err.Error(), nil)
 	}
 	return
@@ -46,20 +43,19 @@ func (r *RabbitMQ) Produce(name string, msg interface{}, delaySeconds int64) err
 		logger.Body:      message,
 	}
 
-	ch, err := r.conn.Channel()
+	channel, err := r.conn.Channel()
 	if err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error create channel: %v", err), extra)
 		return err
 	}
 
 	defer func(ch *amqp.Channel) {
-		err = ch.Close()
-		if err != nil {
+		if err = ch.Close(); err != nil {
 			r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error closing channel: %v", err), extra)
 		}
-	}(ch)
+	}(channel)
 
-	err = ch.ExchangeDeclare(
+	if err = channel.ExchangeDeclare(
 		"delayed_exchange",
 		"x-delayed-message",
 		true,
@@ -67,13 +63,12 @@ func (r *RabbitMQ) Produce(name string, msg interface{}, delaySeconds int64) err
 		false,
 		false,
 		amqp.Table{"x-delayed-type": "direct"},
-	)
-	if err != nil {
+	); err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error ExchangeDeclare: %v", err), extra)
 		return err
 	}
 
-	q, err := ch.QueueDeclare(
+	queueDeclare, err := channel.QueueDeclare(
 		name,
 		true,
 		false,
@@ -86,31 +81,28 @@ func (r *RabbitMQ) Produce(name string, msg interface{}, delaySeconds int64) err
 		return err
 	}
 
-	err = ch.QueueBind(
-		q.Name,
-		q.Name,
+	if err = channel.QueueBind(
+		queueDeclare.Name,
+		queueDeclare.Name,
 		"delayed_exchange",
 		false,
 		nil,
-	)
-	if err != nil {
+	); err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error QueueBind: %v", err), extra)
 		return err
 	}
 
-	headers := amqp.Table{"x-delay": delaySeconds * 1000}
-	err = ch.Publish(
+	if err = channel.Publish(
 		"delayed_exchange",
-		q.Name,
+		queueDeclare.Name,
 		false,
 		false,
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        message,
-			Headers:     headers,
+			Headers:     amqp.Table{"x-delay": delaySeconds * 1000},
 		},
-	)
-	if err != nil {
+	); err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error Publish message: %v", err), extra)
 		return err
 	}
@@ -124,13 +116,13 @@ func (r *RabbitMQ) RegisterConsumer(name string, callback func(message []byte) e
 		logger.QueueName: name,
 	}
 
-	ch, err := r.conn.Channel()
+	channel, err := r.conn.Channel()
 	if err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQProduce, fmt.Sprintf("Error create channel: %v", err), extra)
 		return err
 	}
 
-	q, err := ch.QueueDeclare(
+	queueDeclare, err := channel.QueueDeclare(
 		name,
 		true,
 		false,
@@ -148,8 +140,8 @@ func (r *RabbitMQ) RegisterConsumer(name string, callback func(message []byte) e
 		return err
 	}
 
-	deliveries, err := ch.Consume(
-		q.Name,
+	deliveries, err := channel.Consume(
+		queueDeclare.Name,
 		"",
 		false,
 		false,

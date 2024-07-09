@@ -9,6 +9,7 @@ type MockLogger struct {
 }
 
 func (r *MockLogger) Init(appName string) {
+	r.Called(appName)
 }
 
 func (r *MockLogger) Debug(category Category, subCategory SubCategory, message string, extra map[ExtraKey]interface{}) {

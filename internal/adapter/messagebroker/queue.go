@@ -6,16 +6,10 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
 )
 
-type DriverInterface interface {
-	Close()
-	Produce(name string, message interface{}, delaySeconds int64) error
-	RegisterConsumer(name string, callback func(message []byte) error) error
-}
-
 type Queue struct {
 	Log    logger.Logger
 	Config config.Config
-	Driver DriverInterface
+	Driver port.Driver
 }
 
 func NewQueue(log logger.Logger, config config.Config) *Queue {
@@ -25,7 +19,7 @@ func NewQueue(log logger.Logger, config config.Config) *Queue {
 	}
 }
 
-func RegisterAllQueues(events ...port.EventQueue) {
+func RegisterEvents(events ...port.Event) {
 	for _, event := range events {
 		event.Register()
 	}
