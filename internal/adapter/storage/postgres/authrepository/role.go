@@ -29,7 +29,7 @@ func (r *RoleRepository) Create(role domain.Role) error {
 		role.Title,
 		role.Key,
 		role.Description,
-		role.CreatedBy,
+		role.Modifier.CreatedBy,
 	)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "Create", "Failed").Inc()
@@ -40,10 +40,10 @@ func (r *RoleRepository) Create(role domain.Role) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("roles", "Create", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -55,7 +55,7 @@ func (r *RoleRepository) Create(role domain.Role) error {
 func (r *RoleRepository) GetByUUID(uuid uuid.UUID) (*domain.Role, error) {
 	var role domain.Role
 	err := r.tx.QueryRow("SELECT id, uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
-		Scan(&role.ID, &role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
+		Scan(&role.Base.ID, &role.Base.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			metrics.DbCall.WithLabelValues("roles", "GetByUUID", "Success").Inc()
@@ -94,7 +94,7 @@ func (r *RoleRepository) List() ([]*domain.Role, error) {
 	for rows.Next() {
 
 		var role domain.Role
-		if err = rows.Scan(&role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault); err != nil {
+		if err = rows.Scan(&role.Base.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault); err != nil {
 			metrics.DbCall.WithLabelValues("roles", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
@@ -121,7 +121,7 @@ func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 		role.Title,
 		role.Key,
 		role.Description,
-		role.UpdatedBy,
+		role.Modifier.UpdatedBy,
 		uuid,
 	)
 	if err != nil {
@@ -131,14 +131,14 @@ func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected < 0 {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected < 0 {
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	} else if affected == 0 {
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.New(serviceerror.NoRowsEffected)
 	}
 
@@ -161,17 +161,17 @@ func (r *RoleRepository) Delete(uuid uuid.UUID, deletedBy uint64) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
-		if err != nil {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected <= 0 {
+		if affectedErr != nil {
 			metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-			r.log.Error(logger.Database, logger.DatabaseDelete, err.Error(), nil)
+			r.log.Error(logger.Database, logger.DatabaseDelete, affectedErr.Error(), nil)
 			return serviceerror.NewServerError()
 		}
 
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseDelete, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseDelete, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.New(serviceerror.IsNotDeletable)
 	}
 
@@ -204,7 +204,7 @@ func (r *RoleRepository) ExistKey(key domain.RoleKeyType) (bool, error) {
 
 func (r *RoleRepository) GetRoleUser() (role domain.Role, err error) {
 	err = r.tx.QueryRow(`SELECT id FROM roles WHERE key=$1`, domain.RoleKeyUser).
-		Scan(&role.ID)
+		Scan(&role.Base.ID)
 	if err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
@@ -252,10 +252,10 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 	for rows.Next() {
 		var permission domain.Permission
 		err = rows.Scan(
-			&role.UUID,
+			&role.Base.UUID,
 			&role.Title,
 			&role.Description,
-			&permission.UUID,
+			&permission.Base.UUID,
 			&permission.Title,
 			&permission.Group,
 			&permission.Description,
@@ -267,7 +267,7 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 			return nil, serviceerror.NewServerError()
 		}
 
-		if permission.UUID == uuid.Nil {
+		if permission.Base.UUID == uuid.Nil {
 			continue
 		}
 
@@ -281,7 +281,7 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 		return nil, serviceerror.NewServerError()
 	}
 
-	if role.UUID == uuid.Nil {
+	if role.Base.UUID == uuid.Nil {
 		metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, fmt.Sprintf("There is any role for %s", roleUUID.String()), nil)
@@ -347,10 +347,10 @@ func (r *RoleRepository) SyncPermissions(roleID uint64, permissionIDs []uint64) 
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected < 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected < 0 {
 		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 

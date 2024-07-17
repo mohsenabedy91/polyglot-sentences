@@ -89,8 +89,8 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 
 	if resp != nil {
 		return &userpb.UserResponse{
-			Id:        resp.ID,
-			UUID:      resp.UUID.String(),
+			Id:        resp.Base.ID,
+			UUID:      resp.Base.UUID.String(),
 			FirstName: resp.FirstName,
 			LastName:  resp.LastName,
 			Email:     resp.Email,
@@ -136,8 +136,8 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 
 	if resp != nil {
 		return &userpb.UserResponse{
-			Id:                 resp.ID,
-			UUID:               resp.UUID.String(),
+			Id:                 resp.Base.ID,
+			UUID:               resp.Base.UUID.String(),
 			FirstName:          resp.FirstName,
 			LastName:           resp.LastName,
 			Email:              resp.Email,
@@ -229,8 +229,8 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.
 
 	if resp != nil {
 		return &userpb.UserResponse{
-			Id:                 resp.ID,
-			UUID:               resp.UUID.String(),
+			Id:                 resp.Base.ID,
+			UUID:               resp.Base.UUID.String(),
 			FirstName:          resp.FirstName,
 			LastName:           resp.LastName,
 			Email:              resp.Email,

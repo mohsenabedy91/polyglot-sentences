@@ -14,12 +14,12 @@ type Role struct {
 }
 
 func PrepareRole(role *domain.Role) *Role {
-	if role == nil || role.UUID == uuid.Nil {
+	if role == nil || role.Base.UUID == uuid.Nil {
 		return nil
 	}
 
 	return &Role{
-		ID:          role.UUID.String(),
+		ID:          role.Base.UUID.String(),
 		Title:       role.Title,
 		Description: role.Description,
 		IsDefault:   role.IsDefault,

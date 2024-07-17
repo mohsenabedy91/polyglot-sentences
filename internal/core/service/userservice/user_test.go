@@ -293,7 +293,7 @@ func TestUserService_Create(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedUser.Email, user.Email)
 		require.Equal(t, expectedUser.Status, user.Status)
-		require.Equal(t, userID, user.UUID)
+		require.Equal(t, userID, user.Base.UUID)
 
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)

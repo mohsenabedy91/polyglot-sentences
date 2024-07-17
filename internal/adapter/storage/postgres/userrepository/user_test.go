@@ -29,8 +29,8 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveSuccess() {
 	})
 
 	require.NoError(r.T(), err)
-	require.NotNil(r.T(), user.ID)
-	require.NotEqual(r.T(), uuid.Nil, user.UUID)
+	require.NotNil(r.T(), user.Base.ID)
+	require.NotEqual(r.T(), uuid.Nil, user.Base.UUID)
 
 	require.NoError(r.T(), tx.Commit())
 
@@ -73,11 +73,11 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_Success() {
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	fetchedUser, err := repo.GetByUUID(user.UUID)
+	fetchedUser, err := repo.GetByUUID(user.Base.UUID)
 
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), fetchedUser)
-	require.Equal(r.T(), user.UUID, fetchedUser.UUID)
+	require.Equal(r.T(), user.Base.UUID, fetchedUser.Base.UUID)
 
 	require.NoError(r.T(), tx.Commit())
 }
@@ -98,7 +98,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_UserInActive() {
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	fetchedUser, err := repo.GetByUUID(user.UUID)
+	fetchedUser, err := repo.GetByUUID(user.Base.UUID)
 
 	require.Error(r.T(), err)
 	require.Equal(r.T(), serviceerror.UserInActive, err.(*serviceerror.ServiceError).GetErrorMessage())
@@ -226,11 +226,11 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_Success() {
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	fetchedUser, err := repo.GetByID(user.ID)
+	fetchedUser, err := repo.GetByID(user.Base.ID)
 
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), fetchedUser)
-	require.Equal(r.T(), user.ID, fetchedUser.ID)
+	require.Equal(r.T(), user.Base.ID, fetchedUser.ID)
 
 	require.NoError(r.T(), tx.Commit())
 }
@@ -251,7 +251,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_UserInActive() {
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	fetchedUser, err := repo.GetByID(user.ID)
+	fetchedUser, err := repo.GetByID(user.Base.ID)
 
 	require.Error(r.T(), err)
 	require.Equal(r.T(), serviceerror.UserInActive, err.(*serviceerror.ServiceError).GetErrorMessage())
@@ -440,7 +440,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_Success() {
 
 	require.NoError(r.T(), err)
 
-	fetchedUser, err := repo.GetByUUID(user.UUID)
+	fetchedUser, err := repo.GetByUUID(user.Base.UUID)
 
 	require.NoError(r.T(), err)
 	require.Equal(r.T(), domain.UserStatusActive, fetchedUser.Status)
@@ -510,7 +510,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_Succ
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	err = repo.MarkWelcomeMessageSent(user.ID)
+	err = repo.MarkWelcomeMessageSent(user.Base.ID)
 
 	require.NoError(r.T(), err)
 
@@ -586,7 +586,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_Success() {
 	googleID := "new-google-id"
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	err = repo.UpdateGoogleID(user.ID, googleID)
+	err = repo.UpdateGoogleID(user.Base.ID, googleID)
 
 	require.NoError(r.T(), err)
 
@@ -660,7 +660,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_Success
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	err = repo.UpdateLastLoginTime(user.ID)
+	err = repo.UpdateLastLoginTime(user.Base.ID)
 
 	require.NoError(r.T(), err)
 
@@ -732,7 +732,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_Success() {
 	newPassword := "newHashedPassword"
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
-	err = repo.UpdatePassword(user.ID, newPassword)
+	err = repo.UpdatePassword(user.Base.ID, newPassword)
 
 	require.NoError(r.T(), err)
 
@@ -803,8 +803,8 @@ func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
 		user.Status,
 		user.GoogleID,
 		user.Avatar,
-		user.CreatedBy,
-	).Scan(&user.ID, &user.UUID)
+		user.Modifier.CreatedBy,
+	).Scan(&user.Base.ID, &user.Base.UUID)
 	require.NoError(t, err)
 	return user
 }

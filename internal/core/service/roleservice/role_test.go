@@ -143,8 +143,8 @@ func TestRoleService_List(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				defer wg.Done()
 				cacheRoles := args.Get(1).(map[string]domain.RoleKeyType)
-				require.Equal(t, defaultRole.Key, cacheRoles[defaultRole.UUID.String()])
-				_, exists := cacheRoles[nonDefaultRole.UUID.String()]
+				require.Equal(t, defaultRole.Key, cacheRoles[defaultRole.Base.UUID.String()])
+				_, exists := cacheRoles[nonDefaultRole.Base.UUID.String()]
 				require.False(t, exists)
 			}).
 			Return(nil)
@@ -416,14 +416,14 @@ func TestService_SyncPermissions(t *testing.T) {
 		var permissionUUIDs []uuid.UUID
 		var validPermissionIDs []uint64
 		for _, permission := range permissions {
-			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
-			permissionUUIDs = append(permissionUUIDs, permission.UUID)
-			validPermissionIDs = append(validPermissionIDs, permission.ID)
+			permissionUUIDStr = append(permissionUUIDStr, permission.Base.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.Base.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.Base.ID)
 		}
 
 		mockRoleRepo.On("GetByUUID", roleID).Return(role, nil)
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
-		mockRoleRepo.On("SyncPermissions", role.ID, validPermissionIDs).Return(nil)
+		mockRoleRepo.On("SyncPermissions", role.Base.ID, validPermissionIDs).Return(nil)
 
 		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)
@@ -456,8 +456,8 @@ func TestService_SyncPermissions(t *testing.T) {
 		var permissionUUIDStr []string
 		var permissionUUIDs []uuid.UUID
 		for _, permission := range permissions {
-			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
-			permissionUUIDs = append(permissionUUIDs, permission.UUID)
+			permissionUUIDStr = append(permissionUUIDStr, permission.Base.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.Base.UUID)
 		}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return([]uint64{}, serviceerror.NewServerError())
@@ -480,9 +480,9 @@ func TestService_SyncPermissions(t *testing.T) {
 		var permissionUUIDs []uuid.UUID
 		var validPermissionIDs []uint64
 		for _, permission := range permissions {
-			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
-			permissionUUIDs = append(permissionUUIDs, permission.UUID)
-			validPermissionIDs = append(validPermissionIDs, permission.ID)
+			permissionUUIDStr = append(permissionUUIDStr, permission.Base.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.Base.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.Base.ID)
 		}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
@@ -507,9 +507,9 @@ func TestService_SyncPermissions(t *testing.T) {
 		var permissionUUIDs []uuid.UUID
 		var validPermissionIDs []uint64
 		for _, permission := range permissions {
-			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
-			permissionUUIDs = append(permissionUUIDs, permission.UUID)
-			validPermissionIDs = append(validPermissionIDs, permission.ID)
+			permissionUUIDStr = append(permissionUUIDStr, permission.Base.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.Base.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.Base.ID)
 		}
 
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
@@ -536,14 +536,14 @@ func TestService_SyncPermissions(t *testing.T) {
 		var permissionUUIDs []uuid.UUID
 		var validPermissionIDs []uint64
 		for _, permission := range permissions {
-			permissionUUIDStr = append(permissionUUIDStr, permission.UUID.String())
-			permissionUUIDs = append(permissionUUIDs, permission.UUID)
-			validPermissionIDs = append(validPermissionIDs, permission.ID)
+			permissionUUIDStr = append(permissionUUIDStr, permission.Base.UUID.String())
+			permissionUUIDs = append(permissionUUIDs, permission.Base.UUID)
+			validPermissionIDs = append(validPermissionIDs, permission.Base.ID)
 		}
 
 		mockRoleRepo.On("GetByUUID", roleID).Return(role, nil)
 		mockPermissionRepo.On("FilterValidPermissions", permissionUUIDs).Return(validPermissionIDs, nil)
-		mockRoleRepo.On("SyncPermissions", role.ID, validPermissionIDs).Return(serviceerror.NewServerError())
+		mockRoleRepo.On("SyncPermissions", role.Base.ID, validPermissionIDs).Return(serviceerror.NewServerError())
 
 		service := roleservice.New(nil)
 		err := service.SyncPermissions(mockUow, roleID.String(), permissionUUIDStr)

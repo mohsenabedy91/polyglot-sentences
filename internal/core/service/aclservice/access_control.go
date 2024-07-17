@@ -29,29 +29,29 @@ func (r ACLService) CheckAccess(
 		return false, 0, err
 	}
 
-	roleKeys, err := uow.RoleRepository().GetRoleKeys(user.ID)
+	roleKeys, err := uow.RoleRepository().GetRoleKeys(user.Base.ID)
 	if err != nil {
 		return false, 0, err
 	}
 
 	for _, key := range roleKeys {
 		if key == domain.RoleKeySuperAdmin {
-			return true, user.ID, nil
+			return true, user.Base.ID, nil
 		}
 	}
 
-	permissionKeys, err := uow.PermissionRepository().GetUserPermissionKeys(user.ID)
+	permissionKeys, err := uow.PermissionRepository().GetUserPermissionKeys(user.Base.ID)
 	if err != nil {
 		return false, 0, err
 	}
 
 	for _, requiredPermission := range requiredPermissions {
 		if requiredPermission == domain.PermissionKeyNone {
-			return true, user.ID, nil
+			return true, user.Base.ID, nil
 		}
 		for _, key := range permissionKeys {
 			if requiredPermission == key {
-				return true, user.ID, nil
+				return true, user.Base.ID, nil
 			}
 		}
 	}
@@ -66,7 +66,7 @@ func (r ACLService) AssignUserRoleToUser(uow port.AuthUnitOfWork, userID uint64)
 	}
 
 	roleIDs := make([]uint64, 1)
-	roleIDs[0] = role.ID
+	roleIDs[0] = role.Base.ID
 
 	return uow.ACLRepository().AssignRolesToUser(userID, roleIDs)
 }

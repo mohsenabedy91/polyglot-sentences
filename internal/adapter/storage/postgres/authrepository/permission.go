@@ -97,7 +97,7 @@ func (r *PermissionRepository) List() ([]*domain.Permission, error) {
 	var permissions []*domain.Permission
 	for rows.Next() {
 		var permission domain.Permission
-		if err = rows.Scan(&permission.UUID, &permission.Title, &permission.Description, &permission.Group); err != nil {
+		if err = rows.Scan(&permission.Base.UUID, &permission.Title, &permission.Description, &permission.Group); err != nil {
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)

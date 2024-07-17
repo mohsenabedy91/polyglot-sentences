@@ -14,12 +14,12 @@ type User struct {
 }
 
 func PrepareUser(user *domain.User) *User {
-	if user == nil || user.UUID == uuid.Nil {
+	if user == nil || user.Base.UUID == uuid.Nil {
 		return nil
 	}
 
 	return &User{
-		ID:        user.UUID.String(),
+		ID:        user.Base.UUID.String(),
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
