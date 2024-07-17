@@ -227,10 +227,10 @@ func (r *UserRepository) VerifiedEmail(email string) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "VerifiedEmail", "Success").Inc()
@@ -247,10 +247,10 @@ func (r *UserRepository) MarkWelcomeMessageSent(id uint64) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "MarkWelcomeMessageSent", "Success").Inc()
@@ -267,10 +267,10 @@ func (r *UserRepository) UpdateGoogleID(id uint64, googleID string) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "UpdateGoogleID", "Success").Inc()
@@ -287,10 +287,10 @@ func (r *UserRepository) UpdateLastLoginTime(id uint64) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "UpdateLastLoginTime", "Success").Inc()
@@ -311,10 +311,10 @@ func (r *UserRepository) UpdatePassword(id uint64, password string) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 	metrics.DbCall.WithLabelValues("users", "UpdatePassword", "Success").Inc()
@@ -327,9 +327,11 @@ func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var firstName sql.NullString
 	var lastName sql.NullString
 
-	err := scanner.Scan(&user.ID, &user.UUID, &firstName, &lastName, &user.Email, &user.Status)
+	if err := scanner.Scan(&user.ID, &user.UUID, &firstName, &lastName, &user.Email, &user.Status); err != nil {
+		return domain.User{}, err
+	}
 
 	user.SetFirstName(firstName).SetLastName(lastName)
 
-	return user, err
+	return user, nil
 }
