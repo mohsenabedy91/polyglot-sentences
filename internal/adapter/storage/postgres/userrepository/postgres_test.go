@@ -12,6 +12,8 @@ import (
 	"path"
 	"runtime"
 	"testing"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type UserRepositoryTestSuite struct {
@@ -29,8 +31,6 @@ func (r *UserRepositoryTestSuite) SetupSuite() {
 	configProvider := &config.Config{}
 	conf := configProvider.GetConfig(envPath)
 
-	require.NoError(r.T(), err)
-
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 		conf.DB.Host,
 		conf.DB.Port,
@@ -44,7 +44,9 @@ func (r *UserRepositoryTestSuite) SetupSuite() {
 	r.db, err = sql.Open("postgres", dsn)
 	require.NoError(r.T(), err)
 
-	_, filename, _, _ := runtime.Caller(0)
+	_, filename, _, ok := runtime.Caller(0)
+	require.True(r.T(), ok)
+
 	migrationDir := "file://" + path.Join(path.Dir(filename), "..", "migrations")
 
 	driver, err := postgres.WithInstance(r.db, &postgres.Config{})
@@ -54,6 +56,8 @@ func (r *UserRepositoryTestSuite) SetupSuite() {
 
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), r.m)
+
+	_ = r.m.Down()
 	require.NoError(r.T(), r.m.Up())
 }
 
