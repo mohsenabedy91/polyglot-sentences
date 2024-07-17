@@ -43,12 +43,12 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   ├── 📁constant/
 │   │   │   └── 📄messages.go
 │   │   ├── 📁email/
-│   │   │   ├── 📁mocks/
-│   │   │   │   └── 📄mock_sendgrid.go
+│   │   │   ├── 📄mock_sendgrid.go
 │   │   │   ├── 📄sendgrid.go
 │   │   │   └── 📄sendgrid_test.go
 │   │   ├── 📁grpc/
 │   │   │   ├── 📁client/
+│   │   │   │   ├── 📄mock_user_client.go
 │   │   │   │   └── 📄user_client.go
 │   │   │   ├── 📁proto/
 │   │   │   │   └── 📁user/
@@ -66,15 +66,21 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   │   │   └── 📄custom_recovery.go
 │   │   │   ├── 📁presenter/
 │   │   │   │   ├── 📄base.go
-│   │   │   │   └── 📄user.go
+│   │   │   │   ├── 📄base_test.go
+│   │   │   │   ├── 📄user.go
+│   │   │   │   └── 📄user_test.go
 │   │   │   ├── 📁request/
 │   │   │   │   ├── 📄base.go
-│   │   │   │   └── 📄user.go
+│   │   │   │   ├── 📄user.go
+│   │   │   │   └── 📄user_test.go
 │   │   │   ├── 📁routes/
+│   │   │   │   ├── 📄auth_router.go
 │   │   │   │   ├── 📄router.go
-│   │   │   │   └── 📄swagger.go
+│   │   │   │   ├── 📄swagger.go
+│   │   │   │   └── 📄user_router.go
 │   │   │   └── 📁validations/
-│   │   │       └── 📄validator.go
+│   │   │       ├── 📄validator.go
+│   │   │       └── 📄validator_test.go
 │   │   ├── 📁messagebroker/
 │   │   │   ├── 📄queue.go
 │   │   │   └── 📄rabbitmq.go
@@ -82,16 +88,25 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │   │   └── 📄client.go
 │   │   └── 📁storage/
 │   │       ├── 📁postgres/
+│   │       │   ├── 📁authrepository/
+│   │       │   │   ├── 📄access_control.go
+│   │       │   │   ├── 📄access_control_test.go
+│   │       │   │   ├── 📄mock_access_control.go
+│   │       │   │   ├── 📄mock_permission.go
+│   │       │   │   ├── 📄mock_role.go
+│   │       │   │   ├── 📄mock_unit_of_work.go
+│   │       │   │   ├── 📄permission.go
+│   │       │   │   ├── 📄permission_test.go
+│   │       │   │   ├── 📄postgres_test.go
+│   │       │   │   ├── 📄role.go
+│   │       │   │   ├── 📄role_test.go
+│   │       │   │   └── 📄unit_of_work.go
 │   │       │   ├── 📁migrations/
 │   │       │   │   ├── 📄202404031147_create_users_table.down.sql
 │   │       │   │   └── 📄202404031147_create_users_table.up.sql
-│   │       │   ├── 📁authrepository/
-│   │       │   │   ├── 📄access_control.go
-│   │       │   │   ├── 📄postgres_test.go
-│   │       │   │   ├── 📄permission.go
-│   │       │   │   ├── 📄role.go
-│   │       │   │   └── 📄unit_of_work.go
 │   │       │   ├── 📁userrepository/
+│   │       │   │   ├── 📄mock_unit_of_work.go
+│   │       │   │   ├── 📄mock_user.go
 │   │       │   │   ├── 📄postgres_test.go
 │   │       │   │   ├── 📄unit_of_work.go
 │   │       │   │   ├── 📄user.go
@@ -100,6 +115,9 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │       └── 📁redis/
 │   │           ├── 📁authrepository/
 │   │           │   ├── 📄auth.go
+│   │           │   ├── 📄mock_auth.go
+│   │           │   ├── 📄mock_otp.go
+│   │           │   ├── 📄mock_role.go
 │   │           │   ├── 📄otp.go
 │   │           │   └── 📄role.go
 │   │           └── 📄db.go
