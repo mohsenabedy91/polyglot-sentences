@@ -68,12 +68,13 @@ func TestUserGoogleInfo(t *testing.T) {
 			name: "Successful user info retrieval",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@google.com",
+				err := json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
+					Email: "user@gmail.com",
 				})
+				require.NoError(t, err)
 			},
 			expectedError: nil,
-			expectedEmail: "user@google.com",
+			expectedEmail: "user@gmail.com",
 		},
 		{
 			name: "Unsuccessful user info retrieval",
@@ -93,7 +94,8 @@ func TestUserGoogleInfo(t *testing.T) {
 			name: "Invalid JSON response",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("invalid json"))
+				_, err := w.Write([]byte("invalid json"))
+				require.NoError(t, err)
 			},
 			expectedError: serviceerror.NewServerError(),
 		},
@@ -101,12 +103,13 @@ func TestUserGoogleInfo(t *testing.T) {
 			name: "Error closing response body",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
-					Email: "user@google.com",
+				err := json.NewEncoder(w).Encode(oauth.GoogleUserInfo{
+					Email: "user@gmail.com",
 				})
+				require.NoError(t, err)
 			},
 			expectedError:  nil,
-			expectedEmail:  "user@google.com",
+			expectedEmail:  "user@gmail.com",
 			closeBodyError: true,
 		},
 		{
