@@ -54,8 +54,8 @@ func TestOTPCacheService_Set(t *testing.T) {
 			Value:        "123456",
 			Used:         false,
 			RequestCount: 1,
-			CreatedAt:    time.Now().Unix() - 1000,
-			LastRequest:  time.Now().Unix() - 1000,
+			CreatedAt:    time.Now().Unix() - 1_000,
+			LastRequest:  time.Now().Unix() - 1_000,
 		}
 
 		mockOTPCache := new(authrepository.MockOTPCache)
@@ -276,8 +276,8 @@ func TestOTPCacheService_SetForgetPassword(t *testing.T) {
 			Value:        "123456",
 			Used:         false,
 			RequestCount: 1,
-			CreatedAt:    time.Now().Unix() - 1000,
-			LastRequest:  time.Now().Unix() - 1000,
+			CreatedAt:    time.Now().Unix() - 1_000,
+			LastRequest:  time.Now().Unix() - 1_000,
 		}
 
 		mockOTPCache := new(authrepository.MockOTPCache)

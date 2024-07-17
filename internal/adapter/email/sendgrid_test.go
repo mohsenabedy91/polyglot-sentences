@@ -18,7 +18,7 @@ func TestSend_Successful(t *testing.T) {
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@google.com",
+		Address: "test@gmail.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -51,7 +51,7 @@ func TestSend_Failure(t *testing.T) {
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@google.com",
+		Address: "test@gmail.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -83,7 +83,7 @@ func TestSend_LoggingSuccess(t *testing.T) {
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@google.com",
+		Address: "test@gmail.com",
 		Key:     "SG.fake_key",
 	}
 
@@ -125,7 +125,7 @@ func TestSend_LoggingFailure(t *testing.T) {
 
 	conf := config.SendGrid{
 		Name:    "Test",
-		Address: "test@google.com",
+		Address: "test@gmail.com",
 		Key:     "SG.fake_key",
 	}
 
