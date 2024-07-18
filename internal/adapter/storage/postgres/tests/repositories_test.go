@@ -1,4 +1,4 @@
-package userrepository_test
+package tests
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -16,13 +17,13 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-type UserRepositoryTestSuite struct {
+type TestSuite struct {
 	suite.Suite
 	db *sql.DB
 	m  *migrate.Migrate
 }
 
-func (r *UserRepositoryTestSuite) SetupSuite() {
+func (r *TestSuite) SetupSuite() {
 	var err error
 
 	envPath, err := helper.GetEnvFilePath(".env.test")
@@ -61,35 +62,53 @@ func (r *UserRepositoryTestSuite) SetupSuite() {
 	require.NoError(r.T(), r.m.Up())
 }
 
-func (r *UserRepositoryTestSuite) TearDownTest() {
-	rows, err := r.db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
-	require.NoError(r.T(), err)
-
-	for rows.Next() {
-		var tableName string
-		err = rows.Scan(&tableName)
-		require.NoError(r.T(), err)
-
-		if tableName == "schema_migrations" {
-			continue
-		}
-
-		queryTruncateTable := fmt.Sprintf("TRUNCATE TABLE %s CASCADE;", tableName)
-		_, err = r.db.Exec(queryTruncateTable)
-		require.NoError(r.T(), err)
-	}
-
-	err = rows.Close()
-	require.NoError(r.T(), err)
+func (r *TestSuite) TearDownTest() {
+	_ = r.m.Down()
+	require.NoError(r.T(), r.m.Up())
 }
 
-func (r *UserRepositoryTestSuite) TearDownSuite() {
+func (r *TestSuite) TearDownSuite() {
 	require.NoError(r.T(), r.m.Down())
 }
 
-func TestUserRepositoryTestSuite(t *testing.T) {
+func (r *TestSuite) GetDB() *sql.DB {
+	return r.db
+}
+
+func TestRepositoriesTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")
 	}
+	suite.Run(t, new(RoleRepositoryTestSuite))
 	suite.Run(t, new(UserRepositoryTestSuite))
+}
+
+func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
+	require.NoError(t, tx.QueryRow(
+		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by) 
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+							RETURNING id, uuid`,
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		user.Password,
+		user.Status,
+		user.GoogleID,
+		user.Avatar,
+		user.Modifier.CreatedBy,
+	).Scan(&user.Base.ID, &user.Base.UUID))
+
+	return user
+}
+
+func insertRole(t *testing.T, tx *sql.Tx, role *domain.Role) *domain.Role {
+	require.NoError(t, tx.QueryRow(
+		"INSERT INTO roles (title, key, description, created_by) VALUES ($1, $2, $3, $4) RETURNING id, uuid",
+		role.Title,
+		role.Key,
+		role.Description,
+		role.Modifier.CreatedBy,
+	).Scan(&role.Base.ID, &role.Base.UUID))
+
+	return role
 }

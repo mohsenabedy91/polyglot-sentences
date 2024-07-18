@@ -1,7 +1,6 @@
-package userrepository_test
+package tests
 
 import (
-	"database/sql"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -10,13 +9,16 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
+
+type UserRepositoryTestSuite struct {
+	TestSuite
+}
 
 func (r *UserRepositoryTestSuite) TestUserRepository_SaveSuccess() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -41,7 +43,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveInValidStatus() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -61,7 +63,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveInValidStatus() {
 func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -86,7 +88,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_UserInActive() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Warn", logger.Database, logger.DatabaseSelect, "The User is inactive", mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -113,7 +115,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_RecordNotFound() 
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -132,7 +134,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -153,7 +155,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_DBError() {
 func (r *UserRepositoryTestSuite) TestUserRepository_IsEmailUnique_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -169,7 +171,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_IsEmailUnique_NotUnique() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -193,7 +195,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_IsEmailUnique_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -214,7 +216,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_IsEmailUnique_DBError() {
 func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -239,7 +241,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_UserInActive() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Warn", logger.Database, logger.DatabaseSelect, "The User is inactive", mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -266,7 +268,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_RecordNotFound() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -285,7 +287,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -306,7 +308,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_DBError() {
 func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -331,7 +333,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_RecordNotFound()
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Warn", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	repo := userrepository.NewUserRepository(mockLogger, tx)
@@ -349,7 +351,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -370,7 +372,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_DBError() {
 func (r *UserRepositoryTestSuite) TestUserRepository_List_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -403,7 +405,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_List_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -424,7 +426,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_List_DBError() {
 func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -452,7 +454,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -473,7 +475,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_NoRowsAffecte
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -498,7 +500,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_NoRowsAffecte
 func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -526,7 +528,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_DBEr
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -547,7 +549,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_NoRo
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -572,7 +574,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_NoRo
 func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -602,7 +604,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -623,7 +625,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_NoRowsAffect
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -648,7 +650,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_NoRowsAffect
 func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -672,7 +674,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_DBError
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -693,7 +695,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_NoRowsA
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -718,7 +720,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_NoRowsA
 func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_Success() {
 	mockLogger := new(logger.MockLogger)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	user := insertUser(r.T(), tx, &domain.User{
@@ -748,7 +750,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_DBError() {
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	_, err = tx.Exec("DROP TABLE IF EXISTS users CASCADE")
@@ -769,7 +771,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_NoRowsAffect
 	mockLogger := new(logger.MockLogger)
 	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	tx, err := r.db.Begin()
+	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), tx, &domain.User{
@@ -789,22 +791,4 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_NoRowsAffect
 	require.NoError(r.T(), tx.Rollback())
 
 	mockLogger.AssertExpectations(r.T())
-}
-
-func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
-	err := tx.QueryRow(
-		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by) 
-							VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-							RETURNING id, uuid`,
-		user.FirstName,
-		user.LastName,
-		user.Email,
-		user.Password,
-		user.Status,
-		user.GoogleID,
-		user.Avatar,
-		user.Modifier.CreatedBy,
-	).Scan(&user.Base.ID, &user.Base.UUID)
-	require.NoError(t, err)
-	return user
 }

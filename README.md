@@ -90,27 +90,27 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 │   │       ├── 📁postgres/
 │   │       │   ├── 📁authrepository/
 │   │       │   │   ├── 📄access_control.go
-│   │       │   │   ├── 📄access_control_test.go
 │   │       │   │   ├── 📄mock_access_control.go
 │   │       │   │   ├── 📄mock_permission.go
 │   │       │   │   ├── 📄mock_role.go
 │   │       │   │   ├── 📄mock_unit_of_work.go
 │   │       │   │   ├── 📄permission.go
-│   │       │   │   ├── 📄permission_test.go
-│   │       │   │   ├── 📄postgres_test.go
 │   │       │   │   ├── 📄role.go
-│   │       │   │   ├── 📄role_test.go
 │   │       │   │   └── 📄unit_of_work.go
 │   │       │   ├── 📁migrations/
 │   │       │   │   ├── 📄202404031147_create_users_table.down.sql
 │   │       │   │   └── 📄202404031147_create_users_table.up.sql
+│   │       │   ├── 📁tests/
+│   │       │   │   ├── 📄access_control_test.go
+│   │       │   │   ├── 📄permission_test.go
+│   │       │   │   ├── 📄repositories_test.go
+│   │       │   │   ├── 📄role_test.go
+│   │       │   │   └── 📄user_test.go
 │   │       │   ├── 📁userrepository/
 │   │       │   │   ├── 📄mock_unit_of_work.go
 │   │       │   │   ├── 📄mock_user.go
-│   │       │   │   ├── 📄postgres_test.go
 │   │       │   │   ├── 📄unit_of_work.go
-│   │       │   │   ├── 📄user.go
-│   │       │   │   └── 📄user_test.go
+│   │       │   │   └── 📄user.go
 │   │       │   └── 📄db.go
 │   │       └── 📁redis/
 │   │           ├── 📁authrepository/
