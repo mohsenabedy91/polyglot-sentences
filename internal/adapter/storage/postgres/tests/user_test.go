@@ -375,6 +375,9 @@ func (r *UserRepositoryTestSuite) TestUserRepository_List_Success() {
 	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
+	_, err = tx.Exec("TRUNCATE users CASCADE;")
+	require.NoError(r.T(), err)
+
 	insertUser(r.T(), tx, &domain.User{
 		FirstName: helper.StringPtr("John"),
 		LastName:  helper.StringPtr("Doe"),
