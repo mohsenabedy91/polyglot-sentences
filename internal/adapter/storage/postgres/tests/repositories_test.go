@@ -112,3 +112,33 @@ func insertRole(t *testing.T, tx *sql.Tx, role *domain.Role) *domain.Role {
 
 	return role
 }
+
+func insertPermission(t *testing.T, tx *sql.Tx, permission *domain.Permission) *domain.Permission {
+	require.NoError(t, tx.QueryRow(
+		"INSERT INTO permissions (title, key, description, created_by) VALUES ($1, $2, $3, $4) RETURNING id, uuid",
+		permission.Title,
+		permission.Key,
+		permission.Description,
+		permission.Modifier.CreatedBy,
+	).Scan(&permission.Base.ID, &permission.Base.UUID))
+
+	return permission
+}
+
+func insertRolePermission(t *testing.T, tx *sql.Tx, roleID uint64, permissionID uint64) {
+	_, err := tx.Exec(
+		"INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2);",
+		roleID,
+		permissionID,
+	)
+	require.NoError(t, err)
+}
+
+func addRoleToUser(t *testing.T, tx *sql.Tx, userID uint64, roleID uint64) {
+	_, err := tx.Exec(
+		"INSERT INTO access_controls (user_id, role_id) VALUES ($1, $2);",
+		userID,
+		roleID,
+	)
+	require.NoError(t, err)
+}
