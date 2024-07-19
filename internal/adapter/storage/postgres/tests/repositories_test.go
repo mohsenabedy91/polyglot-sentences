@@ -20,6 +20,7 @@ import (
 type TestSuite struct {
 	suite.Suite
 	db *sql.DB
+	tx *sql.Tx
 	m  *migrate.Migrate
 }
 
@@ -54,7 +55,6 @@ func (r *TestSuite) SetupSuite() {
 	require.NoError(r.T(), err)
 
 	r.m, err = migrate.NewWithDatabaseInstance(migrationDir, conf.DB.Name, driver)
-
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), r.m)
 
@@ -62,25 +62,34 @@ func (r *TestSuite) SetupSuite() {
 	require.NoError(r.T(), r.m.Up())
 }
 
+func (r *TestSuite) SetupTest() {
+	var err error
+	r.tx, err = r.db.Begin()
+	require.NoError(r.T(), err)
+}
+
 func (r *TestSuite) TearDownTest() {
-	_ = r.m.Down()
-	require.NoError(r.T(), r.m.Up())
+	require.NoError(r.T(), r.tx.Rollback())
 }
 
 func (r *TestSuite) TearDownSuite() {
 	require.NoError(r.T(), r.m.Down())
+	require.NoError(r.T(), r.db.Close())
 }
 
-func (r *TestSuite) GetDB() *sql.DB {
-	return r.db
+func (r *TestSuite) GetTx() *sql.Tx {
+	return r.tx
 }
 
 func TestRepositoriesTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")
 	}
+
+	t.Parallel()
 	suite.Run(t, new(RoleRepositoryTestSuite))
 	suite.Run(t, new(UserRepositoryTestSuite))
+	suite.Run(t, new(PermissionRepositoryTestSuite))
 }
 
 func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
