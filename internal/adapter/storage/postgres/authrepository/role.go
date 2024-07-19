@@ -25,11 +25,11 @@ func NewRoleRepository(log logger.Logger, tx *sql.Tx) *RoleRepository {
 
 func (r *RoleRepository) Create(role domain.Role) error {
 	res, err := r.tx.Exec(
-		`INSERT INTO roles (title, key, description, created_by) VALUES ($1, $2, $3, $4)`,
+		"INSERT INTO roles (title, key, description, created_by) VALUES ($1, $2, $3, $4)",
 		role.Title,
 		role.Key,
 		role.Description,
-		role.CreatedBy,
+		role.Modifier.CreatedBy,
 	)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "Create", "Failed").Inc()
@@ -40,10 +40,10 @@ func (r *RoleRepository) Create(role domain.Role) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected <= 0 {
 		metrics.DbCall.WithLabelValues("roles", "Create", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseInsert, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 
@@ -55,7 +55,7 @@ func (r *RoleRepository) Create(role domain.Role) error {
 func (r *RoleRepository) GetByUUID(uuid uuid.UUID) (*domain.Role, error) {
 	var role domain.Role
 	err := r.tx.QueryRow("SELECT id, uuid, title, key, description, is_default FROM roles WHERE deleted_at IS NULL AND uuid = $1", uuid).
-		Scan(&role.ID, &role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
+		Scan(&role.Base.ID, &role.Base.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			metrics.DbCall.WithLabelValues("roles", "GetByUUID", "Success").Inc()
@@ -94,7 +94,7 @@ func (r *RoleRepository) List() ([]*domain.Role, error) {
 	for rows.Next() {
 
 		var role domain.Role
-		if err = rows.Scan(&role.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault); err != nil {
+		if err = rows.Scan(&role.Base.UUID, &role.Title, &role.Key, &role.Description, &role.IsDefault); err != nil {
 			metrics.DbCall.WithLabelValues("roles", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
@@ -121,7 +121,7 @@ func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 		role.Title,
 		role.Key,
 		role.Description,
-		role.UpdatedBy,
+		role.Modifier.UpdatedBy,
 		uuid,
 	)
 	if err != nil {
@@ -131,14 +131,15 @@ func (r *RoleRepository) Update(role domain.Role, uuid uuid.UUID) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected < 0 {
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil {
 		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	} else if affected == 0 {
+		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.New(serviceerror.NoRowsEffected)
 	}
 
@@ -161,17 +162,15 @@ func (r *RoleRepository) Delete(uuid uuid.UUID, deletedBy uint64) error {
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := res.RowsAffected(); err != nil || affected <= 0 {
-		if err != nil {
-			metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
+	if affected, affectedErr := res.RowsAffected(); affectedErr != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
 
-			r.log.Error(logger.Database, logger.DatabaseDelete, err.Error(), nil)
+		if affectedErr != nil {
+			r.log.Error(logger.Database, logger.DatabaseDelete, affectedErr.Error(), nil)
 			return serviceerror.NewServerError()
 		}
 
-		metrics.DbCall.WithLabelValues("roles", "Delete", "Failed").Inc()
-
-		r.log.Error(logger.Database, logger.DatabaseDelete, fmt.Sprintf("There is any effected row in DB: %v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseDelete, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
 		return serviceerror.New(serviceerror.IsNotDeletable)
 	}
 
@@ -185,12 +184,6 @@ func (r *RoleRepository) ExistKey(key domain.RoleKeyType) (bool, error) {
 	err := r.tx.QueryRow("SELECT count(*) FROM roles WHERE deleted_at IS NULL AND key = $1", key).
 		Scan(&count)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			metrics.DbCall.WithLabelValues("roles", "ExistKey", "Success").Inc()
-
-			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return false, nil
-		}
 		metrics.DbCall.WithLabelValues("roles", "ExistKey", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
@@ -203,19 +196,17 @@ func (r *RoleRepository) ExistKey(key domain.RoleKeyType) (bool, error) {
 }
 
 func (r *RoleRepository) GetRoleUser() (role domain.Role, err error) {
-	err = r.tx.QueryRow(`SELECT id FROM roles WHERE key=$1`, domain.RoleKeyUser).
-		Scan(&role.ID)
+	err = r.tx.QueryRow("SELECT id, key FROM roles WHERE key = $1", domain.RoleKeyUser).
+		Scan(&role.Base.ID, &role.Key)
 	if err != nil {
-
-		if errors.Is(err, sql.ErrNoRows) {
-			metrics.DbCall.WithLabelValues("roles", "GetRoleUser", "Success").Inc()
-
-			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return role, serviceerror.New(serviceerror.RecordNotFound)
-		}
 		metrics.DbCall.WithLabelValues("roles", "GetRoleUser", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return role, serviceerror.New(serviceerror.RecordNotFound)
+		}
+
 		return role, serviceerror.NewServerError()
 	}
 
@@ -251,23 +242,23 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 
 	for rows.Next() {
 		var permission domain.Permission
-		err = rows.Scan(
-			&role.UUID,
+
+		if err = rows.Scan(
+			&role.Base.UUID,
 			&role.Title,
 			&role.Description,
-			&permission.UUID,
+			&permission.Base.UUID,
 			&permission.Title,
 			&permission.Group,
 			&permission.Description,
-		)
-		if err != nil {
+		); err != nil {
 			metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return nil, serviceerror.NewServerError()
 		}
 
-		if permission.UUID == uuid.Nil {
+		if permission.Base.UUID == uuid.Nil {
 			continue
 		}
 
@@ -281,7 +272,7 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 		return nil, serviceerror.NewServerError()
 	}
 
-	if role.UUID == uuid.Nil {
+	if role.Base.UUID == uuid.Nil {
 		metrics.DbCall.WithLabelValues("roles", "GetPermissions", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, fmt.Sprintf("There is any role for %s", roleUUID.String()), nil)
@@ -294,7 +285,7 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 	return &role, nil
 }
 
-func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
+func (r *RoleRepository) GetUserRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
 	rows, err := r.tx.Query(
 		`SELECT DISTINCT r.key FROM access_controls AS ac
          		INNER JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
@@ -302,7 +293,7 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 		userID,
 	)
 	if err != nil {
-		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		return nil, serviceerror.NewServerError()
@@ -318,7 +309,7 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 	for rows.Next() {
 		var key domain.RoleKeyType
 		if err = rows.Scan(&key); err != nil {
-			metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+			metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return nil, serviceerror.NewServerError()
@@ -327,13 +318,13 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 	}
 
 	if err = rows.Err(); err != nil {
-		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 
 		return nil, serviceerror.NewServerError()
 	}
 
-	metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Success").Inc()
+	metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Success").Inc()
 
 	return keys, nil
 }
@@ -347,16 +338,18 @@ func (r *RoleRepository) SyncPermissions(roleID uint64, permissionIDs []uint64) 
 		return serviceerror.NewServerError()
 	}
 
-	if affected, err := result.RowsAffected(); err != nil || affected < 0 {
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected < 0 {
 		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
 
-		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", err), nil)
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("%v", affectedErr), nil)
 		return serviceerror.NewServerError()
 	}
 
+	// TODO: If there exist a big size of permissions to insert is it better used batch insert
 	stmt, err := r.tx.Prepare("INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2);")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+
 		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
 		return serviceerror.NewServerError()
 	}
@@ -370,6 +363,7 @@ func (r *RoleRepository) SyncPermissions(roleID uint64, permissionIDs []uint64) 
 	for _, permissionID := range permissionIDs {
 		if _, err = stmt.Exec(roleID, permissionID); err != nil {
 			metrics.DbCall.WithLabelValues("roles", "SyncPermissions", "Failed").Inc()
+
 			r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
 			return serviceerror.NewServerError()
 		}

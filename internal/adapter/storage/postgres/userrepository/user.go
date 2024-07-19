@@ -35,12 +35,6 @@ func (r *UserRepository) IsEmailUnique(email string) (bool, error) {
 		email,
 	).Scan(&count)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
-
-			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return true, nil
-		}
 		metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
@@ -64,8 +58,8 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 		user.Status,
 		user.GoogleID,
 		user.Avatar,
-		user.CreatedBy,
-	).Scan(&user.ID, &user.UUID)
+		user.Modifier.CreatedBy,
+	).Scan(&user.Base.ID, &user.Base.UUID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
 
@@ -144,7 +138,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 		domain.UserStatusUnverifiedStr,
 		domain.UserStatusActive,
 		strings.ToLower(email),
-	).Scan(&user.ID, &user.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent, &googleID, &user.Status)
+	).Scan(&user.Base.ID, &user.Base.UUID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.WelcomeMessageSent, &googleID, &user.Status)
 	if err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
@@ -186,13 +180,6 @@ func (r *UserRepository) List() ([]*domain.User, error) {
 	for rows.Next() {
 		user, scanErr := scanUser(rows)
 		if scanErr != nil {
-
-			if errors.Is(scanErr, sql.ErrNoRows) {
-				metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
-
-				r.log.Warn(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
-				return nil, serviceerror.New(serviceerror.RecordNotFound)
-			}
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
@@ -327,7 +314,7 @@ func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var firstName sql.NullString
 	var lastName sql.NullString
 
-	if err := scanner.Scan(&user.ID, &user.UUID, &firstName, &lastName, &user.Email, &user.Status); err != nil {
+	if err := scanner.Scan(&user.Base.ID, &user.Base.UUID, &firstName, &lastName, &user.Email, &user.Status); err != nil {
 		return domain.User{}, err
 	}
 

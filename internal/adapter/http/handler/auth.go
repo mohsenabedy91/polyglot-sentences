@@ -127,7 +127,7 @@ func (r AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+	if err = r.aclService.AssignUserRoleToUser(uowFactory, user.Base.ID); err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
@@ -249,7 +249,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 		return
 	}
 
-	token, err := r.tokenService.GenerateToken(user.UUID.String())
+	token, err := r.tokenService.GenerateToken(user.Base.UUID.String())
 	if err != nil {
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
@@ -262,7 +262,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 
 		if !user.WelcomeMessageSent {
 			message := authevent.SendWelcomeDto{
-				UserID:   user.ID,
+				UserID:   user.Base.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
@@ -270,7 +270,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 			authevent.NewSendWelcome(r.queue, r.userClient).Publish(message)
 		}
 
-		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.Base.ID); err != nil {
 			return
 		}
 	}()
@@ -354,12 +354,12 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 	go func() {
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.Base.ID); err != nil {
 			return
 		}
 	}()
 
-	token, err := r.tokenService.GenerateToken(user.UUID.String())
+	token, err := r.tokenService.GenerateToken(user.Base.UUID.String())
 	if err != nil {
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
@@ -446,7 +446,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 			return
 		}
 
-		if err = r.aclService.AssignUserRoleToUser(uowFactory, user.ID); err != nil {
+		if err = r.aclService.AssignUserRoleToUser(uowFactory, user.Base.ID); err != nil {
 			if rErr := uowFactory.Rollback(); rErr != nil {
 				presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 				return
@@ -461,7 +461,7 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 		}
 
 	} else if user.GoogleID == nil {
-		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.ID, *googleUserInfo.Id); err != nil {
+		if err = r.userClient.UpdateGoogleID(ctx.Request.Context(), user.Base.ID, *googleUserInfo.Id); err != nil {
 			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 			return
 		}
@@ -472,19 +472,19 @@ func (r AuthHandler) Google(ctx *gin.Context) {
 		defer cancel()
 		if !user.WelcomeMessageSent {
 			message := authevent.SendWelcomeDto{
-				UserID:   user.ID,
+				UserID:   user.Base.ID,
 				To:       user.Email,
 				Name:     user.GetFullName(),
 				Language: ctx.Param("language"),
 			}
 			authevent.NewSendWelcome(r.queue, r.userClient).Publish(message)
 		}
-		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.ID); err != nil {
+		if err = r.userClient.UpdateLastLoginTime(ctxWithTimeout, user.Base.ID); err != nil {
 			return
 		}
 	}()
 
-	token, err := r.tokenService.GenerateToken(user.UUID.String())
+	token, err := r.tokenService.GenerateToken(user.Base.UUID.String())
 	if err != nil {
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
@@ -620,7 +620,7 @@ func (r AuthHandler) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	if err = r.userClient.UpdatePassword(ctx.Request.Context(), user.ID, hashPassword); err != nil {
+	if err = r.userClient.UpdatePassword(ctx.Request.Context(), user.Base.ID, hashPassword); err != nil {
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
 		return
 	}

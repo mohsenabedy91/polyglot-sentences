@@ -29,11 +29,11 @@ func TestRoleCacheService_Get(t *testing.T) {
 
 	t.Run("Get success", func(t *testing.T) {
 		mockCache := new(authrepository.MockRoleCache)
-		key := fmt.Sprintf("%s:%s", constant.RoleKeyPrefix, role.UUID.String())
+		key := fmt.Sprintf("%s:%s", constant.RoleKeyPrefix, role.Base.UUID.String())
 		mockCache.On("Get", ctx, key).Return(&role.Key, nil)
 
 		service := roleservice.NewRoleCacheService(mockCache)
-		roleKey, err := service.Get(ctx, role.UUID.String())
+		roleKey, err := service.Get(ctx, role.Base.UUID.String())
 
 		require.NoError(t, err)
 		require.Equal(t, roleKey, &role.Key)
@@ -43,12 +43,12 @@ func TestRoleCacheService_Get(t *testing.T) {
 
 	t.Run("Get cache error", func(t *testing.T) {
 		mockCache := new(authrepository.MockRoleCache)
-		key := fmt.Sprintf("%s:%s", constant.RoleKeyPrefix, role.UUID.String())
+		key := fmt.Sprintf("%s:%s", constant.RoleKeyPrefix, role.Base.UUID.String())
 		var expectedRoleKey *domain.RoleKeyType
 		mockCache.On("Get", ctx, key).Return(expectedRoleKey, serviceerror.NewServerError())
 
 		service := roleservice.NewRoleCacheService(mockCache)
-		roleKey, err := service.Get(ctx, role.UUID.String())
+		roleKey, err := service.Get(ctx, role.Base.UUID.String())
 
 		require.Error(t, err)
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
@@ -85,7 +85,7 @@ func TestRoleCacheService_SetBulk(t *testing.T) {
 
 		items := map[string]domain.RoleKeyType{}
 		for _, role := range roles {
-			items[role.UUID.String()] = role.Key
+			items[role.Base.UUID.String()] = role.Key
 		}
 
 		for uuidStr, roleKey := range items {
@@ -105,13 +105,13 @@ func TestRoleCacheService_SetBulk(t *testing.T) {
 		mockCache := new(authrepository.MockRoleCache)
 
 		var uuidStr string
-		uuidStr = roles[0].UUID.String()
+		uuidStr = roles[0].Base.UUID.String()
 		var roleKey domain.RoleKeyType
 		roleKey = roles[0].Key
 
 		items := map[string]domain.RoleKeyType{}
 		for _, role := range roles {
-			items[role.UUID.String()] = role.Key
+			items[role.Base.UUID.String()] = role.Key
 		}
 
 		key := fmt.Sprintf("%s:%s", constant.RoleKeyPrefix, uuidStr)

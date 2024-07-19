@@ -44,7 +44,7 @@ func (r *Service) List(ctx context.Context, uow port.AuthUnitOfWork) ([]*domain.
 			cacheRoles := make(map[string]domain.RoleKeyType)
 			for _, role := range roles {
 				if role.IsDefault == true {
-					cacheRoles[role.UUID.String()] = role.Key
+					cacheRoles[role.Base.UUID.String()] = role.Key
 				}
 			}
 
@@ -110,5 +110,5 @@ func (r *Service) SyncPermissions(uow port.AuthUnitOfWork, uuidStr string, permi
 		return err
 	}
 
-	return uow.RoleRepository().SyncPermissions(role.ID, validPermissions)
+	return uow.RoleRepository().SyncPermissions(role.Base.ID, validPermissions)
 }

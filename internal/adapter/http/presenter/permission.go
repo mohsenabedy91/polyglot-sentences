@@ -13,12 +13,12 @@ type Permission struct {
 }
 
 func PreparePermission(permission *domain.Permission) *Permission {
-	if permission == nil || permission.UUID == uuid.Nil {
+	if permission == nil || permission.Base.UUID == uuid.Nil {
 		return nil
 	}
 
 	return &Permission{
-		ID:          permission.UUID.String(),
+		ID:          permission.Base.UUID.String(),
 		Title:       permission.Title,
 		Group:       permission.Group,
 		Description: permission.Description,
