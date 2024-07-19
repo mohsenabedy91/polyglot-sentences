@@ -145,7 +145,6 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_GetByUUID_RecordNotFound() 
 	require.NoError(r.T(), err)
 
 	repo := authrepository.NewRoleRepository(mockLogger, tx)
-
 	fetchedRole, err := repo.GetByUUID(uuid.New())
 
 	require.Error(r.T(), err)
@@ -330,8 +329,6 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_Delete_Success() {
 	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
-	repo := authrepository.NewRoleRepository(mockLogger, tx)
-
 	user := insertUser(r.T(), tx, &domain.User{
 		FirstName: helper.StringPtr("John"),
 		LastName:  helper.StringPtr("Doe"),
@@ -350,10 +347,13 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_Delete_Success() {
 		},
 	})
 
+	repo := authrepository.NewRoleRepository(mockLogger, tx)
 	err = repo.Delete(newRole.Base.UUID, user.Base.ID)
+
 	require.NoError(r.T(), err)
 
 	deletedRole, err := repo.GetByUUID(newRole.Base.UUID)
+
 	require.Error(r.T(), err)
 	require.Equal(r.T(), serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 	require.Nil(r.T(), deletedRole)
@@ -408,15 +408,15 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_ExistKey_Success() {
 	tx, err := r.GetDB().Begin()
 	require.NoError(r.T(), err)
 
-	repo := authrepository.NewRoleRepository(mockLogger, tx)
-
 	insertRole(r.T(), tx, &domain.Role{
 		Title:       "Admin",
 		Key:         "admin",
 		Description: "Administrator Role",
 	})
 
+	repo := authrepository.NewRoleRepository(mockLogger, tx)
 	exists, err := repo.ExistKey("admin")
+
 	require.NoError(r.T(), err)
 	require.True(r.T(), exists)
 
@@ -430,8 +430,8 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_ExistKey_NotExist() {
 	require.NoError(r.T(), err)
 
 	repo := authrepository.NewRoleRepository(mockLogger, tx)
-
 	exists, err := repo.ExistKey("nonexistent")
+
 	require.NoError(r.T(), err)
 	require.False(r.T(), exists)
 
