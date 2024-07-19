@@ -29,7 +29,7 @@ func (r ACLService) CheckAccess(
 		return false, 0, err
 	}
 
-	roleKeys, err := uow.RoleRepository().GetRoleKeys(user.Base.ID)
+	roleKeys, err := uow.RoleRepository().GetUserRoleKeys(user.Base.ID)
 	if err != nil {
 		return false, 0, err
 	}

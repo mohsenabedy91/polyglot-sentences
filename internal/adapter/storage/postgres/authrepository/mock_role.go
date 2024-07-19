@@ -55,7 +55,7 @@ func (r *MockRoleRepository) SyncPermissions(roleID uint64, permissionIDs []uint
 	return args.Error(0)
 }
 
-func (r *MockRoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
+func (r *MockRoleRepository) GetUserRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
 	args := r.Called(userID)
 	return args.Get(0).([]domain.RoleKeyType), args.Error(1)
 }

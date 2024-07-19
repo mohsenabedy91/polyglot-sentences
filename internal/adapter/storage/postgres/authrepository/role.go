@@ -294,7 +294,7 @@ func (r *RoleRepository) GetPermissions(roleUUID uuid.UUID) (*domain.Role, error
 	return &role, nil
 }
 
-func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
+func (r *RoleRepository) GetUserRoleKeys(userID uint64) ([]domain.RoleKeyType, error) {
 	rows, err := r.tx.Query(
 		`SELECT DISTINCT r.key FROM access_controls AS ac
          		INNER JOIN roles r on r.id = ac.role_id AND r.deleted_at IS NULL
@@ -302,7 +302,7 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 		userID,
 	)
 	if err != nil {
-		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 		return nil, serviceerror.NewServerError()
@@ -318,7 +318,7 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 	for rows.Next() {
 		var key domain.RoleKeyType
 		if err = rows.Scan(&key); err != nil {
-			metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+			metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 			return nil, serviceerror.NewServerError()
@@ -327,13 +327,13 @@ func (r *RoleRepository) GetRoleKeys(userID uint64) ([]domain.RoleKeyType, error
 	}
 
 	if err = rows.Err(); err != nil {
-		metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Failed").Inc()
+		metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Failed").Inc()
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
 
 		return nil, serviceerror.NewServerError()
 	}
 
-	metrics.DbCall.WithLabelValues("roles", "GetRoleKeys", "Success").Inc()
+	metrics.DbCall.WithLabelValues("roles", "GetUserRoleKeys", "Success").Inc()
 
 	return keys, nil
 }

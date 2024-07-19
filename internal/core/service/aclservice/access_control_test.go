@@ -32,7 +32,7 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUOW.On("RoleRepository").Return(mockRoleRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{domain.RoleKeySuperAdmin}, nil)
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{domain.RoleKeySuperAdmin}, nil)
 
 		service := aclservice.New(mockUserClient)
 		hasAccess, userID, err := service.CheckAccess(ctx, mockUOW, userUUID, domain.PermissionKeyReadUser)
@@ -54,7 +54,7 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUOW.On("PermissionRepository").Return(mockPermissionRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
 		mockPermissionRepo.On("GetUserPermissionKeys", user.Base.ID).
 			Return([]domain.PermissionKeyType{domain.PermissionKeyReadUser}, nil)
 
@@ -79,7 +79,7 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUOW.On("PermissionRepository").Return(mockPermissionRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
 		mockPermissionRepo.On("GetUserPermissionKeys", user.Base.ID).Return([]domain.PermissionKeyType{}, nil)
 
 		service := aclservice.New(mockUserClient)
@@ -103,7 +103,7 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUOW.On("PermissionRepository").Return(mockPermissionRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
 		mockPermissionRepo.On("GetUserPermissionKeys", user.Base.ID).Return([]domain.PermissionKeyType{}, nil)
 
 		service := aclservice.New(mockUserClient)
@@ -135,14 +135,14 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUserClient.AssertExpectations(t)
 	})
 
-	t.Run("GetRoleKeys error", func(t *testing.T) {
+	t.Run("GetUserRoleKeys error", func(t *testing.T) {
 		mockUOW := new(authrepository.MockUnitOfWork)
 		mockUserClient := new(client.MockUserClient)
 		mockRoleRepo := new(authrepository.MockRoleRepository)
 		mockUOW.On("RoleRepository").Return(mockRoleRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, serviceerror.NewServerError())
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, serviceerror.NewServerError())
 
 		service := aclservice.New(mockUserClient)
 		hasAccess, userID, err := service.CheckAccess(ctx, mockUOW, userUUID, domain.PermissionKeyReadUser)
@@ -165,7 +165,7 @@ func TestACLService_CheckAccess(t *testing.T) {
 		mockUOW.On("PermissionRepository").Return(mockPermissionRepo)
 
 		mockUserClient.On("GetByUUID", mock.Anything, userUUID.String()).Return(user, nil)
-		mockRoleRepo.On("GetRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
+		mockRoleRepo.On("GetUserRoleKeys", user.Base.ID).Return([]domain.RoleKeyType{}, nil)
 		mockPermissionRepo.On("GetUserPermissionKeys", user.Base.ID).
 			Return([]domain.PermissionKeyType{}, serviceerror.NewServerError())
 
