@@ -2,7 +2,6 @@ package authrepository
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
@@ -50,12 +49,6 @@ func (r *PermissionRepository) GetUserPermissionKeys(userID uint64) ([]domain.Pe
 
 	for rows.Next() {
 		if err = rows.Scan(&key); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Success").Inc()
-
-				r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-				return nil, serviceerror.New(serviceerror.RecordNotFound)
-			}
 			metrics.DbCall.WithLabelValues("users", "GetUserPermissionKeys", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)

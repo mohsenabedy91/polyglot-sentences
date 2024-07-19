@@ -35,12 +35,6 @@ func (r *UserRepository) IsEmailUnique(email string) (bool, error) {
 		email,
 	).Scan(&count)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Success").Inc()
-
-			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return true, nil
-		}
 		metrics.DbCall.WithLabelValues("users", "IsEmailUnique", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
@@ -186,13 +180,6 @@ func (r *UserRepository) List() ([]*domain.User, error) {
 	for rows.Next() {
 		user, scanErr := scanUser(rows)
 		if scanErr != nil {
-
-			if errors.Is(scanErr, sql.ErrNoRows) {
-				metrics.DbCall.WithLabelValues("users", "List", "Success").Inc()
-
-				r.log.Warn(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
-				return nil, serviceerror.New(serviceerror.RecordNotFound)
-			}
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, scanErr.Error(), nil)
