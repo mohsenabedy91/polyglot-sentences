@@ -73,7 +73,7 @@ func (r *PermissionRepository) GetUserPermissionKeys(userID uint64) ([]domain.Pe
 }
 
 func (r *PermissionRepository) List() ([]*domain.Permission, error) {
-	rows, err := r.tx.Query(`SELECT uuid, title, description, "group" FROM permissions WHERE deleted_at IS NULL;`)
+	rows, err := r.tx.Query(`SELECT id, uuid, title, description, "group" FROM permissions WHERE deleted_at IS NULL;`)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
@@ -90,7 +90,7 @@ func (r *PermissionRepository) List() ([]*domain.Permission, error) {
 	var permissions []*domain.Permission
 	for rows.Next() {
 		var permission domain.Permission
-		if err = rows.Scan(&permission.Base.UUID, &permission.Title, &permission.Description, &permission.Group); err != nil {
+		if err = rows.Scan(&permission.Base.ID, &permission.Base.UUID, &permission.Title, &permission.Description, &permission.Group); err != nil {
 			metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
 			r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
