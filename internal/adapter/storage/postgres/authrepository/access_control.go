@@ -34,7 +34,6 @@ func (r *ACLRepository) AssignRolesToUser(userID uint64, roleIDs []uint64) error
 		metrics.DbCall.WithLabelValues("access_controls", "AssignRolesToUser", "Failed").Inc()
 
 		r.log.Error(logger.Database, logger.DatabasePrepare, err.Error(), nil)
-
 		return serviceerror.NewServerError()
 	}
 	defer func(stmt *sql.Stmt) {
@@ -51,7 +50,6 @@ func (r *ACLRepository) AssignRolesToUser(userID uint64, roleIDs []uint64) error
 				"userID": userID,
 				"roleID": roleID,
 			})
-
 			return serviceerror.NewServerError()
 		}
 	}

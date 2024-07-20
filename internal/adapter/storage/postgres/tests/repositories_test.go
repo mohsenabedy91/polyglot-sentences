@@ -90,6 +90,7 @@ func TestRepositoriesTestSuite(t *testing.T) {
 	suite.Run(t, new(RoleRepositoryTestSuite))
 	suite.Run(t, new(UserRepositoryTestSuite))
 	suite.Run(t, new(PermissionRepositoryTestSuite))
+	suite.Run(t, new(ACLRepositoryTestSuite))
 }
 
 func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
