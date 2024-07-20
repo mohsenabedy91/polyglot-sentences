@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -9,6 +10,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 type PermissionRepositoryTestSuite struct {
@@ -122,6 +124,33 @@ func (r *PermissionRepositoryTestSuite) TestPermissionRepository_List_DBError() 
 	mockLogger.AssertExpectations(r.T())
 }
 
+func (r *PermissionRepositoryTestSuite) TestPermissionRepository_List_DBScanError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS permissions CASCADE")
+	require.NoError(r.T(), err)
+
+	_, err = r.GetTx().Exec(`CREATE TABLE permissions (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, uuid uuid DEFAULT gen_random_uuid(), title VARCHAR(64) DEFAULT NULL UNIQUE, key VARCHAR(64) DEFAULT NULL UNIQUE, "group" VARCHAR(64) DEFAULT NULL, description VARCHAR(64) DEFAULT NULL, deleted_at TIMESTAMP DEFAULT NULL, created_by BIGINT DEFAULT NULL)`)
+	require.NoError(r.T(), err)
+
+	insertInvalidPermission(r.T(), r.GetTx(), &domain.Permission{
+		Title: helper.StringPtr("Permission 1"),
+	})
+	insertInvalidPermission(r.T(), r.GetTx(), &domain.Permission{
+		Title: helper.StringPtr("Permission 2"),
+	})
+
+	repo := authrepository.NewPermissionRepository(mockLogger, r.GetTx())
+	validPermissions, err := repo.List()
+
+	require.Error(r.T(), err)
+	require.Nil(r.T(), validPermissions)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
 func (r *PermissionRepositoryTestSuite) TestPermissionRepository_FilterValidPermissions_Success() {
 	mockLogger := new(logger.MockLogger)
 
@@ -168,4 +197,45 @@ func (r *PermissionRepositoryTestSuite) TestPermissionRepository_FilterValidPerm
 	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
 
 	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *PermissionRepositoryTestSuite) TestPermissionRepository_FilterValidPermissions_DBScanError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS permissions CASCADE")
+	require.NoError(r.T(), err)
+
+	_, err = r.GetTx().Exec(`CREATE TABLE permissions (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, uuid uuid DEFAULT gen_random_uuid(), title VARCHAR(64) DEFAULT NULL UNIQUE, key VARCHAR(64) DEFAULT NULL UNIQUE, "group" VARCHAR(64) DEFAULT NULL, description VARCHAR(64) DEFAULT NULL, deleted_at TIMESTAMP DEFAULT NULL, created_by BIGINT DEFAULT NULL)`)
+	require.NoError(r.T(), err)
+
+	var permissionUUIDs []uuid.UUID
+
+	permission1 := insertInvalidPermission(r.T(), r.GetTx(), &domain.Permission{
+		Title: helper.StringPtr("Permission 1"),
+	})
+	permission2 := insertInvalidPermission(r.T(), r.GetTx(), &domain.Permission{
+		Title: helper.StringPtr("Permission 2"),
+	})
+
+	permissionUUIDs = append(permissionUUIDs, permission1.UUID)
+	permissionUUIDs = append(permissionUUIDs, permission2.UUID)
+
+	repo := authrepository.NewPermissionRepository(mockLogger, r.GetTx())
+	validPermissions, err := repo.FilterValidPermissions(permissionUUIDs)
+
+	require.Error(r.T(), err)
+	require.Nil(r.T(), validPermissions)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func insertInvalidPermission(t *testing.T, tx *sql.Tx, permission *domain.Permission) *domain.Permission {
+	require.NoError(t, tx.QueryRow(
+		"INSERT INTO permissions (title) VALUES ($1) RETURNING uuid",
+		permission.Title,
+	).Scan(&permission.Base.UUID))
+
+	return permission
 }

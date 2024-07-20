@@ -200,7 +200,7 @@ Polyglot Sentences is a Go-based application designed to help users learn and ma
 ```
 
 # Profiling
-We use pprof tool for get CPU, go routine and memory leak
+We use `pprof` tool to get CPU, goroutine, and memory usage data.
 
 - [pprof](http://localhost:2526/debug/pprof/)
 - [goroutine](http://localhost:2526/debug/pprof/goroutine?debug=1)
@@ -210,17 +210,16 @@ curl http://localhost:2526/debug/pprof/goroutine --output goroutine.o
 
 go tool pprof -http=:2020 goroutine.o
 ```
-if debug mode was true its work
+Make sure the debug mode is enabled for the above links to work.
 
 # API Gateway
-There is an API gateway, and we used of `Kong` for management.
-The APIs available on `http://localhost:8000` and for Dashboard you can open with this link:
+We use `Kong` as the API gateway for managing the APIs. The APIs are available at `http://localhost:8000`. You can access the Kong Dashboard here:
 [workspaces](http://localhost:8002/default/overview)
 
 # Requirements
 ## Authentication/Authorization:
 - Proto buffer:
-There we need to get user details for this matters you should run protoc command for user management service
+  To get user details, run the protoc command for the user management service:
 ```bash
 protoc --go_out=. --go_opt=paths=source_relative \
 --go-grpc_out=. --go-grpc_opt=paths=source_relative \
@@ -235,3 +234,32 @@ internal/adapter/grpc/proto/user/user.proto
 ## Questions Management
 ## Questions Planner
 ## Telegram Integration
+
+# Test
+## Setup
+
+Create a .env.test file with the necessary test environment variables.
+
+## Running Tests
+
+To run the tests, execute the following commands:
+```bash
+go test -cover -count=1 ./...
+```
+To generate a coverage profile:
+```bash
+go test -covermode=count -coverprofile=prof.out ./...
+```
+To visualize the coverage profile:
+```bash
+go tool cover -html=prof.out
+```
+## Test Suites
+
+The project includes comprehensive test suites to ensure the functionality and reliability of the codebase. The tests cover various components and features of the application.
+## Running All Tests
+
+To run all the tests in the project, use the following command:
+```bash
+go test ./... -v
+```
