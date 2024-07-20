@@ -3,11 +3,7 @@ package otpservice_test
 import (
 	"context"
 	"fmt"
-	"strings"
-	"testing"
-	"time"
-
-	"github.com/bxcodec/faker/v4"
+	"github.com/go-faker/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/constant"
@@ -16,6 +12,9 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
+	"time"
 )
 
 func generateOTP(digits int) string {

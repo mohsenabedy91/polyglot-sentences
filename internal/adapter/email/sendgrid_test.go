@@ -1,7 +1,7 @@
 package email_test
 
 import (
-	"github.com/bxcodec/faker/v4"
+	"github.com/go-faker/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/email"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
