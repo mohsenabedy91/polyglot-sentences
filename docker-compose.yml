@@ -98,6 +98,9 @@ services:
     restart: always
     deploy:
       mode: global
+    networks:
+      - default
+      - app_network
 
   prometheus:
     image: prom/prometheus:v2.52.0
@@ -118,6 +121,9 @@ services:
       - alertmanager:alertmanager
     depends_on:
       - cadvisor
+    networks:
+      - default
+      - app_network
 
   node-exporter:
     image: prom/node-exporter:v1.8.0
@@ -136,6 +142,9 @@ services:
     restart: always
     deploy:
       mode: global
+    networks:
+      - default
+      - app_network
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
@@ -148,6 +157,9 @@ services:
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
+    networks:
+      - default
+      - app_network
 
   grafana:
     image: grafana/grafana:10.1.10
@@ -165,6 +177,9 @@ services:
     depends_on:
       - prometheus
     restart: always
+    networks:
+      - default
+      - app_network
 
   ####################### SETUP #######################
   setup:
@@ -184,6 +199,7 @@ services:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
       FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
     networks:
+      - default
       - app_network
     depends_on:
       - elasticsearch
@@ -207,6 +223,7 @@ services:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
       discovery.type: single-node
     networks:
+      - default
       - app_network
     restart: unless-stopped
 
@@ -224,6 +241,7 @@ services:
     environment:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
     networks:
+      - default
       - app_network
     depends_on:
       - elasticsearch
@@ -248,6 +266,7 @@ services:
       FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
       BEATS_SYSTEM_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
     networks:
+      - default
       - app_network
     depends_on:
       - elasticsearch
@@ -267,6 +286,9 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - default
+      - app_network
 
   db:
     image: "postgres:9.6"
@@ -281,6 +303,7 @@ services:
     ports:
       - "${KONG_POSTGRES_PORT}:5432"
     networks:
+      - default
       - app_network
 
   kong:
@@ -321,6 +344,7 @@ services:
       && kong start -c /kong/kong.conf
       "
     networks:
+      - default
       - app_network
 
   minio:
