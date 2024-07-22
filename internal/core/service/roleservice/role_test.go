@@ -2,7 +2,7 @@ package roleservice_test
 
 import (
 	"context"
-	"github.com/bxcodec/faker/v4"
+	"github.com/go-faker/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/authrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/roleservice"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"

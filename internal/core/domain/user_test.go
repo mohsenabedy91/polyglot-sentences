@@ -2,7 +2,7 @@ package domain_test
 
 import (
 	"database/sql"
-	"github.com/bxcodec/faker/v4"
+	"github.com/go-faker/faker/v4"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/stretchr/testify/require"
