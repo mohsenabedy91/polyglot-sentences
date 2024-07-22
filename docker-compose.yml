@@ -1,6 +1,62 @@
 version: '3.8'
 
 services:
+  app_auth:
+    image: app_auth
+    container_name: app_auth
+    build:
+      context: .
+      dockerfile: Dockerfile-Auth
+    ports:
+      - "${AUTH_PORT:-2525}:2525"
+      - "${SWAGGER_FORWARD_PORT:-1525}:1525"
+    restart: always
+    networks:
+      - default
+      - app_network
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  app_user_management:
+    image: app_user_management
+    container_name: app_user_management
+    build:
+      context: .
+      dockerfile: Dockerfile-UserManagement
+    ports:
+      - "${USER_MANAGEMENT_HTTP_PORT:-2535}:2535"
+      - "${USER_MANAGEMENT_GRPC_PORT:-2536}:2536"
+      - "${SWAGGER_FORWARD_PORT:-1535}:1535"
+    restart: always
+    networks:
+      - default
+      - app_network
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  app_worker:
+    image: app_worker
+    container_name: app_worker
+    build:
+      context: .
+      dockerfile: Dockerfile-Worker
+    restart: always
+    networks:
+      - default
+      - app_network
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - rabbitmq
+
   postgres:
     image: postgres:16.3
     container_name: postgres
@@ -200,7 +256,7 @@ services:
     image: rabbitmq-3-12-management
     build:
       context: .
-      dockerfile: Dockerfile-rabbitmq
+      dockerfile: Dockerfile-Rabbitmq
     container_name: rabbitmq
     restart: always
     ports:
