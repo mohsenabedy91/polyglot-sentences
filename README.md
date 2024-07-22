@@ -2,12 +2,43 @@
 Polyglot Sentences is a Go-based application designed to help users learn and master sentences in multiple languages. The app provides a wide range of sentence structures and vocabulary to facilitate language learning through practical and contextual examples.
 
 # Go Version
-- The project uses Go `1.22.3`
+- The project uses Go `1.22.5`
+
+# Installation and Setup
+
+To simplify the installation and setup process for developers, we have provided an install_service.sh script. This script will:
+
+- Check if Docker is installed, and if not, it will install Docker.
+- Install Docker Compose if it is not already installed.
+- Set up the environment file.
+- Run Docker Compose to start the necessary containers.
+- Wait for the PostgreSQL and Kong containers to be ready.
+- Run the database migrations.
+- Set up the services in the API Gateway.
+- Set up the API Gateway.
+
+### Steps to Install and Run the Service
+
+- Make the script executable:
+
+```bash 
+chmod +x install_service.sh
+```
+
+- Run the script:
+
+```bash
+./install_service.sh
+```
+
+# Default admin user detail
+
+- username(email): `john.doe@gmail.com`
+- password: `QWer123!@#`
 
 # Project Architecture
 - The project architecture is based on the `Hexagonal Architecture`.
 - The project is structured in a way that it is easy to understand and navigate through.
-
 
 ```tree-extended
 📁polyglot-sentences/
