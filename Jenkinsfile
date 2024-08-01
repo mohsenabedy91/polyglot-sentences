@@ -19,5 +19,25 @@ pipeline {
                 echo 'TEST EXECUTION STARTED'
             }
         }
+        stage('Deploy') {
+            steps {
+                echo 'DEPLOY EXECUTION STARTED'
+            }
+        }
+        stage('Deploy1') {
+            steps {
+                echo 'DEPLOY1 EXECUTION STARTED'
+            }
+        }
+        stage('Deploy2') {
+            steps {
+                echo 'DEPLOY2 EXECUTION STARTED'
+            }
+        }
+        stage('Deploy3') {
+            steps {
+                echo 'DEPLOY2 EXECUTION STARTED'
+            }
+        }
     }
 }
