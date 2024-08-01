@@ -294,5 +294,3 @@ To run all the tests in the project, use the following command:
 ```bash
 go test ./... -v
 ```
-
-test jenkins
