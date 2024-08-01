@@ -29,5 +29,10 @@ pipeline {
                 echo 'DEPLOY1 EXECUTION STARTED'
             }
         }
+        stage('Deploy2') {
+            steps {
+                echo 'DEPLOY2 EXECUTION STARTED'
+            }
+        }
     }
 }
