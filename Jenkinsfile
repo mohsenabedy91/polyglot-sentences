@@ -4,15 +4,24 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Build'
+                echo 'BUILD EXECUTION STARTED'
+    
+                sh 'rm -rf polyglot-sentences'
+                sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
+                
+                dir('polyglot-sentences') {
+                    sh 'ls -lah'
+                }
             }
         }
-    }
-
-    stages {
         stage('Test') {
             steps {
-                echo 'Test'
+                echo 'TEST EXECUTION STARTED'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'DEPLOY EXECUTION STARTED'
             }
         }
     }
