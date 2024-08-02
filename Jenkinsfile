@@ -11,10 +11,6 @@ pipeline {
                 
                 dir('polyglot-sentences') {
                     sh 'ls -lah'
-
-                    script{
-                        sh 'docker --version'
-                    }
                 }
             }
         }
