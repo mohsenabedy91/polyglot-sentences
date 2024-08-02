@@ -19,11 +19,6 @@ pipeline {
                 echo 'TEST EXECUTION STARTED'
             }
         }
-        stage('Test1') {
-            steps {
-                echo 'TEST1 EXECUTION STARTED'
-            }
-        }
         stage('Deploy') {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
