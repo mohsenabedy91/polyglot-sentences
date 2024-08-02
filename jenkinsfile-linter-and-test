@@ -2,6 +2,11 @@ pipeline {
     agent any
 
     stages {
+        stage('Linter') {
+            steps {
+                echo 'Linter EXECUTION STARTED'
+            }
+        }
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
@@ -17,11 +22,6 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'TEST EXECUTION STARTED'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'DEPLOY EXECUTION STARTED'
             }
         }
     }
