@@ -33,6 +33,16 @@ pipeline {
                 }
             }
         }
+        stage('Lint') {
+            steps {
+                echo 'LINT EXECUTION STARTED'
+
+                dir('polyglot-sentences') {
+                    sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
+                    sh 'golangci-lint run'
+                }
+            }
+        }
         stage('Test') {
             steps {
                 echo 'TEST EXECUTION STARTED'
@@ -49,7 +59,7 @@ pipeline {
                         sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
                         sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
                         '''
-                        sh 'go test ./...'
+                        sh 'go test -cover -count=1 ./...'
                     }
                 }
             }
