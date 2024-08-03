@@ -1,17 +1,24 @@
 run:
-  # timeout for the entire linter run, default is 1m
-  timeout: 2m
+  # timeout for the entire linter run, increased to accommodate larger projects
+  timeout: 5m
 
 issues:
   # exclude directories from analysis
   exclude-dirs:
     - vendor
     - third_party
+    - logs
+    - deploy
+    - docker
+    - docs
+    - .github
 
   # exclude specific files from analysis
   exclude-files:
     - generated.*
+    - proto/.*\.pb\.go
     - cmd/apigateway/main.go
+    - internal/adapter/grpc/proto/.*\.pb\.go
 
   # include only the listed goos/os-arcs
   include:
@@ -23,7 +30,7 @@ issues:
   # it's a substring, not a regex;
   exclude-use-default: false
   exclude:
-    - "error return value not checked"
+    - "error return value not checked" # Add exclusions based on the project's requirements
 
   # use the specified format for issues output.
   format: colored-line-number
@@ -36,10 +43,13 @@ linters:
     - staticcheck
     - gosimple
     - unused
+    - ineffassign # Checks for assignments of unused variables
+    - gofmt # Ensure the code is correctly formatted
 
   # Disable specific linters. By default, all linters are enabled.
   disable:
-    - gocyclo  # We disable gocyclo to avoid cyclomatic complexity errors
+    - gocyclo # We disable gocyclo to avoid cyclomatic complexity errors
+    - stylecheck # Disabled if style linting isn't a priority for your team
 
   # linters-settings contains specific settings for each linter.
   linters-settings:
