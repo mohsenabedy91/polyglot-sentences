@@ -43,7 +43,7 @@ func (r *Service) List(ctx context.Context, uow port.AuthUnitOfWork) ([]*domain.
 		go func() {
 			cacheRoles := make(map[string]domain.RoleKeyType)
 			for _, role := range roles {
-				if role.IsDefault == true {
+				if role.IsDefault {
 					cacheRoles[role.Base.UUID.String()] = role.Key
 				}
 			}

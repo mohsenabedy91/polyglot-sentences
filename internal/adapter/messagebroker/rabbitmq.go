@@ -28,7 +28,6 @@ func (r *RabbitMQ) Close() {
 	if err := r.conn.Close(); err != nil {
 		r.log.Error(logger.Queue, logger.RabbitMQ, err.Error(), nil)
 	}
-	return
 }
 
 func (r *RabbitMQ) Produce(name string, msg interface{}, delaySeconds int64) error {

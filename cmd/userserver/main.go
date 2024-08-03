@@ -130,16 +130,13 @@ func shutdownHTTPServer(
 	conf config.Config,
 ) {
 	timeout := conf.App.GracefullyShutdown * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctxWithTimeout); err != nil {
 		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("Shutdown Server: %v", err), nil)
 	}
 
-	select {
-	case <-ctx.Done():
-		log.Info(logger.Internal, logger.Shutdown, "timeout of 5 seconds.", nil)
-	}
+	<-ctxWithTimeout.Done()
 	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
 }

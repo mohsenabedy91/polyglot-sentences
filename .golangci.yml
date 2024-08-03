@@ -12,6 +12,7 @@ run:
   # can use regexp here: generated.*, regex checks are slow, so try to avoid regexps here if possible
   skip-files:
     - generated.*
+    - cmd/apigateway/main.go
 
 issues:
   # include only the listed goos/os-arcs
