@@ -15,7 +15,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
-                sh 'go version'
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
                 dir('polyglot-sentences') {
@@ -63,10 +62,12 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         dir('polyglot-sentences') {
+                            sh 'cp .env.example .env.docker'
+
                             sh """
-                            echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
-                            docker build -t auth_polyglot_sentences:latest -f Dockerfile-Auth .
-                            docker push auth_polyglot_sentences:latest
+                            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
+                            docker push ${DOCKER_USERNAME}/auth_polyglot_sentences:latest
                             """
                         }
                     }
