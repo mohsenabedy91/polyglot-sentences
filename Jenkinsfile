@@ -8,6 +8,8 @@ pipeline {
         GO114MODULE = 'on'
         CGO_ENABLED = 0
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
+        GOBIN = "${GOPATH}/bin"
+        PATH = "${GOBIN}:${env.PATH}"
     }
     stages {
         stage('Build') {
@@ -18,7 +20,7 @@ pipeline {
 
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
-                
+
                 dir('polyglot-sentences') {
                     sh 'ls -lah'
 
