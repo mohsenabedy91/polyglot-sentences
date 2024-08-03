@@ -12,18 +12,6 @@ pipeline {
         PATH = "${GOBIN}:${env.PATH}"
     }
     stages {
-        stage('Prepare') {
-            steps {
-                script {
-                    try {
-                        unstash 'go-mod-cache'
-                        unstash 'go-bin-cache'
-                    } catch (Exception e) {
-                        echo 'No cache found. Proceeding with fresh dependencies...'
-                    }
-                }
-            }
-        }
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
@@ -40,9 +28,6 @@ pipeline {
                     sh 'go get -u github.com/swaggo/files'
 
                     sh 'go mod download'
-
-                    stash name: 'go-mod-cache', includes: 'go.sum, go.mod, **/go/pkg/**'
-                    stash name: 'go-bin-cache', includes: '**/bin/**'
 
                     sh 'swag init -g ./cmd/authserver/main.go'
                 }
