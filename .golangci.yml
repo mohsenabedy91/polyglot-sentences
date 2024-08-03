@@ -2,19 +2,17 @@ run:
   # timeout for the entire linter run, default is 1m
   timeout: 2m
 
-  # which dirs to skip: they won't be analyzed;
-  # can use regexp here: generated.*, regex checks are slow, so try to avoid regexps here if possible
-  skip-dirs:
+issues:
+  # exclude directories from analysis
+  exclude-dirs:
     - vendor
     - third_party
 
-  # which files to skip: they won't be analyzed;
-  # can use regexp here: generated.*, regex checks are slow, so try to avoid regexps here if possible
-  skip-files:
+  # exclude specific files from analysis
+  exclude-files:
     - generated.*
     - cmd/apigateway/main.go
 
-issues:
   # include only the listed goos/os-arcs
   include:
     - linux

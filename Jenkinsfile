@@ -12,6 +12,17 @@ pipeline {
         PATH = "${GOBIN}:${env.PATH}"
     }
     stages {
+        stage('Prepare') {
+            steps {
+                script {
+                    try {
+                        unstash 'go-bin-cache'
+                    } catch (Exception e) {
+                        echo 'No cache found. Proceeding with fresh dependencies...'
+                    }
+                }
+            }
+        }
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
@@ -28,6 +39,8 @@ pipeline {
                     sh 'go get -u github.com/swaggo/files'
 
                     sh 'go mod download'
+
+                    stash name: 'go-bin-cache', includes: 'polyglot-sentences/bin/**'
 
                     sh 'swag init -g ./cmd/authserver/main.go'
                 }
@@ -59,7 +72,15 @@ pipeline {
                         sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
                         sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
                         '''
-                        sh 'go test -cover -count=1 ./...'
+                        sh 'go test -cover -count=1 ./... > coverage.out'
+                        script {
+                            def coverage = sh(script: "grep 'coverage:' coverage.out | awk '{print \$2}' | sed 's/%//'", returnStdout: true).trim()
+                            def coveragePercent = coverage as float
+                            echo "Test Coverage: ${coveragePercent}%"
+                            if (coveragePercent < 60) {
+                                error "Test coverage is below 60%. Exiting..."
+                            }
+                        }
                     }
                 }
             }
