@@ -46,6 +46,8 @@ pipeline {
                         sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
                         sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
                         sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                        sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
+                        sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
                         '''
                         sh 'go test ./...'
                     }
