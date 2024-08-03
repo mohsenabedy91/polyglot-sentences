@@ -16,8 +16,6 @@ pipeline {
             steps {
                 echo 'BUILD EXECUTION STARTED'
 
-                sh 'go version'
-
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
                 dir('polyglot-sentences') {
