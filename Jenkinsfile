@@ -74,6 +74,8 @@ pipeline {
                             """
                         }
                     }
+
+                    sh 'kubectl rollout restart deployment -n polyglot-sentences'
                 }
             }
         }
