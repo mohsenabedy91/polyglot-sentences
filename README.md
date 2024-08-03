@@ -2,11 +2,11 @@
 Polyglot Sentences is a Go-based application designed to help users learn and master sentences in multiple languages. The app provides a wide range of sentence structures and vocabulary to facilitate language learning through practical and contextual examples.
 
 # Go Version
-- The project uses Go `1.22.5`
+- The project uses Go version `1.22.5`
 
 # Installation and Setup
 
-To simplify the installation and setup process for developers, we have provided an install_service.sh script. This script will:
+To simplify the installation and setup process for developers, we have provided an `install_service.sh` script. This script will:
 
 - Check if Docker is installed, and if not, it will install Docker.
 - Install Docker Compose if it is not already installed.
@@ -37,8 +37,7 @@ chmod +x install_service.sh
 - password: `QWer123!@#`
 
 # Project Architecture
-- The project architecture is based on the `Hexagonal Architecture`.
-- The project is structured in a way that it is easy to understand and navigate through.
+The project is structured using the Hexagonal Architecture. Here’s an overview of the directory structure:
 
 ```tree-extended
 📁polyglot-sentences/
@@ -231,14 +230,13 @@ chmod +x install_service.sh
 ```
 
 # Profiling
-We use `pprof` tool to get CPU, goroutine, and memory usage data.
+To profile the application, we use the `pprof` tool for CPU, goroutine, and memory usage data.
 
 - [pprof](http://localhost:2526/debug/pprof/)
 - [goroutine](http://localhost:2526/debug/pprof/goroutine?debug=1)
 
 ```bash
 curl http://localhost:2526/debug/pprof/goroutine --output goroutine.o
-
 go tool pprof -http=:2020 goroutine.o
 ```
 Make sure the debug mode is enabled for the above links to work.
@@ -267,13 +265,11 @@ internal/adapter/grpc/proto/user/user.proto
 ## Telegram Integration
 
 # Test
-## Setup
-
+### Setup
 Create a .env.test file with the necessary test environment variables.
 
-## Running Tests
-
-To run the tests, execute the following commands:
+### Running Tests
+To run the tests, execute:
 ```bash
 go test -cover -count=1 ./...
 ```
@@ -285,12 +281,23 @@ To visualize the coverage profile:
 ```bash
 go tool cover -html=prof.out
 ```
-## Test Suites
 
-The project includes comprehensive test suites to ensure the functionality and reliability of the codebase. The tests cover various components and features of the application.
-## Running All Tests
+### Test Suites
+The project includes comprehensive test suites to ensure the functionality and reliability of the codebase, covering various components and features.
 
-To run all the tests in the project, use the following command:
+### Running All Tests
+To run all the tests in the project:
 ```bash
 go test ./... -v
+```
+
+# Linter
+To install the linter package:
+```bash
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+
+To check code with the linter:
+```bash
+golangci-lint run
 ```
