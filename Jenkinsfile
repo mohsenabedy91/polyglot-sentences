@@ -61,10 +61,10 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         dir('polyglot-sentences') {
                             sh """
-                            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                            echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
                             docker build -t auth_polyglot_sentences:latest -f Dockerfile-Auth .
                             docker push auth_polyglot_sentences:latest
                             """
