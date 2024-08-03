@@ -39,7 +39,7 @@ pipeline {
 
                 dir('polyglot-sentences') {
                     sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
-                    sh 'golangci-lint run'
+                    sh 'golangci-lint run -v'
                 }
             }
         }
