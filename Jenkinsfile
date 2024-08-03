@@ -41,7 +41,7 @@ pipeline {
 
                     sh 'go mod download'
 
-                    stash name: 'go-mod-cache', includes: '**/go.sum, **/go.mod'
+                    stash name: 'go-mod-cache', includes: 'go.sum, go.mod, **/go/pkg/**'
                     stash name: 'go-bin-cache', includes: '**/bin/**'
 
                     sh 'swag init -g ./cmd/authserver/main.go'
