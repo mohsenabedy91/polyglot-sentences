@@ -22,16 +22,6 @@ pipeline {
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
 
                 dir('polyglot-sentences') {
-                    sh 'ls -lah'
-
-                }
-            }
-        }
-        stage('Test') {
-            steps {
-                echo 'TEST EXECUTION STARTED'
-
-                dir('polyglot-sentences') {
                     sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                     sh 'go get -u github.com/swaggo/gin-swagger'
                     sh 'go get -u github.com/swaggo/swag'
@@ -40,8 +30,25 @@ pipeline {
                     sh 'go mod download'
 
                     sh 'swag init -g ./cmd/authserver/main.go'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'TEST EXECUTION STARTED'
 
-                    sh 'go test ./...'
+                withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                    dir('polyglot-sentences') {
+                        sh 'cp .env.example .env.test'
+                        sh '''
+                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                        '''
+                        sh 'go test ./...'
+                    }
                 }
             }
         }
