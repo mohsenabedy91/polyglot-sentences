@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
@@ -26,7 +25,7 @@ func main() {
 	}
 	defer queue.Driver.Close()
 
-	log.Info(logger.Queue, logger.Startup, fmt.Sprintf("Setup queue successfully"), nil)
+	log.Info(logger.Queue, logger.Startup, "Setup queue successfully", nil)
 
 	userClient := client.NewUserClient(log, conf.UserManagement)
 	defer userClient.Close()

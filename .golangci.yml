@@ -1,0 +1,54 @@
+run:
+  # timeout for the entire linter run, default is 1m
+  timeout: 2m
+
+issues:
+  # exclude directories from analysis
+  exclude-dirs:
+    - vendor
+    - third_party
+
+  # exclude specific files from analysis
+  exclude-files:
+    - generated.*
+    - cmd/apigateway/main.go
+
+  # include only the listed goos/os-arcs
+  include:
+    - linux
+    - darwin
+    - windows
+
+  # exclude messages by their text, name, or a part of the text;
+  # it's a substring, not a regex;
+  exclude-use-default: false
+  exclude:
+    - "error return value not checked"
+
+  # use the specified format for issues output.
+  format: colored-line-number
+
+linters:
+  # Enable specific linters. By default, all linters are enabled.
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - unused
+
+  # Disable specific linters. By default, all linters are enabled.
+  disable:
+    - gocyclo  # We disable gocyclo to avoid cyclomatic complexity errors
+
+  # linters-settings contains specific settings for each linter.
+  linters-settings:
+    govet:
+      # settings for govet linter
+      check-shadowing: true
+
+    gocyclo:
+      # settings for gocyclo linter
+      min-complexity: 15
+
+    # add settings for other linters if needed

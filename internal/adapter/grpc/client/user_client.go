@@ -39,7 +39,6 @@ func (r UserClient) Close() {
 	if err := r.conn.Close(); err != nil {
 		r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
 	}
-	return
 }
 
 func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {

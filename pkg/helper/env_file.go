@@ -30,5 +30,5 @@ func GetEnvFilePath(envFile string) (string, error) {
 		currentDir = parentDir
 	}
 
-	return "", fmt.Errorf("could not find .env file")
+	return "", fmt.Errorf("could not find envrionment file")
 }

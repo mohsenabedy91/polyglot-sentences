@@ -104,10 +104,8 @@ func TestRoleCacheService_SetBulk(t *testing.T) {
 	t.Run("SetBulk cache error", func(t *testing.T) {
 		mockCache := new(authrepository.MockRoleCache)
 
-		var uuidStr string
-		uuidStr = roles[0].Base.UUID.String()
-		var roleKey domain.RoleKeyType
-		roleKey = roles[0].Key
+		uuidStr := roles[0].Base.UUID.String()
+		roleKey := roles[0].Key
 
 		items := map[string]domain.RoleKeyType{}
 		for _, role := range roles {
