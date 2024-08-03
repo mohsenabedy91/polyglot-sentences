@@ -62,13 +62,17 @@ pipeline {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        dir('polyglot-sentences') {
-                            sh 'cp .env.example .env.docker'
-
+                        dir('polyglot-sentences/docker') {
                             sh """
                             docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+
+                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
                             docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
+                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
+
+                            docker push ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest
                             docker push ${DOCKER_USERNAME}/auth_polyglot_sentences:latest
+                            docker push ${DOCKER_USERNAME}/notification_polyglot_sentences:latest
                             """
                         }
                     }

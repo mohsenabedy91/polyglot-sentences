@@ -1,8 +1,8 @@
-FROM golang:1.22.5 as builder
+FROM golang:1.22.5 AS builder
 
 WORKDIR /app
 
-COPY ./go.* ./
+COPY go.mod go.sum ./
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest \
     && go get -u github.com/swaggo/gin-swagger \
@@ -11,18 +11,17 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest \
 
 RUN go mod download
 
-COPY . .
+COPY .. .
 
-RUN swag init -g ./cmd/worker/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -v -o /app/worker_polyglot_sentences ./cmd/worker/main.go
+RUN swag init -g ./cmd/userserver/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -v -o /app/user_polyglot_sentences ./cmd/userserver/main.go
 
 FROM alpine:3.15
 
 WORKDIR /app
 
-COPY --from=builder /app/worker_polyglot_sentences /app/
+COPY --from=builder /app/user_polyglot_sentences /app/
 COPY --from=builder /app/.env.docker /app/.env
 COPY --from=builder /app/pkg/translation/lang /app/pkg/translation/lang
-COPY --from=builder /app/internal/core/views /app/internal/core/views
 
-CMD ["/app/worker_polyglot_sentences"]
+CMD ["/app/user_polyglot_sentences"]

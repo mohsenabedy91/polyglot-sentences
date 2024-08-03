@@ -17,7 +17,7 @@ import (
 func main() {
 	configProvider := &config.Config{}
 	conf := configProvider.GetConfig()
-	log := logger.NewLogger(conf.Auth.Name, conf.Log)
+	log := logger.NewLogger(conf.Notification.Name, conf.Log)
 
 	queue, err := setup.InitializeQueue(log, conf)
 	if err != nil {

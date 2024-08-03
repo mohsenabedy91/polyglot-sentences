@@ -58,10 +58,19 @@ type Auth struct {
 type UserManagement struct {
 	Name     string
 	Version  string
-	URL      string
+	HTTPUrl  string
+	GRPCUrl  string
 	HTTPPort string
 	GRPCPort string
 	Debug    bool
+}
+
+type Notification struct {
+	Name    string
+	Version string
+	URL     string
+	Port    string
+	Debug   bool
 }
 
 type Profile struct {
@@ -174,6 +183,7 @@ type Config struct {
 	App            App
 	Auth           Auth
 	UserManagement UserManagement
+	Notification   Notification
 	Profile        Profile
 	Log            Log
 	Swagger        Swagger
@@ -227,10 +237,18 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	var userManagement UserManagement
 	userManagement.Name = os.Getenv("USER_MANAGEMENT_NAME")
 	userManagement.Version = os.Getenv("USER_MANAGEMENT_VERSION")
-	userManagement.URL = os.Getenv("USER_MANAGEMENT_URL")
+	userManagement.HTTPUrl = os.Getenv("USER_MANAGEMENT_HTTP_URL")
+	userManagement.GRPCUrl = os.Getenv("USER_MANAGEMENT_GRPC_URL")
 	userManagement.HTTPPort = os.Getenv("USER_MANAGEMENT_HTTP_PORT")
 	userManagement.GRPCPort = os.Getenv("USER_MANAGEMENT_GRPC_PORT")
 	userManagement.Debug = getBoolEnv("USER_MANAGEMENT_DEBUG", false)
+
+	var notification Notification
+	notification.Name = os.Getenv("AUTH_NAME")
+	notification.Version = os.Getenv("AUTH_VERSION")
+	notification.URL = os.Getenv("AUTH_URL")
+	notification.Port = os.Getenv("AUTH_PORT")
+	notification.Debug = getBoolEnv("AUTH_DEBUG", false)
 
 	var profile Profile
 	profile.Debug = getBoolEnv("PROFILE_DEBUG", false)
@@ -315,6 +333,8 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	return Config{
 		Kong:           kong,
 		App:            app,
+		UserManagement: userManagement,
+		Notification:   notification,
 		Auth:           auth,
 		Profile:        profile,
 		Log:            log,
@@ -322,7 +342,6 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 		DB:             db,
 		Redis:          redis,
 		Jwt:            jwt,
-		UserManagement: userManagement,
 		OTP:            otp,
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,

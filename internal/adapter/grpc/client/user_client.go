@@ -20,7 +20,7 @@ type UserClient struct {
 }
 
 func NewUserClient(log logger.Logger, conf config.UserManagement) *UserClient {
-	target := fmt.Sprintf("%s:%s", conf.URL, conf.GRPCPort)
+	target := fmt.Sprintf("%s:%s", conf.GRPCUrl, conf.GRPCPort)
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)

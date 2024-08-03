@@ -14,7 +14,6 @@ import (
 
 func InitializeDatabase(ctx context.Context, log logger.Logger, conf config.Config) (*sql.DB, error) {
 	if err := postgres.InitClient(ctx, log, conf); err != nil {
-		log.Fatal(logger.Database, logger.Startup, fmt.Sprintf("Failed to setup postgres, error: %v", err), nil)
 		return nil, err
 	}
 	return postgres.Get(), nil

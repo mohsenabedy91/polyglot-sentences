@@ -4,9 +4,10 @@ services:
   app_auth:
     image: app_auth
     container_name: app_auth
+    env_file: ".env.docker"
     build:
       context: .
-      dockerfile: Dockerfile-Auth
+      dockerfile: docker/Dockerfile-Auth-Local
     ports:
       - "${AUTH_PORT:-2525}:2525"
       - "${SWAGGER_FORWARD_PORT:-1525}:1525"
@@ -24,9 +25,10 @@ services:
   app_user_management:
     image: app_user_management
     container_name: app_user_management
+    env_file: ".env.docker"
     build:
       context: .
-      dockerfile: Dockerfile-UserManagement
+      dockerfile: docker/Dockerfile-UserManagement-Local
     ports:
       - "${USER_MANAGEMENT_HTTP_PORT:-2535}:2535"
       - "${USER_MANAGEMENT_GRPC_PORT:-2536}:2536"
@@ -42,12 +44,13 @@ services:
       - redis
       - rabbitmq
 
-  app_worker:
-    image: app_worker
-    container_name: app_worker
+  app_notification:
+    image: app_notification
+    container_name: app_notification
+    env_file: ".env.docker"
     build:
       context: .
-      dockerfile: Dockerfile-Worker
+      dockerfile: docker/Dockerfile-Notification-Local
     restart: always
     networks:
       - default
@@ -60,6 +63,7 @@ services:
   postgres:
     image: postgres:16.3
     container_name: postgres
+    env_file: ".env.docker"
     volumes:
       - postgres:/data/postgres
     ports:
@@ -76,6 +80,7 @@ services:
   redis:
     image: redis:7.2.4
     container_name: redis
+    env_file: ".env.docker"
     volumes:
       - redis:/etc/redis
     ports:
@@ -184,10 +189,11 @@ services:
   ####################### SETUP #######################
   setup:
     build:
-      context: docker/elk/setup/
+      context: docker/elk/setup
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     container_name: setup
+    env_file: ".env.docker"
     init: true
     volumes:
       - ./docker/elk/setup/entrypoint.sh:/entrypoint.sh:ro,Z
@@ -207,9 +213,10 @@ services:
   ####################### ELK #######################
   elasticsearch:
     build:
-      context: docker/elk/elasticsearch/
+      context: docker/elk/elasticsearch
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
+    env_file: ".env.docker"
     container_name: elasticsearch
     volumes:
       - ./docker/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
@@ -229,10 +236,11 @@ services:
 
   kibana:
     build:
-      context: docker/elk/kibana/
+      context: docker/elk/kibana
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     container_name: kibana
+    env_file: ".env.docker"
     volumes:
       - ./docker/elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
       - elasticsearch:/usr/share/kibana/data:Z
@@ -249,10 +257,11 @@ services:
 
   filebeat:
     build:
-      context: docker/elk/filebeat/
+      context: docker/elk/filebeat
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     container_name: filebeat
+    env_file: ".env.docker"
     user: root
     command:
       - -e
@@ -273,17 +282,15 @@ services:
 
   rabbitmq:
     image: rabbitmq-3-12-management
+    container_name: rabbitmq
+    env_file: ".env.docker"
     build:
       context: .
-      dockerfile: Dockerfile-Rabbitmq
-    container_name: rabbitmq
+      dockerfile: docker/Dockerfile-Rabbitmq
     restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - "${RABBITMQ_AMQP_FORWARD_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGE_FORWARD_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -293,6 +300,7 @@ services:
   db:
     image: "postgres:9.6"
     container_name: "kong-database"
+    env_file: ".env.docker"
     restart: always
     volumes:
       - "kong_db_data:/var/lib/postgresql/data"
@@ -300,8 +308,6 @@ services:
       - POSTGRES_USER=${KONG_POSTGRES_USER}
       - POSTGRES_DB=${KONG_POSTGRES_DATABASE}
       - POSTGRES_PASSWORD=${KONG_POSTGRES_PASSWORD}
-    ports:
-      - "${KONG_POSTGRES_PORT}:5432"
     networks:
       - default
       - app_network
@@ -309,6 +315,7 @@ services:
   kong:
     image: "kong/kong-gateway:3.6"
     container_name: "kong-gateway"
+    env_file: ".env.docker"
     restart: on-failure
     depends_on:
       - "db"
@@ -350,6 +357,7 @@ services:
   minio:
     image: minio/minio
     container_name: minio
+    env_file: ".env.docker"
     restart: always
     ports:
       - "${MINIO_PORT:-9000}:9000"
@@ -359,6 +367,41 @@ services:
     volumes:
       - minio_data:/data
     command: server /data
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    restart: always
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  jenkins-slave-1:
+    image: jenkins/inbound-agent
+    container_name: jenkins-slave-1
+    restart: always
+    environment:
+      - JENKINS_URL=http://jenkins-master:8080
+      - JENKINS_AGENT_NAME=slave-1
+      - JENKINS_SECRET=YOUR_SLAVE_SECRET_1
+    depends_on:
+      - jenkins-master
+
+  jenkins-slave-2:
+    image: jenkins/inbound-agent
+    container_name: jenkins-slave-2
+    restart: always
+    environment:
+      - JENKINS_URL=http://jenkins-master:8080
+      - JENKINS_AGENT_NAME=slave-2
+      - JENKINS_SECRET=YOUR_SLAVE_SECRET_2
+    depends_on:
+      - jenkins-master
 
 volumes:
   postgres:
@@ -371,6 +414,7 @@ volumes:
   rabbitmq_data:
   kong_db_data:
   minio_data:
+  jenkins_home:
 
 networks:
   default:
