@@ -16,6 +16,7 @@ pipeline {
             steps {
                 script {
                     try {
+                        unstash 'go-mod-cache'
                         unstash 'go-bin-cache'
                     } catch (Exception e) {
                         echo 'No cache found. Proceeding with fresh dependencies...'
@@ -40,7 +41,8 @@ pipeline {
 
                     sh 'go mod download'
 
-                    stash name: 'go-bin-cache', includes: 'polyglot-sentences/bin/**'
+                    stash name: 'go-mod-cache', includes: '**/go.sum, **/go.mod'
+                    stash name: 'go-bin-cache', includes: '**/bin/**'
 
                     sh 'swag init -g ./cmd/authserver/main.go'
                 }
