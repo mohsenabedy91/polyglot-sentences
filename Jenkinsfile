@@ -30,6 +30,15 @@ pipeline {
                 echo 'TEST EXECUTION STARTED'
 
                 dir('polyglot-sentences') {
+                    sh 'go install github.com/swaggo/swag/cmd/swag@latest'
+                    sh 'go get -u github.com/swaggo/gin-swagger'
+                    sh 'go get -u github.com/swaggo/swag'
+                    sh 'go get -u github.com/swaggo/files'
+
+                    sh 'go mod download'
+
+                    sh 'swag init -g ./cmd/authserver/main.go'
+
                     sh 'go test ./...'
                 }
             }
