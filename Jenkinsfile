@@ -15,20 +15,15 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
-
                 sh 'go version'
-
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
-
                 dir('polyglot-sentences') {
                     sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                     sh 'go get -u github.com/swaggo/gin-swagger'
                     sh 'go get -u github.com/swaggo/swag'
                     sh 'go get -u github.com/swaggo/files'
-
                     sh 'go mod download'
-
                     sh 'swag init -g ./cmd/authserver/main.go'
                 }
             }
@@ -36,7 +31,6 @@ pipeline {
         stage('Lint') {
             steps {
                 echo 'LINT EXECUTION STARTED'
-
                 dir('polyglot-sentences') {
                     sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
                     sh 'golangci-lint run -v'
@@ -46,7 +40,6 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'TEST EXECUTION STARTED'
-
                 withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
                     dir('polyglot-sentences') {
                         sh 'cp .env.example .env.test'
@@ -67,6 +60,17 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        dir('polyglot-sentences') {
+                            sh """
+                            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                            docker build -t auth_polyglot_sentences:latest -f Dockerfile-Auth .
+                            docker push auth_polyglot_sentences:latest
+                            """
+                        }
+                    }
+                }
             }
         }
     }
