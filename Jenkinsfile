@@ -28,6 +28,10 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'TEST EXECUTION STARTED'
+
+                dir('polyglot-sentences') {
+                    sh 'go test ./...'
+                }
             }
         }
         stage('Deploy') {
