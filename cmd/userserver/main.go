@@ -110,7 +110,7 @@ func startHTTPServer(
 
 	router = router.NewUserRouter(*userHandler)
 
-	listenAddr := fmt.Sprintf("%s:%s", conf.UserManagement.URL, conf.UserManagement.HTTPPort)
+	listenAddr := fmt.Sprintf("%s:%s", conf.UserManagement.HTTPUrl, conf.UserManagement.HTTPPort)
 	httpServer := &http.Server{
 		Addr:    listenAddr,
 		Handler: router.Engine.Handler(),

@@ -37,7 +37,7 @@ func NewUserGRPCServer(
 }
 
 func (r Server) StartUserGRPCServer() (*grpc.Server, error) {
-	address := fmt.Sprintf("%s:%s", r.conf.URL, r.conf.GRPCPort)
+	address := fmt.Sprintf("%s:%s", r.conf.GRPCUrl, r.conf.GRPCPort)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, err

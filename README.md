@@ -49,11 +49,11 @@ The project is structured using the Hexagonal Architecture. Here’s an overview
 │   │   └── 📄main.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
+│   ├── 📁notificationserver/
+│   │   └── 📄main.go
 │   ├── 📁setup/
 │   │   └── 📄setup.go
-│   ├── 📁userserver/
-│   │   └── 📄main.go
-│   └── 📁worker/
+│   └── 📁userserver/
 │       └── 📄main.go
 ├── 📁deploy/
 │   ├── 📄Deployment.yml
