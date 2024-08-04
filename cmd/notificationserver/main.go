@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/client"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/messagebroker"
@@ -12,9 +13,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
+	fmt.Println("time.Now()", time.Now())
 	configProvider := &config.Config{}
 	conf := configProvider.GetConfig()
 	log := logger.NewLogger(conf.Notification.Name, conf.Log)
