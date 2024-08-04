@@ -15,7 +15,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
-
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
                 dir('polyglot-sentences') {
@@ -57,27 +56,44 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
+        stage('Generate Docker Images') {
+            steps {
+                echo 'DEPLOY EXECUTION STARTED'
+                script {
+                    dir('polyglot-sentences/docker') {
+                        sh """
+                        docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
+                        docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
+                        docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
+                        """
+                    }
+                }
+            }
+        }
+        stage('Push Docker Images') {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        dir('polyglot-sentences/docker') {
-                            sh """
-                            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                        sh """
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 
-                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
-                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
-                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
-
-                            docker push ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest
-                            docker push ${DOCKER_USERNAME}/auth_polyglot_sentences:latest
-                            docker push ${DOCKER_USERNAME}/notification_polyglot_sentences:latest
-                            """
-                        }
+                        docker push ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest
+                        docker push ${DOCKER_USERNAME}/auth_polyglot_sentences:latest
+                        docker push ${DOCKER_USERNAME}/notification_polyglot_sentences:latest
+                        """
                     }
+                }
+            }
+        }
+        stage('Deployment') {
+            steps {
+                echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
 
-                    sh 'kubectl rollout restart deployment -n polyglot-sentences'
+                sshagent(['k8s']) {
+                    script {
+                        sh 'ssh mohsen@192.168.1.104 kubectl rollout restart deployment -n polyglot-sentences'
+                    }
                 }
             }
         }
