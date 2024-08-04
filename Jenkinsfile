@@ -19,10 +19,9 @@ pipeline {
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
 
-
-                    dir('polyglot-sentences/docker') {
-                        sh('ls -lah')
-                    }
+                dir('polyglot-sentences/docker') {
+                    sh('ls -lah')
+                }
 
                 dir('polyglot-sentences') {
                     sh 'go install github.com/swaggo/swag/cmd/swag@latest'
