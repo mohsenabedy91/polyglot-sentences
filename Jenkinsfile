@@ -61,11 +61,11 @@ pipeline {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        dir('polyglot-sentences/docker') {
+                        dir('polyglot-sentences') {
                             sh """
-                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
-                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
-                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
+                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .
+                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .
+                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .
                             """
                         }
                     }
@@ -91,10 +91,9 @@ pipeline {
         stage('Deployment') {
             steps {
                 echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
-
                 sshagent(['k8s']) {
                     script {
-                        sh 'ssh mohsen@192.168.1.104 kubectl rollout restart deployment -n polyglot-sentences'
+                        sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
                     }
                 }
             }
