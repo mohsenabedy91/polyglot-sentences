@@ -16,20 +16,16 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'BUILD EXECUTION STARTED'
-                sh 'rm -rf polyglot-sentences'
-                sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
-
-                dir('polyglot-sentences/docker') {
-                    sh('ls -lah')
-                }
+                sh('rm -rf polyglot-sentences')
+                sh('git clone https://github.com/mohsenabedy91/polyglot-sentences.git')
 
                 dir('polyglot-sentences') {
-                    sh 'go install github.com/swaggo/swag/cmd/swag@latest'
-                    sh 'go get -u github.com/swaggo/gin-swagger'
-                    sh 'go get -u github.com/swaggo/swag'
-                    sh 'go get -u github.com/swaggo/files'
-                    sh 'go mod download'
-                    sh 'swag init -g ./cmd/authserver/main.go'
+                    sh('go install github.com/swaggo/swag/cmd/swag@latest')
+                    sh('go get -u github.com/swaggo/gin-swagger')
+                    sh('go get -u github.com/swaggo/swag')
+                    sh('go get -u github.com/swaggo/files')
+                    sh('go mod download')
+                    sh('swag init -g ./cmd/authserver/main.go')
                 }
             }
         }
@@ -37,8 +33,8 @@ pipeline {
             steps {
                 echo 'LINT EXECUTION STARTED'
                 dir('polyglot-sentences') {
-                    sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
-                    sh 'golangci-lint run -v'
+                    sh('go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'))
+                    sh('golangci-lint run -v')
                 }
             }
         }
@@ -47,7 +43,7 @@ pipeline {
                 echo 'TEST EXECUTION STARTED'
                 withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
                     dir('polyglot-sentences') {
-                        sh 'cp .env.example .env.test'
+                        sh('cp .env.example .env.test')
                         sh '''
                         sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
                         sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
@@ -57,7 +53,7 @@ pipeline {
                         sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
                         sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
                         '''
-                        sh 'go test -cover -count=1 ./...'
+                        sh('go test -cover -count=1 ./...')
                     }
                 }
             }
@@ -66,13 +62,10 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    dir('polyglot-sentences') {
-                        sh('ls -lah')
-                        sh """
-                        docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .
-                        docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .
-                        docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .
-                        """
+                    dir('polyglot-sentences/docker') {
+                        sh('docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .')
+                        sh('docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f Dockerfile-Auth .')
+                        sh('docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f Dockerfile-Notification .')
                     }
                 }
             }
@@ -81,13 +74,10 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    sh """
-                    docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}
-
-                    docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest
-                    docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest
-                    docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest
-                    """
+                    sh('docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}')
+                    sh('docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest')
+                    sh('docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest')
+                    sh('docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest')
                 }
             }
         }
@@ -96,7 +86,7 @@ pipeline {
                 echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
                 sshagent(['k8s']) {
                     script {
-                        sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
+                        sh('ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences')
                     }
                 }
             }
