@@ -62,10 +62,10 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    dir('polyglot-sentences/docker') {
-                        sh('docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .')
-                        sh('docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f Dockerfile-Auth .')
-                        sh('docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f Dockerfile-Notification .')
+                    dir('polyglot-sentences') {
+                        sh('docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .')
+                        sh('docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .')
+                        sh('docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .')
                     }
                 }
             }
