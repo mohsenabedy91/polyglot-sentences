@@ -10,6 +10,7 @@ pipeline {
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOBIN = "${GOPATH}/bin"
         PATH = "${GOBIN}:${env.PATH}"
+        DOCKER_CREDS = credentials('docker-hub-credentials')
     }
     stages {
         stage('Build') {
@@ -17,6 +18,12 @@ pipeline {
                 echo 'BUILD EXECUTION STARTED'
                 sh 'rm -rf polyglot-sentences'
                 sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
+
+
+                    dir('polyglot-sentences/docker') {
+                        sh('ls -lah')
+                    }
+
                 dir('polyglot-sentences') {
                     sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                     sh 'go get -u github.com/swaggo/gin-swagger'
@@ -60,14 +67,13 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        dir('polyglot-sentences') {
-                            sh """
-                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .
-                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .
-                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .
-                            """
-                        }
+                    dir('polyglot-sentences') {
+                        sh('ls -lah')
+                        sh """
+                        docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .
+                        docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .
+                        docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .
+                        """
                     }
                 }
             }
@@ -76,15 +82,13 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh """
-                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                    sh """
+                    docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}
 
-                        docker push ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest
-                        docker push ${DOCKER_USERNAME}/auth_polyglot_sentences:latest
-                        docker push ${DOCKER_USERNAME}/notification_polyglot_sentences:latest
-                        """
-                    }
+                    docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest
+                    docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest
+                    docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest
+                    """
                 }
             }
         }

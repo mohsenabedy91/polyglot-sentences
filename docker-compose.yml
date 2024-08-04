@@ -368,41 +368,6 @@ services:
       - minio_data:/data
     command: server /data
 
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    restart: always
-    privileged: true
-    user: root
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  jenkins-slave-1:
-    image: jenkins/inbound-agent
-    container_name: jenkins-slave-1
-    restart: always
-    environment:
-      - JENKINS_URL=http://jenkins-master:8080
-      - JENKINS_AGENT_NAME=slave-1
-      - JENKINS_SECRET=YOUR_SLAVE_SECRET_1
-    depends_on:
-      - jenkins-master
-
-  jenkins-slave-2:
-    image: jenkins/inbound-agent
-    container_name: jenkins-slave-2
-    restart: always
-    environment:
-      - JENKINS_URL=http://jenkins-master:8080
-      - JENKINS_AGENT_NAME=slave-2
-      - JENKINS_SECRET=YOUR_SLAVE_SECRET_2
-    depends_on:
-      - jenkins-master
-
 volumes:
   postgres:
   redis:
@@ -414,7 +379,6 @@ volumes:
   rabbitmq_data:
   kong_db_data:
   minio_data:
-  jenkins_home:
 
 networks:
   default:
