@@ -60,12 +60,14 @@ pipeline {
             steps {
                 echo 'DEPLOY EXECUTION STARTED'
                 script {
-                    dir('polyglot-sentences/docker') {
-                        sh """
-                        docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
-                        docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
-                        docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
-                        """
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        dir('polyglot-sentences/docker') {
+                            sh """
+                            docker build -t ${DOCKER_USERNAME}/user_management_polyglot_sentences:latest -f Dockerfile-UserManagement .
+                            docker build -t ${DOCKER_USERNAME}/auth_polyglot_sentences:latest -f Dockerfile-Auth .
+                            docker build -t ${DOCKER_USERNAME}/notification_polyglot_sentences:latest -f Dockerfile-Notification .
+                            """
+                        }
                     }
                 }
             }
