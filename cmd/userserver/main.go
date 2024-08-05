@@ -30,7 +30,6 @@ import (
 // @name Authorization
 // @description "Bearer <your-jwt-token>"
 func main() {
-	fmt.Println("time.Now()", time.Now())
 	configProvider := &config.Config{}
 	conf := configProvider.GetConfig()
 	log := logger.NewLogger(conf.UserManagement.Name, conf.Log)
