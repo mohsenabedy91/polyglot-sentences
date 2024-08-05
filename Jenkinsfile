@@ -1,6 +1,37 @@
 pipeline {
-    agent any
-
+    agent {
+        kubernetes {
+            yaml '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: jenkins-slave
+                image: 'jenkins/inbound-agent'
+                args: ['-secret', '$(JENKINS_SECRET)', '-name', '$(JENKINS_NAME)', '-url', 'http://jenkins-master-service/']
+                volumeMounts:
+                  - mountPath: "/home/jenkins/agent"
+                    name: "workspace-volume"
+                    readOnly: false
+              - name: docker
+                image: 'docker:19.03-dind'
+                securityContext:
+                  privileged: true
+                volumeMounts:
+                  - mountPath: "/home/jenkins/agent"
+                    name: "workspace-volume"
+                  - mountPath: /var/lib/docker
+                    name: docker-storage
+                command: ['dockerd-entrypoint.sh']
+                args: ['-H', 'tcp://0.0.0.0:2375', '-H', 'unix:///var/run/docker.sock']
+              volumes:
+              - name: workspace-volume
+                emptyDir: {}
+              - name: docker-storage
+                emptyDir: {}
+            '''
+        }
+    }
     tools {
         go '1.22.5'
     }
@@ -13,80 +44,94 @@ pipeline {
         DOCKER_CREDS = credentials('docker-hub-credentials')
     }
     stages {
-        stage('Build') {
+        stage('Prepare') {
             steps {
-                echo 'BUILD EXECUTION STARTED'
-                sh('rm -rf polyglot-sentences')
-                sh('git clone https://github.com/mohsenabedy91/polyglot-sentences.git')
+                container('jenkins-slave') {
+                    echo 'Prepare EXECUTION STARTED'
+                    sh 'go version'
 
-                dir('polyglot-sentences') {
-                    sh('go install github.com/swaggo/swag/cmd/swag@latest')
-                    sh('go get -u github.com/swaggo/gin-swagger')
-                    sh('go get -u github.com/swaggo/swag')
-                    sh('go get -u github.com/swaggo/files')
-                    sh('go mod download')
-                    sh('swag init -g ./cmd/authserver/main.go')
+                    sh 'rm -rf polyglot-sentences'
+                    sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
+
+                    dir('polyglot-sentences') {
+                        sh 'go install github.com/swaggo/swag/cmd/swag@latest'
+                        sh 'go get -u github.com/swaggo/gin-swagger'
+                        sh 'go get -u github.com/swaggo/swag'
+                        sh 'go get -u github.com/swaggo/files'
+                        sh 'go mod download'
+                        sh 'swag init -g ./cmd/authserver/main.go'
+                    }
                 }
             }
         }
         stage('Lint') {
             steps {
-                echo 'LINT EXECUTION STARTED'
-                dir('polyglot-sentences') {
-                    sh('go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest')
-                    sh('golangci-lint run -v')
+                container('jenkins-slave') {
+                    echo 'LINT EXECUTION STARTED'
+                    dir('polyglot-sentences') {
+                        sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
+                        sh 'golangci-lint run -v'
+                    }
                 }
             }
         }
         stage('Test') {
             steps {
-                echo 'TEST EXECUTION STARTED'
-                withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
-                    dir('polyglot-sentences') {
-                        sh('cp .env.example .env.test')
-                        sh '''
-                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
-                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
-                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
-                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
-                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                        sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
-                        sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
-                        '''
-                        sh('go test -cover -count=1 ./...')
+                container('jenkins-slave') {
+                    echo 'TEST EXECUTION STARTED'
+                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                        dir('polyglot-sentences') {
+                            sh 'cp .env.example .env.test'
+                            sh '''
+                            sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                            sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                            sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                            sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
+                            sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
+                            '''
+                            sh 'go test -cover -count=1 ./...'
+                        }
                     }
                 }
             }
         }
         stage('Generate Docker Images') {
             steps {
-                echo 'DEPLOY EXECUTION STARTED'
-                script {
-                    dir('polyglot-sentences') {
-                        sh('docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .')
-                        sh('docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .')
-                        sh('docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .')
+                container('docker') {
+                    echo 'Generate Docker Images EXECUTION STARTED'
+                    script {
+                        dir('polyglot-sentences') {
+                            sh 'docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .'
+                            sh 'docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .'
+                            sh 'docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .'
+                        }
                     }
                 }
             }
         }
         stage('Push Docker Images') {
             steps {
-                echo 'DEPLOY EXECUTION STARTED'
-                script {
-                    sh('docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}')
-                    sh('docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest')
-                    sh('docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest')
-                    sh('docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest')
+                container('docker') {
+                    echo 'Push Docker Images EXECUTION STARTED'
+                    script {
+                        sh 'docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}'
+                        sh 'docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest'
+                        sh 'docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest'
+                        sh 'docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest'
+                    }
                 }
             }
         }
         stage('Deployment') {
             steps {
-                echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
-                sshagent(['k8s']) {
-                    script {
-                        sh('ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences')
+                container('jenkins-slave') {
+                    echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
+                    sshagent(['k8s']) {
+                        script {
+                            sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
+                        }
                     }
                 }
             }
