@@ -31,7 +31,7 @@ pipeline {
                 securityContext:
                   privileged: true
                 volumeMounts:
-                  - mountPath: "/home/jenkins/agent"
+                  - mountPath: "/var/jenkins/agent"
                     name: "jenkins-home"
                   - mountPath: /var/lib/docker
                     name: docker-storage
