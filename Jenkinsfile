@@ -219,16 +219,4 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            echo 'Cleaning up...'
-            deleteDir()
-        }
-        success {
-            echo 'Build completed successfully!'
-        }
-        failure {
-            echo 'Build failed.'
-        }
-    }
 }
