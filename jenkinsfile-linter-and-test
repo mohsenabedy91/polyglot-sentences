@@ -65,50 +65,54 @@ pipeline {
                 }
             }
         }
-        stage('Build Application') {
-            steps {
-                container('golang') {
-                    echo 'Building application...'
-                    dir('polyglot-sentences') {
-                        sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
-                        sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
-                        sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
+        stage('Static Analysis') {
+            parallel {
+                stage('Lint Code') {
+                    steps {
+                        container('golang') {
+                            echo 'Linting code...'
+                            dir('polyglot-sentences') {
+                                sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
+                                sh 'golangci-lint run -v'
+                            }
+                        }
                     }
                 }
-            }
-        }
-        stage('Lint Code') {
-            steps {
-                container('golang') {
-                    echo 'Linting code...'
-                    dir('polyglot-sentences') {
-                        sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
-                        sh 'golangci-lint run -v'
-                    }
-                }
-            }
-        }
-        stage('Run Tests') {
-            steps {
-                container('golang') {
-                    echo 'Running tests...'
-                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
-                        dir('polyglot-sentences') {
-                            sh 'cp .env.example .env.test'
-                            sh '''
-                            sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
-                            sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
-                            sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
-                            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
-                            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                            sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
-                            sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
-                            '''
-                            sh 'go test -cover -count=1 ./...'
+                stage('Run Tests') {
+                    steps {
+                        container('golang') {
+                            echo 'Running tests...'
+                            withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                                dir('polyglot-sentences') {
+                                    sh 'cp .env.example .env.test'
+                                    sh '''
+                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
+                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
+                                    '''
+                                    sh 'go test -cover -count=1 ./...'
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up...'
+            deleteDir()
+        }
+        success {
+            echo 'Build completed successfully!'
+        }
+        failure {
+            echo 'Build failed.'
         }
     }
 }

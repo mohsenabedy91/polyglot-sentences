@@ -81,59 +81,105 @@ pipeline {
             }
         }
         stage('Build Application') {
-            steps {
-                container('golang') {
-                    echo 'Building application...'
-                    dir('polyglot-sentences') {
-                        sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
-                        sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
-                        sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
+            parallel {
+                stage('Build User Server') {
+                    steps {
+                        container('golang') {
+                            echo 'Building user server...'
+                            dir('polyglot-sentences') {
+                                sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
+                            }
+                        }
+                    }
+                }
+                stage('Build Auth Server') {
+                    steps {
+                        container('golang') {
+                            echo 'Building auth server...'
+                            dir('polyglot-sentences') {
+                                sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
+                            }
+                        }
+                    }
+                }
+                stage('Build Notification Server') {
+                    steps {
+                        container('golang') {
+                            echo 'Building notification server...'
+                            dir('polyglot-sentences') {
+                                sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
+                            }
+                        }
                     }
                 }
             }
         }
-        stage('Lint Code') {
-            steps {
-                container('golang') {
-                    echo 'Linting code...'
-                    dir('polyglot-sentences') {
-                        sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
-                        sh 'golangci-lint run -v'
+        stage('Static Analysis') {
+            parallel {
+                stage('Lint Code') {
+                    steps {
+                        container('golang') {
+                            echo 'Linting code...'
+                            dir('polyglot-sentences') {
+                                sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
+                                sh 'golangci-lint run -v'
+                            }
+                        }
                     }
                 }
-            }
-        }
-        stage('Run Tests') {
-            steps {
-                container('golang') {
-                    echo 'Running tests...'
-                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
-                        dir('polyglot-sentences') {
-                            sh 'cp .env.example .env.test'
-                            sh '''
-                            sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
-                            sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
-                            sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
-                            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
-                            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                            sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
-                            sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
-                            '''
-                            sh 'go test -cover -count=1 ./...'
+                stage('Run Tests') {
+                    steps {
+                        container('golang') {
+                            echo 'Running tests...'
+                            withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                                dir('polyglot-sentences') {
+                                    sh 'cp .env.example .env.test'
+                                    sh '''
+                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
+                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
+                                    '''
+                                    sh 'go test -cover -count=1 ./...'
+                                }
+                            }
                         }
                     }
                 }
             }
         }
         stage('Build Docker Images') {
-            steps {
-                container('docker') {
-                    echo 'Building Docker images...'
-                    script {
-                        dir('polyglot-sentences') {
-                            sh 'docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .'
-                            sh 'docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .'
-                            sh 'docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .'
+            parallel {
+                stage('Build User Docker Image') {
+                    steps {
+                        container('docker') {
+                            echo 'Building User Docker image...'
+                            dir('polyglot-sentences') {
+                                sh 'docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .'
+                            }
+                        }
+                    }
+                }
+                stage('Build Auth Docker Image') {
+                    steps {
+                        container('docker') {
+                            echo 'Building Auth Docker image...'
+                            dir('polyglot-sentences') {
+                                sh 'docker build -t ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest -f docker/Dockerfile-Auth .'
+                            }
+                        }
+                    }
+                }
+                stage('Build Notification Docker Image') {
+                    steps {
+                        container('docker') {
+                            echo 'Building Notification Docker image...'
+                            dir('polyglot-sentences') {
+                                sh 'docker build -t ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest -f docker/Dockerfile-Notification .'
+                            }
                         }
                     }
                 }
@@ -145,9 +191,11 @@ pipeline {
                     echo 'Pushing Docker images...'
                     script {
                         sh 'docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}'
-                        sh 'docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest'
-                        sh 'docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest'
-                        sh 'docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest'
+                        retry(3) {
+                            sh 'docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest'
+                            sh 'docker push ${DOCKER_CREDS_USR}/auth_polyglot_sentences:latest'
+                            sh 'docker push ${DOCKER_CREDS_USR}/notification_polyglot_sentences:latest'
+                        }
                     }
                 }
             }
@@ -162,11 +210,25 @@ pipeline {
                                 mkdir -p ~/.ssh
                                 ssh-keyscan -H ${K8S_REMOTE_ADDRESS} >> ~/.ssh/known_hosts
                             '''
-                            sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
+                            retry(3) {
+                                sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up...'
+            deleteDir()
+        }
+        success {
+            echo 'Build completed successfully!'
+        }
+        failure {
+            echo 'Build failed.'
         }
     }
 }
