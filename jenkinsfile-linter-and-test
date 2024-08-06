@@ -4,6 +4,9 @@ pipeline {
             yaml '''
             apiVersion: v1
             kind: Pod
+            metadata:
+              labels:
+                jenkins: slave
             spec:
               containers:
               - name: golang
