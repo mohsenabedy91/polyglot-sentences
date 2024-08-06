@@ -27,7 +27,7 @@ pipeline {
                   - name: PATH
                     value: "/usr/local/go/bin:/var/jenkins_home/jobs/${JOB_NAME}/builds/${BUILD_ID}/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
               - name: docker
-                image: 'docker:19.03-dind'
+                image: 'docker:20.10.7-dind'
                 securityContext:
                   privileged: true
                 volumeMounts:
@@ -36,7 +36,7 @@ pipeline {
                   - mountPath: /var/lib/docker
                     name: docker-storage
                 command: ['dockerd-entrypoint.sh']
-                args: ['-H', 'tcp://0.0.0.0:2375', '-H', 'unix:///var/run/docker.sock']
+                args: ['-H', 'tcp://0.0.0.0:4243', '-H', 'unix:///var/run/docker.sock']
               volumes:
               - name: jenkins-home
                 persistentVolumeClaim:
