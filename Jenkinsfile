@@ -57,14 +57,18 @@ pipeline {
         DOCKER_CREDS = credentials('docker-hub-credentials')
     }
     stages {
-        stage('Prepare') {
+        stage('Clone Repository') {
             steps {
                 container('golang') {
-                    echo 'Prepare EXECUTION STARTED'
-                    sh 'go version'
-
+                    echo 'Cloning repository...'
                     sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
-
+                }
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                container('golang') {
+                    echo 'Installing dependencies...'
                     dir('polyglot-sentences') {
                         sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                         sh 'go get -u github.com/swaggo/gin-swagger'
@@ -72,7 +76,15 @@ pipeline {
                         sh 'go get -u github.com/swaggo/files'
                         sh 'go mod download'
                         sh 'swag init -g ./cmd/authserver/main.go'
-
+                    }
+                }
+            }
+        }
+        stage('Build Application') {
+            steps {
+                container('golang') {
+                    echo 'Building application...'
+                    dir('polyglot-sentences') {
                         sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
                         sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
                         sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
@@ -80,10 +92,10 @@ pipeline {
                 }
             }
         }
-        stage('Lint') {
+        stage('Lint Code') {
             steps {
                 container('golang') {
-                    echo 'LINT EXECUTION STARTED'
+                    echo 'Linting code...'
                     dir('polyglot-sentences') {
                         sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
                         sh 'golangci-lint run -v'
@@ -91,10 +103,10 @@ pipeline {
                 }
             }
         }
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 container('golang') {
-                    echo 'TEST EXECUTION STARTED'
+                    echo 'Running tests...'
                     withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
                         dir('polyglot-sentences') {
                             sh 'cp .env.example .env.test'
@@ -113,10 +125,10 @@ pipeline {
                 }
             }
         }
-        stage('Generate Docker Images') {
+        stage('Build Docker Images') {
             steps {
                 container('docker') {
-                    echo 'Generate Docker Images EXECUTION STARTED'
+                    echo 'Building Docker images...'
                     script {
                         dir('polyglot-sentences') {
                             sh 'docker build -t ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest -f docker/Dockerfile-UserManagement .'
@@ -130,7 +142,7 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 container('docker') {
-                    echo 'Push Docker Images EXECUTION STARTED'
+                    echo 'Pushing Docker images...'
                     script {
                         sh 'docker login -u ${DOCKER_CREDS_USR} -p ${DOCKER_CREDS_PSW}'
                         sh 'docker push ${DOCKER_CREDS_USR}/user_management_polyglot_sentences:latest'
@@ -140,10 +152,10 @@ pipeline {
                 }
             }
         }
-        stage('Deployment') {
+        stage('Deploy to Kubernetes') {
             steps {
                 container('golang') {
-                    echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
+                    echo 'Deploying to Kubernetes...'
                     sshagent(['k8s']) {
                         script {
                             sh '''
