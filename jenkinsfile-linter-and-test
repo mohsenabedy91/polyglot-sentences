@@ -4,9 +4,6 @@ pipeline {
             yaml '''
             apiVersion: v1
             kind: Pod
-            metadata:
-              labels:
-                jenkins: slave
             spec:
               containers:
               - name: golang
@@ -22,13 +19,13 @@ pipeline {
                   limits:
                     memory: "4Gi"
                     cpu: "2"
+                volumeMounts:
+                  - mountPath: "/var/jenkins/agent"
+                    name: "jenkins-home"
+                    readOnly: false
                 env:
                   - name: PATH
                     value: "/usr/local/go/bin:/var/jenkins_home/jobs/${JOB_NAME}/builds/${BUILD_ID}/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-                volumeMounts:
-                  - name: "jenkins-home"
-                    mountPath: "/var/jenkins/agent"
-                    readOnly: false
               volumes:
               - name: jenkins-home
                 persistentVolumeClaim:
@@ -45,14 +42,18 @@ pipeline {
         PATH = "/usr/local/go/bin:${GOBIN}:${env.PATH}"
     }
     stages {
-        stage('Prepare') {
+        stage('Clone Repository') {
             steps {
                 container('golang') {
-                    echo 'Prepare EXECUTION STARTED'
-                    sh 'go version'
-
+                    echo 'Cloning repository...'
                     sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
-
+                }
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                container('golang') {
+                    echo 'Installing dependencies...'
                     dir('polyglot-sentences') {
                         sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                         sh 'go get -u github.com/swaggo/gin-swagger'
@@ -64,10 +65,22 @@ pipeline {
                 }
             }
         }
-        stage('Lint') {
+        stage('Build Application') {
             steps {
                 container('golang') {
-                    echo 'LINT EXECUTION STARTED'
+                    echo 'Building application...'
+                    dir('polyglot-sentences') {
+                        sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
+                        sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
+                        sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
+                    }
+                }
+            }
+        }
+        stage('Lint Code') {
+            steps {
+                container('golang') {
+                    echo 'Linting code...'
                     dir('polyglot-sentences') {
                         sh 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'
                         sh 'golangci-lint run -v'
@@ -75,10 +88,10 @@ pipeline {
                 }
             }
         }
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 container('golang') {
-                    echo 'TEST EXECUTION STARTED'
+                    echo 'Running tests...'
                     withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
                         dir('polyglot-sentences') {
                             sh 'cp .env.example .env.test'
