@@ -31,7 +31,7 @@ pipeline {
                 securityContext:
                   privileged: true
                 volumeMounts:
-                  - mountPath: "/home/jenkins/agent"
+                  - mountPath: "/var/jenkins/agent"
                     name: "jenkins-home"
                   - mountPath: /var/lib/docker
                     name: docker-storage
@@ -62,7 +62,6 @@ pipeline {
                     echo 'Prepare EXECUTION STARTED'
                     sh 'go version'
 
-                    sh 'rm -rf polyglot-sentences'
                     sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
 
                     dir('polyglot-sentences') {

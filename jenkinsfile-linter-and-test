@@ -4,6 +4,9 @@ pipeline {
             yaml '''
             apiVersion: v1
             kind: Pod
+            metadata:
+              labels:
+                jenkins: slave
             spec:
               containers:
               - name: golang
@@ -19,13 +22,13 @@ pipeline {
                   limits:
                     memory: "4Gi"
                     cpu: "2"
-                volumeMounts:
-                  - mountPath: "/var/jenkins/agent"
-                    name: "jenkins-home"
-                    readOnly: false
                 env:
                   - name: PATH
                     value: "/usr/local/go/bin:/var/jenkins_home/jobs/${JOB_NAME}/builds/${BUILD_ID}/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                volumeMounts:
+                  - name: "jenkins-home"
+                    mountPath: "/var/jenkins/agent"
+                    readOnly: false
               volumes:
               - name: jenkins-home
                 persistentVolumeClaim:
@@ -48,7 +51,6 @@ pipeline {
                     echo 'Prepare EXECUTION STARTED'
                     sh 'go version'
 
-                    sh 'rm -rf polyglot-sentences'
                     sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
 
                     dir('polyglot-sentences') {

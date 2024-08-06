@@ -297,7 +297,7 @@ To install the linter package:
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
-To check code with the linter:
+To check code with the linter: 
 ```bash
 golangci-lint run
 ```
