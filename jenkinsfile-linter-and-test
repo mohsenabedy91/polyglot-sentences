@@ -8,6 +8,7 @@ pipeline {
               containers:
               - name: golang
                 image: 'golang:1.22.5'
+                args: ['-secret', '$(JENKINS_SECRET)', '-name', '$(JENKINS_NAME)', '-url', 'http://jenkins-master-service/']
                 command:
                   - /bin/sh
                   - -c
