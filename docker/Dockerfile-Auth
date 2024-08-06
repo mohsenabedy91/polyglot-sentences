@@ -13,10 +13,9 @@ RUN go mod download
 
 COPY . .
 
-ENV CGO_ENABLED=0
+#RUN swag init -g ./cmd/authserver/main.go
 
-RUN swag init -g ./cmd/authserver/main.go
-RUN GOOS=linux go build -a -installsuffix cgo -v -o /app/auth_polyglot_sentences ./cmd/authserver/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -v -o /app/auth_polyglot_sentences ./cmd/authserver/main.go
 
 FROM alpine:3.15
 
