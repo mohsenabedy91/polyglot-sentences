@@ -50,6 +50,7 @@ pipeline {
     environment {
         GO114MODULE = 'on'
         CGO_ENABLED = 0
+        GOOS = 'linux'
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
         GOBIN = "${GOPATH}/bin"
         PATH = "/usr/local/go/bin:${GOBIN}:${env.PATH}"
@@ -71,6 +72,10 @@ pipeline {
                         sh 'go get -u github.com/swaggo/files'
                         sh 'go mod download'
                         sh 'swag init -g ./cmd/authserver/main.go'
+
+                        sh 'go build -a -installsuffix cgo -v -o user_polyglot_sentences ./cmd/userserver/main.go'
+                        sh 'go build -a -installsuffix cgo -v -o auth_polyglot_sentences ./cmd/authserver/main.go'
+                        sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
                     }
                 }
             }
@@ -141,6 +146,10 @@ pipeline {
                     echo 'UPDATE DEPLOYMENT EXECUTION STARTED'
                     sshagent(['k8s']) {
                         script {
+                            sh '''
+                                mkdir -p ~/.ssh
+                                ssh-keyscan -H ${K8S_REMOTE_ADDRESS} >> ~/.ssh/known_hosts
+                            '''
                             sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
                         }
                     }
