@@ -134,4 +134,19 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            container('postgres') {
+                withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                    script {
+                        sh '''
+                        export PGPASSWORD=$DB_PASSWORD
+                        psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "DROP DATABASE IF EXISTS test;"
+                        echo "Database 'test' dropped."
+                        '''
+                    }
+                }
+            }
+        }
+    }
 }
