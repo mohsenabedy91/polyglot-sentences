@@ -83,7 +83,7 @@ func (r JWTService) LogoutToken(ctx context.Context, jti string, exp int64) erro
 
 	key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti)
 
-	if err := r.cache.SetTokenState(ctx, key, constant.LogoutRedisValue, expTime.Sub(time.Now())); err != nil {
+	if err := r.cache.SetTokenState(ctx, key, constant.LogoutRedisValue, time.Until(expTime)); err != nil {
 		return err
 	}
 

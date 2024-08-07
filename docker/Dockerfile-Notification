@@ -1,0 +1,9 @@
+FROM alpine:3.20
+
+WORKDIR /app
+
+COPY notification_polyglot_sentences /app/
+COPY pkg/translation/lang /app/pkg/translation/lang
+COPY internal/core/views /app/internal/core/views
+
+CMD ["/app/notification_polyglot_sentences"]

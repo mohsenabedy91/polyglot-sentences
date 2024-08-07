@@ -2,11 +2,11 @@
 Polyglot Sentences is a Go-based application designed to help users learn and master sentences in multiple languages. The app provides a wide range of sentence structures and vocabulary to facilitate language learning through practical and contextual examples.
 
 # Go Version
-- The project uses Go `1.22.5`
+- The project uses Go version `1.22.5`
 
 # Installation and Setup
 
-To simplify the installation and setup process for developers, we have provided an install_service.sh script. This script will:
+To simplify the installation and setup process for developers, we have provided an `install_service.sh` script. This script will:
 
 - Check if Docker is installed, and if not, it will install Docker.
 - Install Docker Compose if it is not already installed.
@@ -21,7 +21,7 @@ To simplify the installation and setup process for developers, we have provided 
 
 - Make the script executable:
 
-```bash 
+```bash
 chmod +x install_service.sh
 ```
 
@@ -37,8 +37,7 @@ chmod +x install_service.sh
 - password: `QWer123!@#`
 
 # Project Architecture
-- The project architecture is based on the `Hexagonal Architecture`.
-- The project is structured in a way that it is easy to understand and navigate through.
+The project is structured using the Hexagonal Architecture. Here’s an overview of the directory structure:
 
 ```tree-extended
 📁polyglot-sentences/
@@ -50,11 +49,11 @@ chmod +x install_service.sh
 │   │   └── 📄main.go
 │   ├── 📁migration/
 │   │   └── 📄main.go
+│   ├── 📁notificationserver/
+│   │   └── 📄main.go
 │   ├── 📁setup/
 │   │   └── 📄setup.go
-│   ├── 📁userserver/
-│   │   └── 📄main.go
-│   └── 📁worker/
+│   └── 📁userserver/
 │       └── 📄main.go
 ├── 📁deploy/
 │   ├── 📄Deployment.yml
@@ -231,14 +230,13 @@ chmod +x install_service.sh
 ```
 
 # Profiling
-We use `pprof` tool to get CPU, goroutine, and memory usage data.
+To profile the application, we use the `pprof` tool for CPU, goroutine, and memory usage data.
 
 - [pprof](http://localhost:2526/debug/pprof/)
 - [goroutine](http://localhost:2526/debug/pprof/goroutine?debug=1)
 
 ```bash
 curl http://localhost:2526/debug/pprof/goroutine --output goroutine.o
-
 go tool pprof -http=:2020 goroutine.o
 ```
 Make sure the debug mode is enabled for the above links to work.
@@ -267,13 +265,11 @@ internal/adapter/grpc/proto/user/user.proto
 ## Telegram Integration
 
 # Test
-## Setup
-
+### Setup
 Create a .env.test file with the necessary test environment variables.
 
-## Running Tests
-
-To run the tests, execute the following commands:
+### Running Tests
+To run the tests, execute:
 ```bash
 go test -cover -count=1 ./...
 ```
@@ -285,12 +281,275 @@ To visualize the coverage profile:
 ```bash
 go tool cover -html=prof.out
 ```
-## Test Suites
 
-The project includes comprehensive test suites to ensure the functionality and reliability of the codebase. The tests cover various components and features of the application.
-## Running All Tests
+### Test Suites
+The project includes comprehensive test suites to ensure the functionality and reliability of the codebase, covering various components and features.
 
-To run all the tests in the project, use the following command:
+### Running All Tests
+To run all the tests in the project:
 ```bash
 go test ./... -v
 ```
+
+# Linter
+To install the linter package:
+```bash
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+
+To check code with the linter: 
+```bash
+golangci-lint run
+```
+
+# Cloud
+
+## Install minikube in local machine
+1. Download the Minikube binary:
+```bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+```
+2. Install Minikube and remove the binary:
+```bash
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+```
+3. Verify the Minikube installation:
+```bash
+minikube status
+```
+4. Start Minikube:
+```bash
+minikube start
+```
+5. Check Kubernetes pods across all namespaces:
+```bash
+kubectl get po -A
+```
+6. Configure Docker to use Minikube's Docker daemon:
+```bash
+eval $(minikube -p minikube docker-env)
+```
+7. List Docker images:
+```bash
+docker images
+```
+
+### Create Polyglot sentences namespace
+1. Create the `polyglot-sentences` namespace:
+```bash
+kubectl create namespace polyglot-sentences
+```
+2. Set the current context to the `polyglot-sentences` namespace:
+```bash
+kubectl config set-context --current --namespace=polyglot-sentences
+```
+
+### Create config map
+1. Apply the configuration map from the specified YAML file:
+```bash
+kubectl apply -f deploy/config-maps.yaml
+```
+2. Verify the config maps:
+```bash
+kubectl get configmaps
+```
+
+### Create Services
+1. Apply the `auth-service` configuration:
+```bash
+kubectl apply -f deploy/auth-service.yaml
+```
+2. Apply the gRPC user management service configuration:
+```bash
+kubectl apply -f deploy/user-management-grpc-service.yaml
+```
+3. Apply the HTTP user management service configuration:
+```bash
+kubectl apply -f deploy/user-management-http-service.yaml
+```
+4. Verify the created services:
+```bash
+kubectl get services
+```
+
+### Create Secrets for environments
+1. Create a secret for the `polyglot-sentences` namespace:
+```bash
+kubectl -n=polyglot-sentences create secret generic polyglot-sentences-secret --from-literal JWT_ACCESS_TOKEN_SECRET="your-access-token-secret" --from-literal SEND_GRID_KEY="send-grid-key"
+```
+2. Verify the secret:
+```bash
+kubectl get secret polyglot-sentences-secret -o yaml
+```
+
+### Create deployments
+1. Apply the user management deployment:
+```bash
+kubectl apply -f deploy/user-management-deployment.yaml
+```
+2. Apply the authentication deployment:
+```bash
+kubectl apply -f deploy/auth-deployment.yaml
+```
+3. Apply the notification deployment:
+```bash
+kubectl apply -f deploy/notification-deployment.yaml
+```
+4. Verify the deployments:
+```bash
+kubectl get deployments
+```
+5. Check the status of the pods:
+```bash
+kubectl get pods
+```
+
+## Rollout deployments for apply new version images
+1. Rollout restart for all deployments in the polyglot-sentences namespace:
+```bash
+kubectl rollout restart deployment -n polyglot-sentences
+```
+2. Rollout restart specific deployments:
+```bash
+kubectl rollout restart deployment.apps/auth-deployment -n polyglot-sentences
+```
+```bash
+kubectl rollout restart deployment.apps/user-management-deployment -n polyglot-sentences
+```
+```bash
+kubectl rollout restart deployment.apps/notification-deployment -n polyglot-sentences
+```
+
+# Jenkins
+1. Create the `jenkins` namespace:
+```bash
+kubectl create namespace jenkins
+```
+2. Set the current context to the `jenkins` namespace:
+```bash
+kubectl config set-context --current --namespace=jenkins
+```
+3. Apply the Jenkins persistent volume configuration:
+```bash
+kubectl apply -f deploy/jenkins-persistent-volume.yaml
+```
+4. Apply the Jenkins persistent volume claim configuration:
+```bash
+kubectl apply -f deploy/jenkins-persistent-volume-claim.yaml
+```
+5. Apply the Jenkins service configuration:
+```bash
+kubectl apply -f deploy/jenkins-service.yaml
+```
+6. Apply the Jenkins master deployment configuration:
+```bash
+kubectl apply -f deploy/jenkins-master-deployment.yaml
+```
+
+### Setup docker sock API
+1. Edit the Docker service file:
+```bash
+sudo nano /lib/systemd/system/docker.service
+```
+2. Find and remove the following line:
+`ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock`
+3. Replace it with:
+```bash
+ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock
+```
+4. Reload the systemd daemon and restart Docker:
+```bash
+sudo systemctl daemon-reload
+sudo service docker restart
+```
+5. Check the Docker service status:
+```bash
+sudo service docker status
+```
+6. Verify the Docker daemon is working:
+```bash
+curl http://localhost:4243/version
+```
+
+### plugins
+After running the Jenkins service, navigate to: `Manage Jenkins` -> `System Configuration` -> `Plugins` -> `Available plugins`. Search for and install the following plugins:
+- **Kubernetes**
+- **SSH Agent**
+- **Blue Ocean**
+- **ThinBackup**
+- **Slack Notification**
+- **Role-based Authorization Strategy**
+
+## Setup Kubernetes plugins
+To configure the Kubernetes plugin, follow these steps:
+1. Go to: `Manage Jenkins` -> `Clouds` -> `New cloud`, select `Kubernetes`, and enter a name (e.g., `kubernetes`).
+2. Set the `Kubernetes URL` by retrieving it with the following command:
+```bash
+kubectl cluster-info
+```
+3. Check the `Disable https certificate check` option.
+4. Set the `Kubernetes Namespace` to jenkins.
+5. Add credentials:
+  - Select `Secret text`
+    - ID: `JENKINS_SECRET`
+    - For the secret, retrieve the Kubernetes service account token by following these steps:
+```bash
+kubectl create serviceaccount jenkins --namespace=jenkins
+kubectl apply -f deploy/jenkins-token.yaml
+kubectl create rolebinding jenkins-admin-binding --clusterrole=admin --serviceaccount=jenkins:jenkins --namespace=jenkins
+TOKEN_NAME=$(kubectl get secret --namespace=jenkins | grep jenkins-token | awk '{print $1}')
+kubectl describe secret $TOKEN_NAME --namespace=jenkins
+```
+6. Check WebSocket under the connection options.
+
+## Credentials
+- **Docker Hub**: Use `Username and Password`.
+- **Kubernetes**: Use service account token as `Secret text`.
+- **GitHub App**: Use the following:
+  - **ID**: `GitHub-APP`
+  - **App ID**: `Your GitHub App ID`
+  - **Token**: Convert and provide the token with `$ cat path/to/converted-github-app.pem`
+- **DB_PASSWORD**: Use `Secret text` (Your test DB password).
+- **SSH Agent**: Use `SSH Username with private key`:
+  - **ID**: `k8s`
+  - **Username**: Kubernetes host user
+  - **Private key**:
+    - **Generate**: `$ ssh-keygen -t rsa -b 4096 -C "jenkins@example.com"`
+    - **Copy**: `$ ssh-copy-id «kubernetes host user»@«kubernetes remote address»`
+    - **Retrieve value**: `$ cat ~/.ssh/id_rsa`
+
+
+## Variable
+- **DB_HOST**: Your DB Host address
+- **DB_PORT**: 5425
+- **DB_NAME**: Your test DB name
+- **DB_USERNAME**: Your test DB username
+- **REDIS_HOST**: Your Redis Host address
+- **REDIS_PORT**: 6325
+- **K8S_USER**: Kubernetes host user
+- **K8S_REMOTE_ADDRESS**: Kubernetes remote address
+
+## Jobs
+### First Job: Polyglot Sentences Linting and Run Test
+1. **Name**: `Polyglot Sentences linting and run test`
+2. **Trigger**: Check `GitHub hook trigger for GITScm polling`
+3. **Pipeline**:
+   - **Definition**: `Pipeline script from SCM` 
+   - **SCM**: `Git` 
+   - **Repository URL**: `https://github.com/mohsenabedy91/polyglot-sentences.git`
+   - **Credentials**: `GitHub-APP`
+   - **Branches to build**:
+     - **Branch Specifier**: `:^(?!origin/master$|origin/develop$).*`
+   - **Script Path**: `jenkinsfile-linter-and-test`
+
+### Second Job: Polyglot Sentences Deploy to Develop
+1. **Name**: `Polyglot Sentences deploy to develop`
+2. **Trigger**: `Check GitHub hook trigger for GITScm polling`
+3. **Pipeline**:
+   - **Definition**: `Pipeline script from SCM`
+   - **SCM**: `Git`
+   - **Repository URL**: `https://github.com/mohsenabedy91/polyglot-sentences.git`
+   - **Credentials**: `GitHub-APP`
+   - **Branches to build**:
+     - **Branch Specifier**: `*/develop`
+   - **Script Path**: `Jenkinsfile`

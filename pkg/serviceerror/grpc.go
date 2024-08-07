@@ -42,7 +42,8 @@ func ConvertToGrpcError(serviceErr *ServiceError) error {
 func ExtractFromGrpcError(err error) error {
 	st, ok := status.FromError(err)
 	if ok && st != nil {
-		for _, detail := range st.Details() {
+		if len(st.Details()) > 0 {
+			detail := st.Details()[0]
 			anyDetail, _ := detail.(*anypb.Any)
 
 			var customErrorDetail common.CustomErrorDetail

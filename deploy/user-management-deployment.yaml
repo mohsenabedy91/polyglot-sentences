@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-management-deployment
+  namespace: polyglot-sentences
+  labels:
+    app: user-management
+    type: back-end
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-management
+  template:
+    metadata:
+      name: user-management-deployment
+      namespace: polyglot-sentences
+      labels:
+        name: polyglot-sentences-deployment
+        app: user-management
+        type: back-end
+    spec:
+      containers:
+        - name: user-management-container
+          image: mohsenabedy1991/user_management_polyglot_sentences:latest
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              port: 2535
+              path: /en/v1/health/check
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              port: 2535
+              path: /en/v1/health/check
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          ports:
+            - containerPort: 2535
+            - containerPort: 2536
+          env:
+            - name: PROFILE_DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: polyglot-sentences-env-config
+                  key: PROFILE_DEBUG
+            - name: PROFILE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: polyglot-sentences-env-config
+                  key: PROFILE_PORT
+          volumeMounts:
+            - name: polyglot-sentences-volume
+              mountPath: /app/.env
+              subPath: .env
+      volumes:
+        - name: polyglot-sentences-volume
+          configMap:
+            name: polyglot-sentences-file-config

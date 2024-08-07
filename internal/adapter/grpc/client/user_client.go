@@ -20,7 +20,7 @@ type UserClient struct {
 }
 
 func NewUserClient(log logger.Logger, conf config.UserManagement) *UserClient {
-	target := fmt.Sprintf("%s:%s", conf.URL, conf.GRPCPort)
+	target := fmt.Sprintf("%s:%s", conf.GRPCUrl, conf.GRPCPort)
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error(logger.Internal, logger.Startup, fmt.Sprintf("There is an error when run http: %v", err), nil)
@@ -39,7 +39,6 @@ func (r UserClient) Close() {
 	if err := r.conn.Close(); err != nil {
 		r.log.Error(logger.Internal, logger.Startup, fmt.Sprintf("Failed to close client connection: %v", err), nil)
 	}
-	return
 }
 
 func (r UserClient) GetByUUID(ctx context.Context, UserUUID string) (*domain.User, error) {

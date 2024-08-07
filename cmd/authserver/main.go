@@ -138,10 +138,7 @@ func main() {
 		log.Fatal(logger.Internal, logger.Shutdown, fmt.Sprintf("Shutdown Server: %v", err), nil)
 	}
 
-	select {
-	case <-ctx.Done():
-		log.Info(logger.Internal, logger.Shutdown, "timeout of 5 seconds.", nil)
-	}
+	<-ctx.Done()
 	log.Info(logger.Internal, logger.Shutdown, "Server exiting", nil)
 }
 

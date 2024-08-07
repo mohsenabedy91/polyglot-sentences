@@ -9,7 +9,7 @@ import (
 )
 
 func setSwaggerRoutes(router *gin.RouterGroup, config config.Swagger) {
-	if config.Enable == false {
+	if !config.Enable {
 		return
 	}
 

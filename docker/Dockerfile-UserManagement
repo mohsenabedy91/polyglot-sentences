@@ -1,0 +1,8 @@
+FROM alpine:3.20
+
+WORKDIR /app
+
+COPY user_polyglot_sentences /app/
+COPY pkg/translation/lang /app/pkg/translation/lang
+
+CMD ["/app/user_polyglot_sentences"]
