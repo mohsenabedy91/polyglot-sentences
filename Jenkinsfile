@@ -37,6 +37,15 @@ pipeline {
                     name: docker-storage
                 command: ['dockerd-entrypoint.sh']
                 args: ['-H', 'tcp://0.0.0.0:4243', '-H', 'unix:///var/run/docker.sock']
+              - name: postgres
+                image: 'postgres:16.3'
+                command:
+                  - /bin/sh
+                  - -c
+                  - "sleep 99d"
+                env:
+                  - name: PATH
+                    value: "/usr/lib/postgresql/12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
               volumes:
               - name: jenkins-home
                 persistentVolumeClaim:
@@ -109,6 +118,28 @@ pipeline {
                             dir('polyglot-sentences') {
                                 sh 'go build -a -installsuffix cgo -v -o notification_polyglot_sentences ./cmd/notificationserver/main.go'
                             }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Check and Create Database') {
+            steps {
+                container('postgres') {
+                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                        script {
+                            sh 'psql --version'
+
+                            sh '''
+                            export PGPASSWORD=$DB_PASSWORD
+                            DB_EXIST=$(psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}';")
+                            if [ -z "$DB_EXIST" ]; then
+                                psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "CREATE DATABASE ${DB_NAME};"
+                                echo "Database '${DB_NAME}' created."
+                            else
+                                echo "Database '${DB_NAME}' already exists."
+                            fi
+                            '''
                         }
                     }
                 }
