@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-master-deployment
+  namespace: jenkins
+  labels:
+    app: jenkins-master
+    version: latest
+    group: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-master
+      version: latest
+      group: jenkins
+  template:
+    metadata:
+      name: jenkins-deployment
+      namespace: jenkins
+      labels:
+        app: jenkins-master
+        version: latest
+        group: jenkins
+    spec:
+      containers:
+        - name: jenkins
+          image: jenkins/jenkins:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: jnlp-port
+              containerPort: 50000
+          env:
+            - name: BACKUP_DIRECTORY
+              value: /var/jenkins_home/jenkins_backups
+          volumeMounts:
+            - name: jenkins-home
+              mountPath: /var/jenkins_home
+      volumes:
+        - name: jenkins-home
+          persistentVolumeClaim:
+            claimName: jenkins-volume-claim
+            readOnly: false
