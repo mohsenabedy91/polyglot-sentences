@@ -311,15 +311,21 @@ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-
 ```
 2. Install Minikube and remove the binary:
 ```bash
-sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
-3. Verify the Minikube installation:
 ```bash
-minikube status
+rm minikube-linux-amd64
 ```
-4. Start Minikube:
+3. Start Minikube:
 ```bash
 minikube start
+```
+```bash
+minikube start --memory=6144 --cpus=4
+```
+4. Verify the Minikube installation:
+```bash
+minikube status
 ```
 5. Check Kubernetes pods across all namespaces:
 ```bash
@@ -347,29 +353,35 @@ kubectl config set-context --current --namespace=polyglot-sentences
 ### Create config map
 1. Apply the configuration map from the specified YAML file:
 ```bash
-kubectl apply -f deploy/config-maps.yaml
+kubectl apply -f deploy/configs/config-maps.yaml
 ```
 2. Verify the config maps:
 ```bash
 kubectl get configmaps
 ```
+```bash
+kubectl describe configmap polyglot-sentences-env-config
+```
+```bash
+kubectl describe configmap polyglot-sentences-file-config
+```
 
 ### Create Services
 1. Apply the `auth-service` configuration:
 ```bash
-kubectl apply -f deploy/auth-service.yaml
+kubectl apply -f deploy/authservice/service.yaml
 ```
 2. Apply the gRPC user management service configuration:
 ```bash
-kubectl apply -f deploy/user-management-grpc-service.yaml
+kubectl apply -f deploy/userservice/grpc-service.yaml
 ```
 3. Apply the HTTP user management service configuration:
 ```bash
-kubectl apply -f deploy/user-management-http-service.yaml
+kubectl apply -f deploy/userservice/http-service.yaml
 ```
 4. Verify the created services:
 ```bash
-kubectl get services
+kubectl get services -o wide
 ```
 
 ### Create Secrets for environments
@@ -385,23 +397,30 @@ kubectl get secret polyglot-sentences-secret -o yaml
 ### Create deployments
 1. Apply the user management deployment:
 ```bash
-kubectl apply -f deploy/user-management-deployment.yaml
+kubectl apply -f deploy/userservice/deployment.yaml
 ```
 2. Apply the authentication deployment:
 ```bash
-kubectl apply -f deploy/auth-deployment.yaml
+kubectl apply -f deploy/authservice/deployment.yaml
 ```
 3. Apply the notification deployment:
 ```bash
-kubectl apply -f deploy/notification-deployment.yaml
+kubectl apply -f deploy/notificationservice/deployment.yaml
 ```
 4. Verify the deployments:
 ```bash
-kubectl get deployments
+kubectl get deployments -o wide
 ```
 5. Check the status of the pods:
 ```bash
-kubectl get pods
+kubectl get pods -o wide
+```
+
+> Apply all Micro services related configurations at once:
+```bash
+kubectl apply -f deploy/userservice
+kubectl apply -f deploy/authservice
+kubectl apply -f deploy/notificationservice
 ```
 
 ## Rollout deployments for apply new version images
@@ -431,19 +450,30 @@ kubectl config set-context --current --namespace=jenkins
 ```
 3. Apply the Jenkins persistent volume configuration:
 ```bash
-kubectl apply -f deploy/jenkins-persistent-volume.yaml
+kubectl apply -f deploy/jenkins/persistent-volume.yaml
 ```
 4. Apply the Jenkins persistent volume claim configuration:
 ```bash
-kubectl apply -f deploy/jenkins-persistent-volume-claim.yaml
+kubectl apply -f deploy/jenkins/persistent-volume-claim.yaml
 ```
-5. Apply the Jenkins service configuration:
+5. Verify the persistent volume:
 ```bash
-kubectl apply -f deploy/jenkins-service.yaml
+kubectl get pvc
 ```
-6. Apply the Jenkins master deployment configuration:
 ```bash
-kubectl apply -f deploy/jenkins-master-deployment.yaml
+kubectl describe pvc jenkins-volume-claim
+```
+6. Apply the Jenkins service configuration:
+```bash
+kubectl apply -f deploy/jenkins/service.yaml
+```
+7. Apply the Jenkins master deployment configuration:
+```bash
+kubectl apply -f deploy/jenkins/master-deployment.yaml
+```
+8. Apply all Jenkins-related configurations at once:
+```bash
+kubectl apply -f deploy/jenkins
 ```
 
 ### Setup docker sock API
@@ -454,7 +484,7 @@ sudo nano /lib/systemd/system/docker.service
 2. Find and remove the following line:
 `ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock`
 3. Replace it with:
-```bash
+```
 ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock
 ```
 4. Reload the systemd daemon and restart Docker:
@@ -469,6 +499,15 @@ sudo service docker status
 6. Verify the Docker daemon is working:
 ```bash
 curl http://localhost:4243/version
+```
+
+> Dashboard URL
+```
+http://jenkins.local:30080
+```
+- Get jenkins secrets
+```bash
+kubectl -n jenkins exec -it $(kubectl get pods -n jenkins -o jsonpath="{.items[0].metadata.name}") -- cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
 ### plugins
@@ -495,15 +534,18 @@ kubectl cluster-info
     - For the secret, retrieve the Kubernetes service account token by following these steps:
 ```bash
 kubectl create serviceaccount jenkins --namespace=jenkins
-kubectl apply -f deploy/jenkins-token.yaml
+kubectl apply -f deploy/jenkins/token.yaml
 kubectl create rolebinding jenkins-admin-binding --clusterrole=admin --serviceaccount=jenkins:jenkins --namespace=jenkins
 TOKEN_NAME=$(kubectl get secret --namespace=jenkins | grep jenkins-token | awk '{print $1}')
 kubectl describe secret $TOKEN_NAME --namespace=jenkins
 ```
-6. Check WebSocket under the connection options.
+6. Check `WebSocket` under the connection options.
 
 ## Credentials
 - **Docker Hub**: Use `Username and Password`.
+  - **ID**: `docker-hub-credentials`
+  - **Username**: Your Docker Hub Username.
+  - **Password**: Your Docker Hub Password.
 - **Kubernetes**: Use service account token as `Secret text`.
 - **GitHub App**: Use the following:
   - **ID**: `GitHub-APP`
@@ -553,3 +595,82 @@ kubectl describe secret $TOKEN_NAME --namespace=jenkins
    - **Branches to build**:
      - **Branch Specifier**: `*/develop`
    - **Script Path**: `Jenkinsfile`
+
+# Kong Api gateway
+1. Create the `kong` namespace:
+```bash
+kubectl create namespace kong
+```
+2. Set the current context to the `kong` namespace:
+```bash
+kubectl config set-context --current --namespace=kong
+```
+3. Create a ConfigMap for `Kong` plugins:
+```bash
+kubectl create configmap kong-plugins --from-file=/home/mohsen/Desktop/Go/polyglot-sentences/docker/kong/plugins/kong/plugins/ps-authorize/
+```
+4. Verify the ConfigMap:
+```bash
+kubectl get configmaps
+```
+```bash
+kubectl describe configmap kong-plugins
+```
+5. Create a secret for the Kong database:
+```bash
+kubectl -n=kong create secret generic kong-db-secrets --from-literal POSTGRES_PASSWORD="password"
+```
+6. Verify the secret:
+```bash
+kubectl get secret
+```
+```bash
+kubectl describe secret kong-db-secrets
+```
+7. Apply the Kong persistent volume claim configuration:
+```bash
+kubectl apply -f deploy/kong/persistent-volume-claim.yaml
+```
+8. Verify the persistent volume:
+```bash
+kubectl get pvc
+```
+```bash
+kubectl describe pvc gateway-postgres-volume-claim
+```
+9. Apply the PostgreSQL service configuration for Kong:
+```bash
+kubectl apply -f deploy/kong/postgres-service.yaml
+```
+10. Apply the PostgreSQL deployment configuration for Kong:
+```bash
+kubectl apply -f deploy/kong/postgres-deployment.yaml
+```
+11. Apply the Kong service configuration:
+```bash
+kubectl apply -f deploy/kong/kong-service.yaml
+```
+12. Apply the Kong ingress configuration:
+```bash
+kubectl apply -f deploy/kong/ingress.yaml
+```
+13. Apply the Kong deployment configuration:
+```bash
+kubectl apply -f deploy/kong/kong-deployment.yaml
+```
+14. Check the status of the pods:
+```bash
+kubectl get pods -o wide
+```
+15. Apply all Kong-related configurations at once:
+```bash
+kubectl apply -f deploy/kong
+```
+16. Rollout restart for all deployments in the `kong` namespace:
+```bash
+kubectl rollout restart deployment -n kong
+```
+> Dashboard URL
+```
+http://kong.local:30080
+```
