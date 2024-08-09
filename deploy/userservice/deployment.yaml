@@ -1,49 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-deployment
+  name: user-management-deployment
   namespace: polyglot-sentences
   labels:
-    app: auth
+    app: user-management
     type: back-end
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: auth
+      app: user-management
   template:
     metadata:
-      name: auth-deployment
+      name: user-management-deployment
       namespace: polyglot-sentences
       labels:
         name: polyglot-sentences-deployment
-        app: auth
+        app: user-management
         type: back-end
     spec:
       containers:
-        - name: auth-container
-          image: mohsenabedy1991/auth_polyglot_sentences:latest
+        - name: user-management-container
+          image: mohsenabedy1991/user_management_polyglot_sentences:latest
           imagePullPolicy: Always
           readinessProbe:
             httpGet:
-              port: 2525
+              port: 2535
               path: /en/v1/health/check
-            initialDelaySeconds: 10
-            periodSeconds: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
           livenessProbe:
             httpGet:
-              port: 2525
+              port: 2535
               path: /en/v1/health/check
-            initialDelaySeconds: 15
-            periodSeconds: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
           ports:
-            - containerPort: 2525
+            - containerPort: 2535
+            - containerPort: 2536
           env:
-            - name: JWT_ACCESS_TOKEN_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: polyglot-sentences-secret
-                  key: JWT_ACCESS_TOKEN_SECRET
             - name: PROFILE_DEBUG
               valueFrom:
                 configMapKeyRef:
@@ -54,8 +50,6 @@ spec:
                 configMapKeyRef:
                   name: polyglot-sentences-env-config
                   key: PROFILE_PORT
-            - name: USER_MANAGEMENT_GRPC_URL
-              value: user-management-grpc-service.polyglot-sentences.svc.cluster.local
           volumeMounts:
             - name: polyglot-sentences-volume
               mountPath: /app/.env

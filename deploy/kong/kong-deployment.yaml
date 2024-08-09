@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-deployment
+  namespace: kong
+  labels:
+    app: gateway
+    type: back-end
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      name: gateway-deployment
+      namespace: kong
+      labels:
+        name: kong-deployment
+        app: gateway
+        type: back-end
+    spec:
+      containers:
+        - name: gateway-container
+          image: kong/kong-gateway:3.6
+          imagePullPolicy: Always
+          ports:
+            - name: proxy
+              protocol: TCP
+              containerPort: 8000
+            - name: proxy-ssl
+              protocol: TCP
+              containerPort: 8443
+            - name: admin
+              protocol: TCP
+              containerPort: 8001
+            - name: admin-ssl
+              protocol: TCP
+              containerPort: 8444
+            - name: kong-gui
+              protocol: TCP
+              containerPort: 8002
+            - name: kong-gui-ssl
+              protocol: TCP
+              containerPort: 8445
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "gateway-postgres-service"
+            - name: KONG_PG_USER
+              value: "kong"
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-secrets
+                  key: POSTGRES_PASSWORD
+            - name: KONG_PROXY_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_PROXY_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
+            - name: KONG_ADMIN_GUI_URL
+              value: "http://kong.local:32002"
+            - name: KONG_ADMIN_GUI_API_URL
+              value: "http://kong.local:32001"
+            - name: KONG_PROXY_URL
+              value: "http://kong.local:32000"
+            - name: KONG_LUA_PACKAGE_PATH
+              value: "/kong/plugins/?.lua"
+            - name: KONG_PLUGINS
+              value: "bundled,ps-authorize"
+            - name: KONG_NGINX_HTTP_LUA_REGEX_MATCH_LIMIT
+              value: "100000"
+            - name: KONG_LICENSE_DATA
+              value: ""
+            - name: KONG_ENFORCE_RBAC
+              value: "on"
+            - name: KONG_ADMIN_GUI_AUTH
+              value: "basic-auth"
+            - name: KONG_ADMIN_GUI_SESSION_CONF
+              value: '{"cookie_name":"04tm34l","secret":"change-this-secret","storage":"kong","cookie_secure":false}'
+          volumeMounts:
+            - name: kong-plugins-volume
+              mountPath: /kong/plugins/kong/plugins/ps-authorize
+          command: ["/bin/sh", "-c", "kong migrations bootstrap && kong migrations up && kong migrations finish && kong start --vv && tail -f /dev/null"]
+      volumes:
+        - name: kong-plugins-volume
+          configMap:
+            name: kong-plugins
