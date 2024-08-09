@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-postgres-deployment
+  namespace: kong
+  labels:
+    app: gateway-postgres
+    type: back-end
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: gateway-postgres-deployment
+      app: gateway-postgres
+  template:
+    metadata:
+      name: gateway-postgres-deployment
+      namespace: kong
+      labels:
+        deployment: gateway-postgres-deployment
+        app: gateway-postgres
+        type: back-end
+    spec:
+      containers:
+        - name: gateway-postgres-container
+          image: postgres:14
+          imagePullPolicy: Always
+          env:
+            - name: POSTGRES_USER
+              value: "kong"
+            - name: POSTGRES_DB
+              value: "kong"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: gateway-postgres-volume-claim

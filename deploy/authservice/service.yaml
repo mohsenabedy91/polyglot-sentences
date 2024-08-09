@@ -1,18 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: user-management-http-service
+  name: auth-service
   namespace: polyglot-sentences
   labels:
-    app: user-management
+    app: auth
     type: back-end
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: user-management
+    app: auth
     type: back-end
   ports:
     - protocol: TCP
-      targetPort: 2535
+      targetPort: 2525
       port: 80
-      nodePort: 30035

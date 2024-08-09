@@ -249,6 +249,16 @@ pipeline {
                 }
             }
         }
+        stage('Sync APIs with API gateway') {
+            steps {
+                container('golang') {
+                    echo 'Syncing Kong...'
+                    dir('polyglot-sentences') {
+                        sh 'go run cmd/apigateway/main.go'
+                    }
+                }
+            }
+        }
     }
     post {
         always {
