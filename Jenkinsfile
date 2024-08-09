@@ -254,6 +254,7 @@ pipeline {
                 container('golang') {
                     echo 'Syncing Kong...'
                     dir('polyglot-sentences') {
+                        sh 'cp .env.example .env'
                         sh 'go run cmd/apigateway/main.go'
                     }
                 }
