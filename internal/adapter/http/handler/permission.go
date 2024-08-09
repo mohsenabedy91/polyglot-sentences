@@ -29,7 +29,7 @@ func NewPermissionHandler(
 }
 
 // List godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[READ_PERMISSION]
 // @Summary List of Permission
 // @Description return a list of permission

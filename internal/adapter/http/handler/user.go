@@ -40,7 +40,7 @@ func NewUserHandler(
 }
 
 // Profile godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer
 // @Summary Profile
 // @Description Get user Profile based on Authorization
@@ -88,7 +88,7 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 }
 
 // Create godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[CREATE_USER]
 // @Summary Create user
 // @Description Create user
@@ -163,7 +163,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 }
 
 // List godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[READ_USER]
 // @Summary List of user
 // @Description Get list of user
@@ -206,7 +206,7 @@ func (r UserHandler) List(ctx *gin.Context) {
 }
 
 // Get godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[READ_USER]
 // @Summary Get User
 // @Description Get User By UUID
