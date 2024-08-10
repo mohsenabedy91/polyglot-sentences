@@ -23,7 +23,7 @@ spec:
       containers:
         - name: gateway-container
           image: kong/kong-gateway:3.6
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - name: proxy
               protocol: TCP
@@ -87,7 +87,7 @@ spec:
               value: '{"cookie_name":"04tm34l","secret":"change-this-secret","storage":"kong","cookie_secure":false}'
           volumeMounts:
             - name: kong-plugins-volume
-              mountPath: /kong/plugins/kong/plugins/ps-authorize
+              mountPath: /kong/plugins/ps-authorize
           command: ["/bin/sh", "-c", "kong migrations bootstrap && kong migrations up && kong migrations finish && kong start --vv && tail -f /dev/null"]
       volumes:
         - name: kong-plugins-volume

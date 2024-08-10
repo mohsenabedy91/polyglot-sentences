@@ -24,7 +24,7 @@ spec:
       containers:
         - name: gateway-postgres-container
           image: postgres:14
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
               value: "kong"

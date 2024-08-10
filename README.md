@@ -607,7 +607,7 @@ kubectl config set-context --current --namespace=kong
 ```
 3. Create a ConfigMap for `Kong` plugins:
 ```bash
-kubectl create configmap kong-plugins --from-file=/home/mohsen/Desktop/Go/polyglot-sentences/docker/kong/plugins/kong/plugins/ps-authorize/
+kubectl create configmap kong-plugins --from-file=/path/to/polyglot-sentences/docker/kong/plugins/ps-authorize/
 ```
 4. Verify the ConfigMap:
 ```bash
