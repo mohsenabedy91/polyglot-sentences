@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	goredis "github.com/go-redis/redis"
 	"github.com/mohsenabedy91/polyglot-sentences/cmd/setup"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/server"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/handler"
@@ -12,6 +13,8 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/minio"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres"
 	repository "github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/postgres/userrepository"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/storage/redis/userrepository"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/service/userservice"
@@ -49,12 +52,23 @@ func main() {
 		return repository.NewUnitOfWork(log, postgresDB)
 	}
 
+	cache, err := redis.New(log, conf)
+	if err != nil {
+		log.Fatal(logger.Internal, logger.Startup, err.Error(), nil)
+		return
+	}
+	defer func() {
+		if cacheCloseErr := cache.Close(); cacheCloseErr != nil {
+			log.Fatal(logger.Cache, logger.Startup, cacheCloseErr.Error(), nil)
+		}
+	}()
+
 	trans := translation.NewTranslation(conf.App)
 	trans.GetLocalizer(conf.App.Locale)
 
 	userService := userservice.New(log)
 
-	httpServer := startHTTPServer(ctx, log, conf, trans, userService, uowFactory)
+	httpServer := startHTTPServer(ctx, log, conf, trans, userService, uowFactory, cache)
 	grpcServer := startGRPCServer(conf, log, userService, uowFactory)
 
 	signalCh := make(chan os.Signal, 1)
@@ -91,6 +105,7 @@ func startHTTPServer(
 	trans translation.Translator,
 	userService *userservice.UserService,
 	uowFactory func() port.UserUnitOfWork,
+	cache *goredis.Client,
 ) *http.Server {
 	minioClient, err := minio.NewMinioClient(ctx, log, conf.Minio)
 	if err != nil {
@@ -98,7 +113,9 @@ func startHTTPServer(
 		return nil
 	}
 
-	userHandler := handler.NewUserHandler(trans, userService, uowFactory, minioClient)
+	totpCache := userrepository.NewTOTPCache(log, conf, cache)
+	totpService := userservice.NewTOTPService(log, conf, totpCache)
+	userHandler := handler.NewUserHandler(trans, userService, totpService, uowFactory, minioClient)
 	healthHandler := handler.NewHealthHandler(trans)
 
 	// Init router

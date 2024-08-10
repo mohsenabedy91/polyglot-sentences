@@ -23,3 +23,7 @@ func (r CreateUserRequest) ToUserDomain() domain.User {
 type UserUUIDUri struct {
 	UUIDStr string `uri:"userID" binding:"required,uuid" example:"8f4a1582-6a67-4d85-950b-2d17049c7385"`
 }
+
+type TOTPEnableRequest struct {
+	Code string `json:"code" binding:"required,min=6,max=6" example:"123456"`
+}

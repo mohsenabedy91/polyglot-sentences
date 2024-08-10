@@ -1,0 +1,89 @@
+package userservice
+
+import (
+	"context"
+	"fmt"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/core/port"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/logger"
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
+)
+
+type TOTPService struct {
+	log       logger.Logger
+	conf      config.Config
+	totpCache port.TOTPCache
+}
+
+func NewTOTPService(log logger.Logger, conf config.Config, totpCache port.TOTPCache) *TOTPService {
+	return &TOTPService{
+		log:       log,
+		conf:      conf,
+		totpCache: totpCache,
+	}
+}
+
+func (r TOTPService) Enroll(ctx context.Context, email string) (*domain.TOTPKey, error) {
+	otpKey, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      r.conf.App.Name,
+		AccountName: email,
+		Digits:      otp.DigitsSix,
+	})
+	if err != nil {
+		r.log.Error(logger.TOTP, logger.EnrollTOTP, err.Error(), nil)
+		return nil, err
+	}
+
+	key := helper.ToAESKey(r.conf.Auth.EncryptionKey)
+	encryptedSecret, encryptErr := helper.EncryptSecret([]byte(otpKey.Secret()), key)
+	if encryptErr != nil {
+		r.log.Error(logger.TOTP, logger.EnrollTOTP, encryptErr.Error(), nil)
+		return nil, encryptErr
+	}
+
+	if cacheErr := r.totpCache.Set(ctx, email, encryptedSecret); cacheErr != nil {
+		return nil, cacheErr
+	}
+
+	return &domain.TOTPKey{
+		Secret: otpKey.Secret(),
+		URL:    otpKey.URL(),
+	}, nil
+}
+
+func (r TOTPService) Enable(ctx context.Context, uow port.UserUnitOfWork, userID uint64, email string, code string) error {
+	encryptedSecret, err := r.totpCache.Get(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	key := helper.ToAESKey(r.conf.Auth.EncryptionKey)
+	decryptedSecret, decryptErr := helper.DecryptSecret(encryptedSecret, key)
+	if decryptErr != nil {
+		r.log.Error(logger.TOTP, logger.EnableTOTP, decryptErr.Error(), nil)
+		return decryptErr
+	}
+
+	if valid, verifyErr := r.Verify(code, string(decryptedSecret)); verifyErr != nil && !valid {
+		return verifyErr
+	}
+
+	if updateErr := uow.UserRepository().UpdateTOTPSecret(userID, &encryptedSecret); updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
+
+func (r TOTPService) Verify(code string, secret string) (bool, error) {
+	if valid := totp.Validate(code, secret); !valid {
+		r.log.Warn(logger.TOTP, logger.EnableTOTP, fmt.Sprintf("The code «%s» is not valid ", code), nil)
+		return false, serviceerror.New(serviceerror.InvalidTOTPCode)
+	}
+
+	return true, nil
+}

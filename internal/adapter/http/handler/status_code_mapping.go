@@ -33,4 +33,6 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.InvalidRequestBody: http.StatusBadRequest,
 	// Role
 	serviceerror.RoleExisted: http.StatusConflict,
+	// TOTP
+	serviceerror.InvalidTOTPCode: http.StatusUnauthorized,
 }

@@ -42,3 +42,18 @@ func ToUserCollection(users []*domain.User) []User {
 
 	return response
 }
+
+type TOTPKey struct {
+	Secret string `json:"secret" example:"secret"`
+	URL    string `json:"url" example:"otpauth_url"`
+}
+
+func ToTOTPResource(totp *domain.TOTPKey) *TOTPKey {
+	if totp == nil {
+		return nil
+	}
+	return &TOTPKey{
+		Secret: totp.Secret,
+		URL:    totp.URL,
+	}
+}

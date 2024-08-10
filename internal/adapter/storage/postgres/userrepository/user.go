@@ -75,7 +75,7 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 
 func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND uuid = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL AND uuid = $1",
 		uuid,
 	)
 	user, err := scanUser(row)
@@ -103,7 +103,7 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 
 func (r *UserRepository) GetByID(id uint64) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND id = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL AND id = $1",
 		id,
 	)
 	user, err := scanUser(row)
@@ -161,7 +161,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 }
 
 func (r *UserRepository) List() ([]*domain.User, error) {
-	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL")
+	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
@@ -309,12 +309,36 @@ func (r *UserRepository) UpdatePassword(id uint64, password string) error {
 	return nil
 }
 
+func (r *UserRepository) UpdateTOTPSecret(id uint64, secret *string) error {
+	result, err := r.tx.Exec(
+		"UPDATE users SET totp_secret = $1, updated_at = NOW() WHERE id = $2;",
+		&secret,
+		id,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Success").Inc()
+
+	return nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
 	var firstName sql.NullString
 	var lastName sql.NullString
 
-	if err := scanner.Scan(&user.Base.ID, &user.Base.UUID, &firstName, &lastName, &user.Email, &user.Status); err != nil {
+	if err := scanner.Scan(&user.Base.ID, &user.Base.UUID, &firstName, &lastName, &user.Email, &user.Status, &user.Secret); err != nil {
 		return domain.User{}, err
 	}
 

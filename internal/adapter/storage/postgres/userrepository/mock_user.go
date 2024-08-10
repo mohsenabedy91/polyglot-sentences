@@ -64,3 +64,8 @@ func (r *MockUserRepository) UpdatePassword(id uint64, password string) error {
 	args := r.Called(id, password)
 	return args.Error(0)
 }
+
+func (r *MockUserRepository) UpdateTOTPSecret(id uint64, secret *string) error {
+	args := r.Called(id, secret)
+	return args.Error(0)
+}

@@ -233,3 +233,35 @@ func TestToUserCollection(t *testing.T) {
 		})
 	}
 }
+
+func TestToTOTPResource(t *testing.T) {
+	tests := []struct {
+		name           string
+		totp           *domain.TOTPKey
+		expectedResult *presenter.TOTPKey
+	}{
+		{
+			name:           "Nil TOTP",
+			totp:           nil,
+			expectedResult: nil,
+		},
+		{
+			name: "Valid TOTP",
+			totp: &domain.TOTPKey{
+				Secret: "this is a secret",
+				URL:    "otpauth_url",
+			},
+			expectedResult: &presenter.TOTPKey{
+				Secret: "this is a secret",
+				URL:    "otpauth_url",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := presenter.ToTOTPResource(test.totp)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}

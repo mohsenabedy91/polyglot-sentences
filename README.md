@@ -551,7 +551,8 @@ kubectl describe secret $TOKEN_NAME --namespace=jenkins
   - **ID**: `GitHub-APP`
   - **App ID**: `Your GitHub App ID`
   - **Token**: Convert and provide the token with `$ cat path/to/converted-github-app.pem`
-- **DB_PASSWORD**: Use `Secret text` (Your test DB password).
+- **DB_PASSWORD_TEST**: Use `Secret text` (Your test DB password).
+- **DB_PASSWORD_STAGE**: Use `Secret text` (Your stage DB password).
 - **SSH Agent**: Use `SSH Username with private key`:
   - **ID**: `k8s`
   - **Username**: Kubernetes host user
@@ -560,16 +561,19 @@ kubectl describe secret $TOKEN_NAME --namespace=jenkins
     - **Copy**: `$ ssh-copy-id «kubernetes host user»@«kubernetes remote address»`
     - **Retrieve value**: `$ cat ~/.ssh/id_rsa`
 
-
 ## Variable
-- **DB_HOST**: Your DB Host address
-- **DB_PORT**: 5425
-- **DB_NAME**: Your test DB name
-- **DB_USERNAME**: Your test DB username
-- **REDIS_HOST**: Your Redis Host address
-- **REDIS_PORT**: 6325
+- **DB_HOST_TEST**: Your test DB Host address
+- **DB_PORT_TEST**: 5425
+- **DB_NAME_TEST**: Your test DB name
+- **DB_USERNAME_TEST**: Your test DB username
+- **REDIS_HOST_TEST**: Your test Redis Host address
+- **REDIS_PORT_TEST**: 6325
 - **K8S_USER**: Kubernetes host user
 - **K8S_REMOTE_ADDRESS**: Kubernetes remote address
+- **DB_HOST_STAGE**: Your stage DB Host address
+- **DB_PORT_STAGE**: 5425
+- **DB_NAME_STAGE**: Your stage DB name
+- **DB_USERNAME_STAGE**: Your stage DB username
 
 ## Jobs
 ### First Job: Polyglot Sentences Linting and Run Test

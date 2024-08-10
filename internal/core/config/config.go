@@ -48,11 +48,12 @@ type App struct {
 }
 
 type Auth struct {
-	Name    string
-	Version string
-	URL     string
-	Port    string
-	Debug   bool
+	Name          string
+	Version       string
+	URL           string
+	Port          string
+	Debug         bool
+	EncryptionKey string
 }
 
 type UserManagement struct {
@@ -149,6 +150,10 @@ type OTP struct {
 	Digits                     int8
 }
 
+type TOTP struct {
+	ExpireSecond time.Duration
+}
+
 type RabbitMQ struct {
 	URL string
 }
@@ -191,6 +196,7 @@ type Config struct {
 	Redis          Redis
 	Jwt            Jwt
 	OTP            OTP
+	TOTP           TOTP
 	RabbitMQ       RabbitMQ
 	SendGrid       SendGrid
 	Oauth          Oauth
@@ -233,6 +239,7 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	auth.URL = os.Getenv("AUTH_URL")
 	auth.Port = os.Getenv("AUTH_PORT")
 	auth.Debug = getBoolEnv("AUTH_DEBUG", false)
+	auth.EncryptionKey = os.Getenv("AUTH_ENCRYPTION_KEY")
 
 	var userManagement UserManagement
 	userManagement.Name = os.Getenv("USER_MANAGEMENT_NAME")
@@ -307,8 +314,11 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 
 	var otp OTP
 	otp.ExpireSecond = time.Duration(getIntEnv("OTP_EXPIRE_SECOND", 7)) * time.Second
-	otp.ForgetPasswordExpireSecond = time.Duration(getIntEnv("FORGET_PASSWORD_EXPIRE_SECOND", 86400)) * time.Second
+	otp.ForgetPasswordExpireSecond = time.Duration(getIntEnv("FORGET_PASSWORD_EXPIRE_SECOND", 86_400)) * time.Second
 	otp.Digits = int8(getIntEnv("OTP_DIGITS", 6))
+
+	var totp TOTP
+	totp.ExpireSecond = time.Duration(getIntEnv("TOTP_EXPIRE_SECOND", 86_400)) * time.Second
 
 	var rabbitMQ RabbitMQ
 	rabbitMQ.URL = os.Getenv("RABBITMQ_URL")
@@ -343,6 +353,7 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 		Redis:          redis,
 		Jwt:            jwt,
 		OTP:            otp,
+		TOTP:           totp,
 		RabbitMQ:       rabbitMQ,
 		SendGrid:       sendGrid,
 		Oauth:          oauth,

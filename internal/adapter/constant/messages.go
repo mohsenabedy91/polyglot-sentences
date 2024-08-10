@@ -15,5 +15,6 @@ const (
 )
 
 const (
-	UserSuccessCreate = "user.success.created"
+	UserSuccessCreate      = "user.success.created"
+	UserSuccessEnabledTOTP = "user.success.totp.enabled"
 )

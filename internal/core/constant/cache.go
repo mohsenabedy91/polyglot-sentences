@@ -2,6 +2,7 @@ package constant
 
 const (
 	RedisOTPPrefix            string = "otp"
+	RedisTOTPPrefix           string = "totp"
 	RedisForgetPasswordPrefix string = "forget_password"
 	RedisAuthTokenPrefix      string = "auth_token"
 )

@@ -162,17 +162,17 @@ pipeline {
                     steps {
                         container('golang') {
                             echo 'Running tests...'
-                            withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                            withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
                                     sh 'cp .env.example .env.test'
                                     sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_TEST}/' .env.test
+                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_TEST}/' .env.test
+                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_TEST}/' .env.test
+                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_TEST}/' .env.test
                                     sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
-                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
+                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
+                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
                                     '''
                                     sh 'go test -cover -count=1 ./...'
                                 }
@@ -249,13 +249,37 @@ pipeline {
                 }
             }
         }
-        stage('Sync APIs with API gateway') {
-            steps {
-                container('golang') {
-                    echo 'Syncing Kong...'
-                    dir('polyglot-sentences') {
-                        sh 'cp .env.example .env'
-                        sh 'go run cmd/apigateway/main.go'
+        stage('Run Migrations and Sync APIs') {
+            parallel {
+                stage('Run Migrations') {
+                    steps {
+                        container('golang') {
+                            echo 'Running Migrations...'
+                            withCredentials([string(credentialsId: 'DB_PASSWORD_STAGE', variable: 'DB_PASSWORD')]) {
+                                dir('polyglot-sentences') {
+                                    sh 'cp .env.example .env'
+                                    sh '''
+                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_STAGE}/' .env
+                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_STAGE}/' .env
+                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_STAGE}/' .env
+                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_STAGE}/' .env
+                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
+                                    '''
+                                    sh 'go run cmd/migration/main.go up'
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Sync APIs with API Gateway') {
+                    steps {
+                        container('golang') {
+                            echo 'Syncing Kong...'
+                            dir('polyglot-sentences') {
+                                sh 'cp .env.example .env'
+                                sh 'go run cmd/apigateway/main.go'
+                            }
+                        }
                     }
                 }
             }

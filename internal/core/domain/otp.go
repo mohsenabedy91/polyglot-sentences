@@ -7,3 +7,8 @@ type OTP struct {
 	CreatedAt    int64
 	LastRequest  int64
 }
+
+type TOTPKey struct {
+	Secret string
+	URL    string
+}

@@ -628,3 +628,62 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_NoRowsAffect
 
 	mockLogger.AssertExpectations(r.T())
 }
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_Success() {
+	mockLogger := new(logger.MockLogger)
+
+	user := insertUser(r.T(), r.GetTx(), &domain.User{
+		Email:  "john.doe@example.com",
+		Status: domain.UserStatusActive,
+	})
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err := repo.UpdateTOTPSecret(user.Base.ID, secret)
+
+	require.NoError(r.T(), err)
+
+	fetchedUser, err := repo.GetByID(user.Base.ID)
+
+	require.NoError(r.T(), err)
+	require.Equal(r.T(), secret, fetchedUser.Secret)
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_DBError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS users CASCADE")
+	require.NoError(r.T(), err)
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err = repo.UpdateTOTPSecret(100_000, secret)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_NoRowsAffected() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	insertUser(r.T(), r.GetTx(), &domain.User{
+		Email:  "john.doe@example.com",
+		Status: domain.UserStatusActive,
+	})
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err := repo.UpdateTOTPSecret(100_000, secret)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}

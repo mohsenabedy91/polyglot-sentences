@@ -1,6 +1,7 @@
 package helper_test
 
 import (
+	"crypto/sha256"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
@@ -149,6 +150,121 @@ func TestGenerateOTP(t *testing.T) {
 
 			require.GreaterOrEqual(t, otpInt, minimum)
 			require.LessOrEqual(t, otpInt, maximum)
+		})
+	}
+}
+
+func TestToAESKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		inputKey string
+	}{
+		{
+			name:     "Convert short key to AES key",
+			inputKey: "short-key",
+		},
+		{
+			name:     "Convert long key to AES key",
+			inputKey: "this-is-a-longer-key-to-test-hash-function",
+		},
+		{
+			name:     "Convert empty key to AES key",
+			inputKey: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			expectedHash := sha256.Sum256([]byte(test.inputKey))
+			expectedKey := expectedHash[:]
+
+			gotKey := helper.ToAESKey(test.inputKey)
+
+			require.Equal(t, expectedKey, gotKey)
+			require.Equal(t, 32, len(gotKey))
+		})
+	}
+}
+
+func TestEncryptSecret(t *testing.T) {
+	tests := []struct {
+		name        string
+		secret      []byte
+		key         []byte
+		expectError bool
+	}{
+		{
+			name:        "Encrypt with valid key and secret",
+			secret:      []byte("this is a secret"),
+			key:         helper.ToAESKey("my-secret-key"),
+			expectError: false,
+		},
+		{
+			name:        "Encrypt with short key",
+			secret:      []byte("this is a secret"),
+			key:         []byte("short-key"),
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			encryptedSecret, err := helper.EncryptSecret(test.secret, test.key)
+
+			if test.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, encryptedSecret)
+			}
+		})
+	}
+}
+
+func TestDecryptSecret(t *testing.T) {
+	key := helper.ToAESKey("my-secret-key")
+	encryptedSecret, err := helper.EncryptSecret([]byte("this is a secret"), key)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name            string
+		encryptedSecret string
+		key             []byte
+		expectError     bool
+		originalSecret  []byte
+	}{
+		{
+			name:            "Decrypt with correct key",
+			key:             key,
+			originalSecret:  []byte("this is a secret"),
+			expectError:     false,
+			encryptedSecret: encryptedSecret,
+		},
+		{
+			name:            "Decrypt with wrong key size",
+			key:             []byte("w"),
+			originalSecret:  []byte("this is a secret"),
+			expectError:     true,
+			encryptedSecret: encryptedSecret,
+		},
+		{
+			name:            "Decrypt with malformed ciphertext",
+			key:             key,
+			expectError:     true,
+			encryptedSecret: "short-ciphertext",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			decryptedSecret, decryptErr := helper.DecryptSecret(test.encryptedSecret, test.key)
+
+			if test.expectError {
+				require.Error(t, decryptErr)
+			} else {
+				require.NoError(t, decryptErr)
+				require.Equal(t, test.originalSecret, decryptedSecret)
+			}
 		})
 	}
 }
