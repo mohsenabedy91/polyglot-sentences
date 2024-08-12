@@ -132,12 +132,12 @@ pipeline {
 
                             sh '''
                             export PGPASSWORD=$DB_PASSWORD
-                            DB_EXIST=$(psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}';")
+                            DB_EXIST=$(psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME_TEST}';")
                             if [ -z "$DB_EXIST" ]; then
-                                psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "CREATE DATABASE ${DB_NAME};"
-                                echo "Database '${DB_NAME}' created."
+                                psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "CREATE DATABASE ${DB_NAME_TEST};"
+                                echo "Database '${DB_NAME_TEST}' created."
                             else
-                                echo "Database '${DB_NAME}' already exists."
+                                echo "Database '${DB_NAME_TEST}' already exists."
                             fi
                             '''
                         }
@@ -288,12 +288,12 @@ pipeline {
     post {
         always {
             container('postgres') {
-                withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                     script {
                         sh '''
                         export PGPASSWORD=$DB_PASSWORD
-                        psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "DROP DATABASE IF EXISTS test;"
-                        echo "Database 'test' dropped."
+                        psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "DROP DATABASE IF EXISTS ${DB_NAME_TEST};"
+                        echo "Database '${DB_NAME_TEST}' dropped."
                         '''
                     }
                 }
