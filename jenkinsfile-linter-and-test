@@ -77,7 +77,7 @@ pipeline {
         stage('Check and Create Database') {
             steps {
                 container('postgres') {
-                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                    withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                         script {
                             sh 'psql --version'
 
