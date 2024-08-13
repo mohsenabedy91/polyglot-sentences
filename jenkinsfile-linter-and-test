@@ -125,6 +125,9 @@ pipeline {
                                     sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
                                     sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
                                     '''
+
+                                    sh 'cat .env.test'
+
                                     sh 'go test -cover -count=1 ./...'
                                 }
                             }
