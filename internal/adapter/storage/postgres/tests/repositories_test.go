@@ -42,6 +42,7 @@ func (r *TestSuite) SetupSuite() {
 		conf.DB.Postgres.SSLMode,
 		conf.DB.Postgres.Timezone,
 	)
+	fmt.Printf("DSN: %s\n", dsn)
 
 	r.db, err = sql.Open("postgres", dsn)
 	require.NoError(r.T(), err)
