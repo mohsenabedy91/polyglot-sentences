@@ -56,6 +56,16 @@ pipeline {
                 container('golang') {
                     echo 'Cloning repository...'
                     sh 'git clone https://github.com/mohsenabedy91/polyglot-sentences.git'
+
+                    withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
+                        sh 'echo DB_PASSWORD: $DB_PASSWORD'
+                        sh 'echo DB_HOST_TEST: ${DB_HOST_TEST}'
+                        sh 'echo DB_PORT_TEST: ${DB_PORT_TEST}'
+                        sh 'echo DB_NAME_TEST: ${DB_NAME_TEST}'
+                        sh 'echo DB_USERNAME_TEST: ${DB_USERNAME_TEST}'
+                        sh 'echo REDIS_HOST_TEST: ${REDIS_HOST_TEST}'
+                        sh 'echo REDIS_PORT_TEST: ${REDIS_PORT_TEST}'
+                    }
                 }
             }
         }
@@ -115,12 +125,6 @@ pipeline {
                             echo 'Running tests...'
                             withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    echo 'DB_HOST_TEST: ${DB_HOST_TEST}'
-                                    echo 'DB_PORT_TEST: ${DB_PORT_TEST}'
-                                    echo 'DB_NAME_TEST: ${DB_NAME_TEST}'
-                                    echo 'DB_USERNAME_TEST: ${DB_USERNAME_TEST}'
-                                    echo 'REDIS_HOST_TEST: ${REDIS_HOST_TEST}'
-                                    echo 'REDIS_PORT_TEST: ${REDIS_PORT_TEST}'
                                     sh 'cp .env.example .env.test'
                                     sh '''
                                     sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_TEST}/' .env.test
