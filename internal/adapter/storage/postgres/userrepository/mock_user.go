@@ -69,3 +69,8 @@ func (r *MockUserRepository) UpdateTOTPSecret(id uint64, secret *string) error {
 	args := r.Called(id, secret)
 	return args.Error(0)
 }
+
+func (r *MockUserRepository) GetTOTPSecret(id uint64) (*string, error) {
+	args := r.Called(id)
+	return args.Get(0).(*string), args.Error(1)
+}

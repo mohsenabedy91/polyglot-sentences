@@ -19,7 +19,8 @@
     "success": {
       "created": "L'utilisateur a été créé avec succès.",
       "totp": {
-        "enabled": "TOTP activé avec succès."
+        "enabled": "TOTP activé avec succès.",
+        "disabled": "TOTP désactivé avec succès."
       }
     }
   }

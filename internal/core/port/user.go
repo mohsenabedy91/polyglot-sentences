@@ -20,6 +20,7 @@ type UserRepository interface {
 	UpdateLastLoginTime(id uint64) error
 	UpdatePassword(id uint64, password string) error
 	UpdateTOTPSecret(id uint64, secret *string) error
+	GetTOTPSecret(id uint64) (*string, error)
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -40,6 +41,7 @@ type UserService interface {
 type TOTPService interface {
 	Enroll(ctx context.Context, email string) (*domain.TOTPKey, error)
 	Enable(ctx context.Context, uow UserUnitOfWork, userID uint64, email string, code string) error
+	Disable(ctx context.Context, uow UserUnitOfWork, userID uint64, code string) error
 	Verify(passCode string, secret string) (bool, error)
 }
 

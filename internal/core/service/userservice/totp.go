@@ -11,6 +11,7 @@ import (
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/serviceerror"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
+	"time"
 )
 
 type TOTPService struct {
@@ -31,7 +32,9 @@ func (r TOTPService) Enroll(ctx context.Context, email string) (*domain.TOTPKey,
 	otpKey, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      r.conf.App.Name,
 		AccountName: email,
+		Period:      30,
 		Digits:      otp.DigitsSix,
+		Algorithm:   otp.AlgorithmSHA1,
 	})
 	if err != nil {
 		r.log.Error(logger.TOTP, logger.EnrollTOTP, err.Error(), nil)
@@ -79,9 +82,51 @@ func (r TOTPService) Enable(ctx context.Context, uow port.UserUnitOfWork, userID
 	return nil
 }
 
+func (r TOTPService) Disable(ctx context.Context, uow port.UserUnitOfWork, userID uint64, code string) error {
+	encryptedSecret, err := uow.UserRepository().GetTOTPSecret(userID)
+	if err != nil {
+		return err
+	}
+	if encryptedSecret == nil {
+		return serviceerror.New(serviceerror.TOTPNotEnrolled)
+	}
+
+	key := helper.ToAESKey(r.conf.Auth.EncryptionKey)
+	decryptedSecret, decryptErr := helper.DecryptSecret(*encryptedSecret, key)
+	if decryptErr != nil {
+		r.log.Error(logger.TOTP, logger.DisableTOTP, decryptErr.Error(), nil)
+		return decryptErr
+	}
+
+	if valid, verifyErr := r.Verify(code, string(decryptedSecret)); verifyErr != nil && !valid {
+		return verifyErr
+	}
+
+	if updateErr := uow.UserRepository().UpdateTOTPSecret(userID, nil); updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
+
 func (r TOTPService) Verify(code string, secret string) (bool, error) {
-	if valid := totp.Validate(code, secret); !valid {
-		r.log.Warn(logger.TOTP, logger.EnableTOTP, fmt.Sprintf("The code «%s» is not valid ", code), nil)
+	if valid, err := totp.ValidateCustom(
+		code,
+		secret,
+		time.Now().UTC(),
+		totp.ValidateOpts{
+			Period:    30,
+			Skew:      0,
+			Digits:    otp.DigitsSix,
+			Algorithm: otp.AlgorithmSHA1,
+		},
+	); err != nil || !valid {
+		if err != nil {
+			r.log.Warn(logger.TOTP, logger.VerifyTOTP, err.Error(), nil)
+			return false, err
+		}
+
+		r.log.Warn(logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", code), nil)
 		return false, serviceerror.New(serviceerror.InvalidTOTPCode)
 	}
 

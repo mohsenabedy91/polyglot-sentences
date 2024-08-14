@@ -139,7 +139,7 @@ func TestTOTPService_Enable(t *testing.T) {
 
 		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
 		invalidCode := "654321"
-		mockLogger.On("Warn", logger.TOTP, logger.EnableTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
+		mockLogger.On("Warn", logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
 
 		err := service.Enable(ctx, mockUow, userID, email, invalidCode)
 		require.Error(t, err)
@@ -168,6 +168,132 @@ func TestTOTPService_Enable(t *testing.T) {
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
 		mockTOTPCache.AssertExpectations(t)
+	})
+}
+
+func TestTOTPService_Disable(t *testing.T) {
+	mockLogger := new(logger.MockLogger)
+	conf := config.Config{
+		App: config.App{
+			Name: "TestApp",
+		},
+		Auth: config.Auth{
+			EncryptionKey: "encryption-key",
+		},
+	}
+
+	ctx := context.Background()
+	userID := uint64(1)
+
+	email := "test@example.com"
+	otpKey, generateErr := totp.Generate(totp.GenerateOpts{
+		Issuer:      conf.App.Name,
+		AccountName: email,
+		Digits:      otp.DigitsSix,
+	})
+	require.NoError(t, generateErr)
+
+	validCode, generateCodeErr := totp.GenerateCode(otpKey.Secret(), time.Now().UTC())
+	require.NoError(t, generateCodeErr)
+
+	t.Run("Disable success", func(t *testing.T) {
+		mockTOTPCache := new(userrepository.MockTOTPCache)
+		mockUow := new(repository.MockUnitOfWork)
+		mockRepo := new(repository.MockUserRepository)
+
+		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), helper.ToAESKey(conf.Auth.EncryptionKey))
+
+		mockTOTPCache.On("Get", ctx, email).Return(encryptedSecret, nil)
+
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("UpdateTOTPSecret", userID, &encryptedSecret).Return(nil)
+
+		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
+		require.NoError(t, service.Enable(ctx, mockUow, userID, email, validCode))
+
+		mockUow = new(repository.MockUnitOfWork)
+		mockRepo = new(repository.MockUserRepository)
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
+		mockRepo.On("UpdateTOTPSecret", userID, (*string)(nil)).Return(nil)
+
+		require.NoError(t, service.Disable(ctx, mockUow, userID, validCode))
+
+		mockUow.AssertExpectations(t)
+		mockRepo.AssertExpectations(t)
+		mockTOTPCache.AssertExpectations(t)
+	})
+
+	t.Run("Disable repository GetTOTPSecret error", func(t *testing.T) {
+		mockTOTPCache := new(userrepository.MockTOTPCache)
+
+		mockUow := new(repository.MockUnitOfWork)
+		mockRepo := new(repository.MockUserRepository)
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), serviceerror.NewServerError())
+
+		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
+		err := service.Disable(ctx, mockUow, userID, validCode)
+		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockTOTPCache.AssertExpectations(t)
+	})
+
+	t.Run("Disable repository GetTOTPSecret return nil", func(t *testing.T) {
+		mockTOTPCache := new(userrepository.MockTOTPCache)
+
+		mockUow := new(repository.MockUnitOfWork)
+		mockRepo := new(repository.MockUserRepository)
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), nil)
+
+		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
+		err := service.Disable(ctx, mockUow, userID, validCode)
+		require.Equal(t, serviceerror.TOTPNotEnrolled, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockTOTPCache.AssertExpectations(t)
+	})
+
+	t.Run("Disable verification error", func(t *testing.T) {
+		mockTOTPCache := new(userrepository.MockTOTPCache)
+
+		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), helper.ToAESKey(conf.Auth.EncryptionKey))
+
+		mockUow := new(repository.MockUnitOfWork)
+		mockRepo := new(repository.MockUserRepository)
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
+
+		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
+		invalidCode := "654321"
+		mockLogger.On("Warn", logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
+
+		err := service.Disable(ctx, mockUow, userID, invalidCode)
+		require.Error(t, err)
+		require.IsType(t, &serviceerror.ServiceError{}, err)
+		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Disable repository UpdateTOTPSecret error", func(t *testing.T) {
+		mockUow := new(repository.MockUnitOfWork)
+		mockRepo := new(repository.MockUserRepository)
+		mockTOTPCache := new(userrepository.MockTOTPCache)
+
+		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), helper.ToAESKey(conf.Auth.EncryptionKey))
+
+		mockUow.On("UserRepository").Return(mockRepo)
+		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
+		mockRepo.On("UpdateTOTPSecret", userID, (*string)(nil)).Return(errors.New("repository error"))
+
+		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
+		err := service.Disable(ctx, mockUow, userID, validCode)
+		require.Error(t, err)
+		require.Equal(t, "repository error", err.Error())
+
+		mockUow.AssertExpectations(t)
+		mockRepo.AssertExpectations(t)
 	})
 }
 
@@ -200,7 +326,7 @@ func TestTOTPService_Verify(t *testing.T) {
 	t.Run("Verify invalid code", func(t *testing.T) {
 		invalidCode := "123456"
 
-		mockLogger.On("Warn", logger.TOTP, logger.EnableTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
+		mockLogger.On("Warn", logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
 
 		valid, err := service.Verify(invalidCode, otpKey.Secret())
 		require.Error(t, err)

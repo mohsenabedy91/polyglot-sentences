@@ -19,7 +19,8 @@
     "success": {
       "created": "تم إنشاء المستخدم بنجاح.",
       "totp": {
-        "enabled": "تم تفعيل TOTP بنجاح."
+        "enabled": "تم تفعيل TOTP بنجاح.",
+        "disabled": "تم تعطيل TOTP بنجاح."
       }
     }
   }

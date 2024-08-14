@@ -38,4 +38,5 @@ var (
 
 	// TOTP
 	InvalidTOTPCode ErrorMessage = "errors.invalidTOTPCode"
+	TOTPNotEnrolled ErrorMessage = "errors.totpNotEnrolled"
 )

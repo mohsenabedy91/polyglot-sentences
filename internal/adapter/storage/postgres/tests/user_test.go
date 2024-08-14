@@ -687,3 +687,52 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_NoRowsAffe
 
 	mockLogger.AssertExpectations(r.T())
 }
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_Success() {
+	mockLogger := new(logger.MockLogger)
+
+	user := insertUser(r.T(), r.GetTx(), &domain.User{
+		FirstName: helper.StringPtr("John"),
+		LastName:  helper.StringPtr("Doe"),
+		Email:     "john.doe@example.com",
+		Password:  helper.StringPtr("hashedPassword"),
+		Status:    domain.UserStatusActive,
+		Secret:    helper.StringPtr("encryptedTOTPSecret"),
+	})
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedSecret, err := repo.GetTOTPSecret(user.Base.ID)
+
+	require.NoError(r.T(), err)
+	require.NotNil(r.T(), fetchedSecret)
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_RecordNotFound() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Warn", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedUser, err := repo.GetTOTPSecret(100_000)
+
+	require.NoError(r.T(), err)
+	require.Nil(r.T(), fetchedUser)
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_DBError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS users CASCADE")
+	require.NoError(r.T(), err)
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedUser, err := repo.GetTOTPSecret(100_000)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+	require.Nil(r.T(), fetchedUser)
+
+	mockLogger.AssertExpectations(r.T())
+}
