@@ -126,18 +126,18 @@ pipeline {
         stage('Check and Create Database') {
             steps {
                 container('postgres') {
-                    withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                    withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                         script {
                             sh 'psql --version'
 
                             sh '''
                             export PGPASSWORD=$DB_PASSWORD
-                            DB_EXIST=$(psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}';")
+                            DB_EXIST=$(psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME_TEST}';")
                             if [ -z "$DB_EXIST" ]; then
-                                psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "CREATE DATABASE ${DB_NAME};"
-                                echo "Database '${DB_NAME}' created."
+                                psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "CREATE DATABASE ${DB_NAME_TEST};"
+                                echo "Database '${DB_NAME_TEST}' created."
                             else
-                                echo "Database '${DB_NAME}' already exists."
+                                echo "Database '${DB_NAME_TEST}' already exists."
                             fi
                             '''
                         }
@@ -164,17 +164,19 @@ pipeline {
                             echo 'Running tests...'
                             withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    sh 'cp .env.example .env.test'
-                                    sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_TEST}/' .env.test
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_TEST}/' .env.test
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_TEST}/' .env.test
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_TEST}/' .env.test
-                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
-                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
-                                    '''
-                                    sh 'go test -cover -count=1 ./...'
+                                    withEnv(['DB_HOST=' + env.DB_HOST_TEST, 'DB_PORT=' + env.DB_PORT_TEST, 'DB_NAME=' + env.DB_NAME_TEST, 'DB_USERNAME=' + env.DB_USERNAME_TEST]) {
+                                        sh 'cp .env.example .env.test'
+                                        sh '''
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                                        sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
+                                        sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
+                                        '''
+                                        sh 'go test -cover -count=1 ./...'
+                                    }
                                 }
                             }
                         }
@@ -257,15 +259,17 @@ pipeline {
                             echo 'Running Migrations...'
                             withCredentials([string(credentialsId: 'DB_PASSWORD_STAGE', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    sh 'cp .env.example .env'
-                                    sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_STAGE}/' .env
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_STAGE}/' .env
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_STAGE}/' .env
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_STAGE}/' .env
-                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
-                                    '''
-                                    sh 'go run cmd/migration/main.go up'
+                                    withEnv(['DB_HOST=' + env.DB_HOST_STAGE, 'DB_PORT=' + env.DB_PORT_STAGE, 'DB_NAME=' + env.DB_NAME_STAGE, 'DB_USERNAME=' + env.DB_USERNAME_STAGE]) {
+                                        sh 'cp .env.example .env'
+                                        sh '''
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
+                                        '''
+                                        sh 'go run cmd/migration/main.go up'
+                                    }
                                 }
                             }
                         }
@@ -288,12 +292,12 @@ pipeline {
     post {
         always {
             container('postgres') {
-                withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                     script {
                         sh '''
                         export PGPASSWORD=$DB_PASSWORD
-                        psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -c "DROP DATABASE IF EXISTS test;"
-                        echo "Database 'test' dropped."
+                        psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "DROP DATABASE IF EXISTS ${DB_NAME_TEST};"
+                        echo "Database '${DB_NAME_TEST}' dropped."
                         '''
                     }
                 }
