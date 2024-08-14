@@ -27,3 +27,7 @@ type UserUUIDUri struct {
 type TOTPEnableRequest struct {
 	Code string `json:"code" binding:"required,min=6,max=6" example:"123456"`
 }
+
+type TOTPDisableRequest struct {
+	Code string `json:"code" binding:"required,min=6,max=6" example:"123456"`
+}

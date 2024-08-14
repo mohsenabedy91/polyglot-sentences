@@ -27,6 +27,7 @@
 
     "roleExisted": "Le rôle avec entrez Titre existe déjà.",
 
-    "invalidTOTPCode": "Le code TOTP fourni est invalide ou a expiré. Veuillez réessayer."
+    "invalidTOTPCode": "Le code TOTP fourni est invalide ou a expiré. Veuillez réessayer.",
+    "totpNotEnrolled": "Le TOTP n'est pas actuellement configuré pour votre compte."
   }
 }

@@ -333,6 +333,31 @@ func (r *UserRepository) UpdateTOTPSecret(id uint64, secret *string) error {
 	return nil
 }
 
+func (r *UserRepository) GetTOTPSecret(id uint64) (*string, error) {
+	var secret *string
+	err := r.tx.QueryRow(
+		"SELECT totp_secret from users WHERE status = $1 AND id = $2;",
+		domain.UserStatusActive,
+		id,
+	).Scan(&secret)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, nil
+		}
+		metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Success").Inc()
+
+	return secret, nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
 	var firstName sql.NullString

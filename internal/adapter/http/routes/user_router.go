@@ -15,8 +15,13 @@ func (r *Router) NewUserRouter(userHandler handler.UserHandler) *Router {
 			user.POST("", userHandler.Create)
 			user.GET("", userHandler.List)
 			user.GET(":userID", userHandler.Get)
-			user.POST("totp/enroll", userHandler.EnrollTOTP)
-			user.PATCH("totp/enable", userHandler.EnableTOTP)
+
+			totp := user.Group("totp")
+			{
+				totp.POST("enroll", userHandler.EnrollTOTP)
+				totp.PATCH("enable", userHandler.EnableTOTP)
+				totp.PATCH("disable", userHandler.DisableTOTP)
+			}
 		}
 	}
 
