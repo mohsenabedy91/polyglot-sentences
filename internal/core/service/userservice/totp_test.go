@@ -58,6 +58,8 @@ func TestTOTPService_Enroll(t *testing.T) {
 		totpKey, err := invalidService.Enroll(ctx, email)
 		require.Error(t, err)
 		require.Nil(t, totpKey)
+
+		mockLogger.AssertExpectations(t)
 	})
 
 	t.Run("Enroll cache error", func(t *testing.T) {
@@ -147,6 +149,7 @@ func TestTOTPService_Enable(t *testing.T) {
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
 
 		mockTOTPCache.AssertExpectations(t)
+		mockLogger.AssertExpectations(t)
 	})
 
 	t.Run("Enable repository error", func(t *testing.T) {
@@ -236,7 +239,8 @@ func TestTOTPService_Disable(t *testing.T) {
 		err := service.Disable(ctx, mockUow, userID, validCode)
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
 
-		mockTOTPCache.AssertExpectations(t)
+		mockUow.AssertExpectations(t)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Disable repository GetTOTPSecret return nil", func(t *testing.T) {
@@ -251,7 +255,8 @@ func TestTOTPService_Disable(t *testing.T) {
 		err := service.Disable(ctx, mockUow, userID, validCode)
 		require.Equal(t, serviceerror.TOTPNotEnrolled, err.(*serviceerror.ServiceError).GetErrorMessage())
 
-		mockTOTPCache.AssertExpectations(t)
+		mockUow.AssertExpectations(t)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Disable verification error", func(t *testing.T) {
@@ -273,7 +278,9 @@ func TestTOTPService_Disable(t *testing.T) {
 		require.IsType(t, &serviceerror.ServiceError{}, err)
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
 
+		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
+		mockLogger.AssertExpectations(t)
 	})
 
 	t.Run("Disable repository UpdateTOTPSecret error", func(t *testing.T) {
@@ -333,5 +340,7 @@ func TestTOTPService_Verify(t *testing.T) {
 		require.False(t, valid)
 		require.IsType(t, &serviceerror.ServiceError{}, err)
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockLogger.AssertExpectations(t)
 	})
 }
