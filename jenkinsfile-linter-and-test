@@ -62,12 +62,14 @@ pipeline {
                 container('golang') {
                     echo 'Installing dependencies...'
                     dir('polyglot-sentences') {
-                        sh 'go env -w GOPROXY=direct'
+                        sh 'go env -w GOPROXY="https://goproxy.io,direct"'
+                        sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                         retry(3) {
-                            sh 'go install github.com/swaggo/swag/cmd/swag@latest'
-                            sh 'go mod tidy'
-                            sh 'go mod download'
+                            sh 'go get -u github.com/swaggo/gin-swagger'
                         }
+                        sh 'go get -u github.com/swaggo/swag'
+                        sh 'go get -u github.com/swaggo/files'
+                        sh 'go mod download'
                         sh 'swag init -g ./cmd/authserver/main.go'
                     }
                 }
