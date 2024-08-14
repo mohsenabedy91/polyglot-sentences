@@ -164,17 +164,19 @@ pipeline {
                             echo 'Running tests...'
                             withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    sh 'cp .env.example .env.test'
-                                    sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_TEST}/' .env.test
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_TEST}/' .env.test
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_TEST}/' .env.test
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_TEST}/' .env.test
-                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
-                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
-                                    '''
-                                    sh 'go test -cover -count=1 ./...'
+                                    withEnv(['DB_HOST=' + env.DB_HOST_TEST, 'DB_PORT=' + env.DB_PORT_TEST, 'DB_NAME=' + env.DB_NAME_TEST, 'DB_USERNAME=' + env.DB_USERNAME_TEST]) {
+                                        sh 'cp .env.example .env.test'
+                                        sh '''
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                                        sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
+                                        sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
+                                        '''
+                                        sh 'go test -cover -count=1 ./...'
+                                    }
                                 }
                             }
                         }
@@ -257,15 +259,17 @@ pipeline {
                             echo 'Running Migrations...'
                             withCredentials([string(credentialsId: 'DB_PASSWORD_STAGE', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    sh 'cp .env.example .env'
-                                    sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST_STAGE}/' .env
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT_STAGE}/' .env
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME_STAGE}/' .env
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME_STAGE}/' .env
-                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
-                                    '''
-                                    sh 'go run cmd/migration/main.go up'
+                                    withEnv(['DB_HOST=' + env.DB_HOST_STAGE, 'DB_PORT=' + env.DB_PORT_STAGE, 'DB_NAME=' + env.DB_NAME_STAGE, 'DB_USERNAME=' + env.DB_USERNAME_STAGE]) {
+                                        sh 'cp .env.example .env'
+                                        sh '''
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
+                                        '''
+                                        sh 'go run cmd/migration/main.go up'
+                                    }
                                 }
                             }
                         }
