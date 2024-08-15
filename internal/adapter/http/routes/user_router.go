@@ -21,6 +21,7 @@ func (r *Router) NewUserRouter(userHandler handler.UserHandler) *Router {
 				totp.POST("enroll", userHandler.EnrollTOTP)
 				totp.PATCH("enable", userHandler.EnableTOTP)
 				totp.PATCH("disable", userHandler.DisableTOTP)
+				totp.GET("", userHandler.GetTOTP)
 			}
 		}
 	}

@@ -34,7 +34,6 @@ func NewMinioClient(ctx context.Context, log logger.Logger, conf config.Minio) (
 			log.Error(logger.Minio, logger.Startup, err.Error(), nil)
 			return nil, err
 		}
-
 	}
 
 	log.Info(logger.Minio, logger.Startup, fmt.Sprintf("Successfully created %s", conf.BucketName), nil)

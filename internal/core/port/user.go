@@ -42,6 +42,7 @@ type TOTPService interface {
 	Enroll(ctx context.Context, email string) (*domain.TOTPKey, error)
 	Enable(ctx context.Context, uow UserUnitOfWork, userID uint64, email string, code string) error
 	Disable(ctx context.Context, uow UserUnitOfWork, userID uint64, code string) error
+	Get(ctx context.Context, uow UserUnitOfWork, userID uint64, email string) (*domain.TOTPKey, error)
 	Verify(passCode string, secret string) (bool, error)
 }
 
