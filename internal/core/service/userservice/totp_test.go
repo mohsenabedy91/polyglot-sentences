@@ -457,7 +457,6 @@ func TestTOTPService_Get(t *testing.T) {
 		mockRepo := new(repository.MockUserRepository)
 		service := userservice.NewTOTPService(mockLogger, conf, nil)
 
-		// Generate an encrypted secret that, when decrypted, results in invalid base32 string
 		invalidBase32Secret := "invalid-base32-secret"
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(invalidBase32Secret), key)
@@ -485,7 +484,6 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 
-		// Modify the configuration to simulate a TOTP generation error
 		invalidConf := conf
 		invalidConf.App.Name = ""
 
