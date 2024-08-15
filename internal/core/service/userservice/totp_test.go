@@ -457,7 +457,6 @@ func TestTOTPService_Get(t *testing.T) {
 		mockRepo := new(repository.MockUserRepository)
 		service := userservice.NewTOTPService(mockLogger, conf, nil)
 
-		// Generate an encrypted secret that, when decrypted, results in invalid base32 string
 		invalidBase32Secret := "invalid-base32-secret"
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(invalidBase32Secret), key)
@@ -478,7 +477,6 @@ func TestTOTPService_Get(t *testing.T) {
 
 		mockUow := new(repository.MockUnitOfWork)
 		mockRepo := new(repository.MockUserRepository)
-		service := userservice.NewTOTPService(mockLogger, conf, nil)
 
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), key)
@@ -486,11 +484,10 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 
-		// Modify the configuration to simulate a TOTP generation error
 		invalidConf := conf
 		invalidConf.App.Name = ""
 
-		service = userservice.NewTOTPService(mockLogger, invalidConf, nil)
+		service := userservice.NewTOTPService(mockLogger, invalidConf, nil)
 		totpKey, err := service.Get(ctx, mockUow, userID, email)
 		require.Error(t, err, "expected an error due to TOTP key generation failure")
 		require.Nil(t, totpKey, "expected nil TOTP key on generation failure")
