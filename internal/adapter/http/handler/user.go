@@ -348,7 +348,7 @@ func (r UserHandler) EnrollTOTP(ctx *gin.Context) {
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Param request body requests.TOTPEnableRequest true "enable totp request"
-// @Success 200 {object} presenter.Response{data=presenter.TOTPKey} "Successful response"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
@@ -411,7 +411,7 @@ func (r UserHandler) EnableTOTP(ctx *gin.Context) {
 // @Produce json
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Param request body requests.TOTPDisableRequest true "disable totp request"
-// @Success 200 {object} presenter.Response{data=presenter.TOTPKey} "Successful response"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 401 {object} presenter.Error "Unauthorized"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
@@ -437,17 +437,7 @@ func (r UserHandler) DisableTOTP(ctx *gin.Context) {
 		return
 	}
 
-	user, err := r.userService.GetByID(uowFactory, header.UserID)
-	if err != nil {
-		if rErr := uowFactory.Rollback(); rErr != nil {
-			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
-			return
-		}
-		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
-		return
-	}
-
-	if disableErr := r.totpService.Disable(ctx.Request.Context(), uowFactory, user.Base.ID, request.Code); disableErr != nil {
+	if disableErr := r.totpService.Disable(ctx.Request.Context(), uowFactory, header.UserID, request.Code); disableErr != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
@@ -462,4 +452,63 @@ func (r UserHandler) DisableTOTP(ctx *gin.Context) {
 	}
 
 	presenter.NewResponse(ctx, r.trans).Message(constant.UserSuccessDisabledTOTP).Echo(http.StatusAccepted)
+}
+
+// GetTOTP godoc
+// @x-kong {"service": "user-management-http-service"}
+// @Security AuthBearer
+// @Summary Get TOTP
+// @Description Get TOTP
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{data=presenter.TOTPKey} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID get_language_v1_users_totp
+// @Router /{language}/v1/users/totp [get]
+func (r UserHandler) GetTOTP(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByID(uowFactory, header.UserID)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	totpKey, err := r.totpService.Get(ctx.Request.Context(), uowFactory, user.Base.ID, user.Email)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, r.trans).Payload(
+		presenter.ToTOTPResource(totpKey),
+	).Echo()
 }

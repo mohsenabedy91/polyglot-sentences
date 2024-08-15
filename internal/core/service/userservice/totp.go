@@ -2,6 +2,7 @@ package userservice
 
 import (
 	"context"
+	"encoding/base32"
 	"fmt"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/config"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
@@ -107,6 +108,41 @@ func (r TOTPService) Disable(ctx context.Context, uow port.UserUnitOfWork, userI
 	}
 
 	return nil
+}
+
+func (r TOTPService) Get(ctx context.Context, uow port.UserUnitOfWork, userID uint64, email string) (*domain.TOTPKey, error) {
+	encryptedSecret, err := uow.UserRepository().GetTOTPSecret(userID)
+	if err != nil {
+		return nil, err
+	}
+	if encryptedSecret == nil {
+		return nil, serviceerror.New(serviceerror.TOTPNotEnrolled)
+	}
+
+	key := helper.ToAESKey(r.conf.Auth.EncryptionKey)
+	decryptedSecret, decryptErr := helper.DecryptSecret(*encryptedSecret, key)
+	if decryptErr != nil {
+		return nil, decryptErr
+	}
+
+	decodeString, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(string(decryptedSecret))
+	if err != nil {
+		return nil, err
+	}
+	otpKey, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      r.conf.App.Name,
+		AccountName: email,
+		Digits:      otp.DigitsSix,
+		Secret:      decodeString,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.TOTPKey{
+		Secret: otpKey.Secret(),
+		URL:    otpKey.URL(),
+	}, nil
 }
 
 func (r TOTPService) Verify(code string, secret string) (bool, error) {
