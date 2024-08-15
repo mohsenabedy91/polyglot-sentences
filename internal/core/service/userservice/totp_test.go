@@ -478,7 +478,6 @@ func TestTOTPService_Get(t *testing.T) {
 
 		mockUow := new(repository.MockUnitOfWork)
 		mockRepo := new(repository.MockUserRepository)
-		service := userservice.NewTOTPService(mockLogger, conf, nil)
 
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), key)
@@ -490,7 +489,7 @@ func TestTOTPService_Get(t *testing.T) {
 		invalidConf := conf
 		invalidConf.App.Name = ""
 
-		service = userservice.NewTOTPService(mockLogger, invalidConf, nil)
+		service := userservice.NewTOTPService(mockLogger, invalidConf, nil)
 		totpKey, err := service.Get(ctx, mockUow, userID, email)
 		require.Error(t, err, "expected an error due to TOTP key generation failure")
 		require.Nil(t, totpKey, "expected nil TOTP key on generation failure")
