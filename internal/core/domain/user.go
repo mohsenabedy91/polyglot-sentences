@@ -54,6 +54,7 @@ type User struct {
 
 	GoogleID *string
 	Secret   *string
+	Gender   UserGenderType
 }
 
 func (r *User) IsActive() bool {
@@ -146,4 +147,20 @@ func (r *UserGenderType) String() string {
 	}
 
 	return str
+}
+
+func ToUserGenderType(gender string) UserGenderType {
+	var userGenderType UserGenderType
+	switch gender {
+	case UserGenderMaleStr:
+		userGenderType = UserGenderMale
+	case UserGenderFemaleStr:
+		userGenderType = UserGenderFemale
+	case UserGenderOtherStr:
+		userGenderType = UserGenderOther
+	default:
+		userGenderType = UserGenderPreferNotToSay
+	}
+
+	return userGenderType
 }

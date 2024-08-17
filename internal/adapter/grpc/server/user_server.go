@@ -204,6 +204,7 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.
 		Avatar:    req.Avatar,
 		GoogleID:  req.GoogleId,
 		Status:    domain.ToUserStatus(req.Status),
+		Gender:    domain.ToUserGenderType(req.Gender),
 	})
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
@@ -238,6 +239,7 @@ func (r Server) Create(ctx context.Context, req *userpb.CreateRequest) (*userpb.
 			Status:             resp.Status.String(),
 			WelcomeMessageSent: resp.WelcomeMessageSent,
 			GoogleId:           resp.GoogleID,
+			Gender:             resp.Gender.String(),
 		}, nil
 	}
 

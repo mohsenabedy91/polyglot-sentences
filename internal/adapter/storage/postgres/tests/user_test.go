@@ -24,7 +24,8 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveSuccess() {
 		LastName:  helper.StringPtr("Doe"),
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusUnverifiedStr,
+		Status:    domain.UserStatusUnverified,
+		Gender:    domain.UserGenderMale,
 	})
 
 	require.NoError(r.T(), err)
@@ -42,6 +43,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveInValidStatus() {
 		LastName:  helper.StringPtr("Doe"),
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
+		Gender:    domain.UserGenderPreferNotToSay,
 	})
 
 	require.Error(r.T(), err)
