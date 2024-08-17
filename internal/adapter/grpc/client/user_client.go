@@ -117,6 +117,7 @@ func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.
 		Avatar:    userParam.Avatar,
 		GoogleId:  userParam.GoogleID,
 		Status:    userParam.Status.String(),
+		Gender:    userParam.Gender.String(),
 	}
 	resp, err := r.userServiceClient.Create(ctx, &req)
 	if err != nil {
@@ -139,6 +140,7 @@ func (r UserClient) Create(ctx context.Context, userParam domain.User) (*domain.
 			Status:             domain.ToUserStatus(resp.Status),
 			WelcomeMessageSent: resp.WelcomeMessageSent,
 			GoogleID:           resp.GoogleId,
+			Gender:             userParam.Gender,
 		}, nil
 	}
 

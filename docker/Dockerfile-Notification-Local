@@ -15,7 +15,7 @@ COPY .. .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -v -o /app/notification_polyglot_sentences ./cmd/notificationserver/main.go
 
-FROM alpine:3.20
+FROM scratch
 
 WORKDIR /app
 

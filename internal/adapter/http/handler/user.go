@@ -20,6 +20,7 @@ import (
 type UserHandler struct {
 	trans       translation.Translator
 	userService port.UserService
+	totpService port.TOTPService
 	uowFactory  func() port.UserUnitOfWork
 	minioClient *minio.Client
 }
@@ -28,19 +29,21 @@ type UserHandler struct {
 func NewUserHandler(
 	trans translation.Translator,
 	userService port.UserService,
+	totpService port.TOTPService,
 	uowFactory func() port.UserUnitOfWork,
 	minioClient *minio.Client,
 ) *UserHandler {
 	return &UserHandler{
 		trans:       trans,
 		userService: userService,
+		totpService: totpService,
 		uowFactory:  uowFactory,
 		minioClient: minioClient,
 	}
 }
 
 // Profile godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer
 // @Summary Profile
 // @Description Get user Profile based on Authorization
@@ -77,8 +80,8 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
 		return
 	}
 
@@ -88,7 +91,7 @@ func (r UserHandler) Profile(ctx *gin.Context) {
 }
 
 // Create godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[CREATE_USER]
 // @Summary Create user
 // @Description Create user
@@ -163,7 +166,7 @@ func (r UserHandler) Create(ctx *gin.Context) {
 }
 
 // List godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[READ_USER]
 // @Summary List of user
 // @Description Get list of user
@@ -195,8 +198,8 @@ func (r UserHandler) List(ctx *gin.Context) {
 		return
 	}
 
-	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
 		return
 	}
 
@@ -206,7 +209,7 @@ func (r UserHandler) List(ctx *gin.Context) {
 }
 
 // Get godoc
-// @x-kong {"service": "user-management"}
+// @x-kong {"service": "user-management-http-service"}
 // @Security AuthBearer[READ_USER]
 // @Summary Get User
 // @Description Get User By UUID
@@ -245,8 +248,8 @@ func (r UserHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	if err = uowFactory.Commit(); err != nil {
-		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
 		return
 	}
 
@@ -274,4 +277,238 @@ func (r UserHandler) handleFileUpload(ctx *gin.Context, file *multipart.FileHead
 	}
 
 	return url, nil
+}
+
+// EnrollTOTP godoc
+// @x-kong {"service": "user-management-http-service"}
+// @Security AuthBearer
+// @Summary Enroll TOTP
+// @Description Enroll TOTP
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{data=presenter.TOTPKey} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID post_language_v1_users_totp_enroll
+// @Router /{language}/v1/users/totp/enroll [post]
+func (r UserHandler) EnrollTOTP(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByID(uowFactory, header.UserID)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	totpKey, err := r.totpService.Enroll(ctx.Request.Context(), user.Email)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, r.trans).Payload(
+		presenter.ToTOTPResource(totpKey),
+	).Echo()
+}
+
+// EnableTOTP godoc
+// @x-kong {"service": "user-management-http-service"}
+// @Security AuthBearer
+// @Summary Enable TOTP
+// @Description Enable TOTP
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.TOTPEnableRequest true "enable totp request"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID patch_language_v1_users_totp_enable
+// @Router /{language}/v1/users/totp/enable [patch]
+func (r UserHandler) EnableTOTP(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var request requests.TOTPEnableRequest
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByID(uowFactory, header.UserID)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if enableErr := r.totpService.Enable(ctx.Request.Context(), uowFactory, user.Base.ID, user.Email, request.Code); enableErr != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(enableErr).Echo()
+		return
+	}
+
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, r.trans).Message(constant.UserSuccessEnabledTOTP).Echo(http.StatusAccepted)
+}
+
+// DisableTOTP godoc
+// @x-kong {"service": "user-management-http-service"}
+// @Security AuthBearer
+// @Summary Disable TOTP
+// @Description Disable TOTP
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Param request body requests.TOTPDisableRequest true "disable totp request"
+// @Success 200 {object} presenter.Response{message=string} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID patch_language_v1_users_totp_disable
+// @Router /{language}/v1/users/totp/disable [patch]
+func (r UserHandler) DisableTOTP(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var request requests.TOTPDisableRequest
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if disableErr := r.totpService.Disable(ctx.Request.Context(), uowFactory, header.UserID, request.Code); disableErr != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(disableErr).Echo()
+		return
+	}
+
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, r.trans).Message(constant.UserSuccessDisabledTOTP).Echo(http.StatusAccepted)
+}
+
+// GetTOTP godoc
+// @x-kong {"service": "user-management-http-service"}
+// @Security AuthBearer
+// @Summary Get TOTP
+// @Description Get TOTP
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param language path string true "language 2 abbreviations" default(en)
+// @Success 200 {object} presenter.Response{data=presenter.TOTPKey} "Successful response"
+// @Failure 400 {object} presenter.Error "Failed response"
+// @Failure 401 {object} presenter.Error "Unauthorized"
+// @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
+// @Failure 500 {object} presenter.Error "Internal server error"
+// @ID get_language_v1_users_totp
+// @Router /{language}/v1/users/totp [get]
+func (r UserHandler) GetTOTP(ctx *gin.Context) {
+	var header requests.Header
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		presenter.NewResponse(ctx, r.trans).Validation(err).Echo(http.StatusUnprocessableEntity)
+		return
+	}
+
+	uowFactory := r.uowFactory()
+	if err := uowFactory.BeginTx(ctx); err != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	user, err := r.userService.GetByID(uowFactory, header.UserID)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	totpKey, err := r.totpService.Get(ctx.Request.Context(), uowFactory, user.Base.ID, user.Email)
+	if err != nil {
+		if rErr := uowFactory.Rollback(); rErr != nil {
+			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
+			return
+		}
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(err).Echo()
+		return
+	}
+
+	if commitErr := uowFactory.Commit(); commitErr != nil {
+		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(commitErr).Echo()
+		return
+	}
+
+	presenter.NewResponse(ctx, r.trans).Payload(
+		presenter.ToTOTPResource(totpKey),
+	).Echo()
 }

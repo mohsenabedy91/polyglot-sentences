@@ -35,4 +35,8 @@ var (
 
 	// Role
 	RoleExisted ErrorMessage = "errors.roleExisted"
+
+	// TOTP
+	InvalidTOTPCode ErrorMessage = "errors.invalidTOTPCode"
+	TOTPNotEnrolled ErrorMessage = "errors.totpNotEnrolled"
 )

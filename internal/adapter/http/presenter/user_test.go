@@ -30,6 +30,13 @@ func TestPrepareUser(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Status:    domain.UserStatusActive,
+				Gender:    domain.UserGenderMale,
+				AuthChallenges: []domain.AuthChallenge{
+					{
+						Type:   domain.ChallengeTOTP,
+						Status: domain.ChallengeEnable,
+					},
+				},
 			},
 			expectedResult: &presenter.User{
 				ID:        "2b1ef850-5b3a-441e-bd26-33f50e527b7a",
@@ -37,6 +44,13 @@ func TestPrepareUser(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Status:    string(domain.UserStatusActive),
+				Gender:    helper.StringPtr("MALE"),
+				AuthChallenges: []presenter.AuthChallenge{
+					{
+						Type:   "TOTP",
+						Status: "ENABLE",
+					},
+				},
 			},
 		},
 		{
@@ -48,6 +62,26 @@ func TestPrepareUser(t *testing.T) {
 				Status:    domain.UserStatusActive,
 			},
 			expectedResult: nil,
+		},
+		{
+			name: "Valid User with Gender",
+			user: &domain.User{
+				Base: domain.Base{
+					UUID: uuid.MustParse("2b1ef850-5b3a-441e-bd26-33f50e527b7a"),
+				},
+				FirstName: helper.StringPtr("John"),
+				LastName:  helper.StringPtr("Doe"),
+				Email:     "john.doe@gmail.com",
+				Status:    domain.UserStatusActive,
+			},
+			expectedResult: &presenter.User{
+				ID:        "2b1ef850-5b3a-441e-bd26-33f50e527b7a",
+				FirstName: helper.StringPtr("John"),
+				LastName:  helper.StringPtr("Doe"),
+				Email:     "john.doe@gmail.com",
+				Status:    string(domain.UserStatusActive),
+				Gender:    helper.StringPtr(domain.UserGenderPreferNotToSayStr),
+			},
 		},
 	}
 
@@ -87,6 +121,7 @@ func TestToUserResource(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Status:    string(domain.UserStatusActive),
+				Gender:    helper.StringPtr(domain.UserGenderPreferNotToSayStr),
 			},
 		},
 		{
@@ -116,43 +151,9 @@ func TestToUserCollection(t *testing.T) {
 		expectedResult []presenter.User
 	}{
 		{
-			name: "Valid Users",
-			users: []*domain.User{
-				{
-					Base: domain.Base{
-						UUID: uuid.MustParse("2b1ef850-5b3a-441e-bd26-33f50e527b7a"),
-					},
-					FirstName: helper.StringPtr("John"),
-					LastName:  helper.StringPtr("Doe"),
-					Email:     "john.doe@gmail.com",
-					Status:    domain.UserStatusActive,
-				},
-				{
-					Base: domain.Base{
-						UUID: uuid.MustParse("fbed3952-feac-4165-958c-202d8a1c80b7"),
-					},
-					FirstName: helper.StringPtr("Jane"),
-					LastName:  helper.StringPtr("Smith"),
-					Email:     "jane.smith@gmail.com",
-					Status:    domain.UserStatusInactive,
-				},
-			},
-			expectedResult: []presenter.User{
-				{
-					ID:        "2b1ef850-5b3a-441e-bd26-33f50e527b7a",
-					FirstName: helper.StringPtr("John"),
-					LastName:  helper.StringPtr("Doe"),
-					Email:     "john.doe@gmail.com",
-					Status:    string(domain.UserStatusActive),
-				},
-				{
-					ID:        "fbed3952-feac-4165-958c-202d8a1c80b7",
-					FirstName: helper.StringPtr("Jane"),
-					LastName:  helper.StringPtr("Smith"),
-					Email:     "jane.smith@gmail.com",
-					Status:    string(domain.UserStatusInactive),
-				},
-			},
+			name:           "Empty user list",
+			users:          []*domain.User{},
+			expectedResult: nil,
 		},
 		{
 			name: "Valid Users",
@@ -165,8 +166,8 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Doe"),
 					Email:     "john.doe@gmail.com",
 					Status:    domain.UserStatusActive,
+					Gender:    domain.UserGenderPreferNotToSay,
 				},
-				{},
 				{
 					Base: domain.Base{
 						UUID: uuid.MustParse("fbed3952-feac-4165-958c-202d8a1c80b7"),
@@ -175,6 +176,7 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Smith"),
 					Email:     "jane.smith@gmail.com",
 					Status:    domain.UserStatusInactive,
+					Gender:    domain.UserGenderPreferNotToSay,
 				},
 			},
 			expectedResult: []presenter.User{
@@ -184,6 +186,7 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Doe"),
 					Email:     "john.doe@gmail.com",
 					Status:    string(domain.UserStatusActive),
+					Gender:    helper.StringPtr(domain.UserGenderPreferNotToSayStr),
 				},
 				{
 					ID:        "fbed3952-feac-4165-958c-202d8a1c80b7",
@@ -191,6 +194,55 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Smith"),
 					Email:     "jane.smith@gmail.com",
 					Status:    string(domain.UserStatusInactive),
+					Gender:    helper.StringPtr(domain.UserGenderPreferNotToSayStr),
+				},
+			},
+		},
+		{
+			name: "Valid Users",
+			users: []*domain.User{
+				{
+					Base: domain.Base{
+						UUID: uuid.MustParse("2b1ef850-5b3a-441e-bd26-33f50e527b7a"),
+					},
+					FirstName:      helper.StringPtr("John"),
+					LastName:       helper.StringPtr("Doe"),
+					Email:          "john.doe@gmail.com",
+					Status:         domain.UserStatusActive,
+					Gender:         domain.UserGenderPreferNotToSay,
+					AuthChallenges: nil,
+				},
+				{},
+				{
+					Base: domain.Base{
+						UUID: uuid.MustParse("fbed3952-feac-4165-958c-202d8a1c80b7"),
+					},
+					FirstName:      helper.StringPtr("Jane"),
+					LastName:       helper.StringPtr("Smith"),
+					Email:          "jane.smith@gmail.com",
+					Status:         domain.UserStatusInactive,
+					Gender:         domain.UserGenderPreferNotToSay,
+					AuthChallenges: nil,
+				},
+			},
+			expectedResult: []presenter.User{
+				{
+					ID:             "2b1ef850-5b3a-441e-bd26-33f50e527b7a",
+					FirstName:      helper.StringPtr("John"),
+					LastName:       helper.StringPtr("Doe"),
+					Email:          "john.doe@gmail.com",
+					Status:         string(domain.UserStatusActive),
+					Gender:         helper.StringPtr(domain.UserGenderPreferNotToSayStr),
+					AuthChallenges: nil,
+				},
+				{
+					ID:             "fbed3952-feac-4165-958c-202d8a1c80b7",
+					FirstName:      helper.StringPtr("Jane"),
+					LastName:       helper.StringPtr("Smith"),
+					Email:          "jane.smith@gmail.com",
+					Status:         string(domain.UserStatusInactive),
+					Gender:         helper.StringPtr(domain.UserGenderPreferNotToSayStr),
+					AuthChallenges: nil,
 				},
 			},
 		},
@@ -205,6 +257,7 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Doe"),
 					Email:     "john.doe@gmail.com",
 					Status:    domain.UserStatusActive,
+					Gender:    domain.UserGenderPreferNotToSay,
 				},
 				{},
 				{
@@ -212,6 +265,7 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Smith"),
 					Email:     "jane.smith@gmail.com",
 					Status:    domain.UserStatusInactive,
+					Gender:    domain.UserGenderPreferNotToSay,
 				},
 			},
 			expectedResult: []presenter.User{
@@ -221,6 +275,7 @@ func TestToUserCollection(t *testing.T) {
 					LastName:  helper.StringPtr("Doe"),
 					Email:     "john.doe@gmail.com",
 					Status:    string(domain.UserStatusActive),
+					Gender:    helper.StringPtr(domain.UserGenderPreferNotToSayStr),
 				},
 			},
 		},
@@ -229,6 +284,82 @@ func TestToUserCollection(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := presenter.ToUserCollection(test.users)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestToTOTPResource(t *testing.T) {
+	tests := []struct {
+		name           string
+		totp           *domain.TOTPKey
+		expectedResult *presenter.TOTPKey
+	}{
+		{
+			name:           "Nil TOTP",
+			totp:           nil,
+			expectedResult: nil,
+		},
+		{
+			name: "Valid TOTP",
+			totp: &domain.TOTPKey{
+				Secret: "this is a secret",
+				URL:    "otpauth_url",
+			},
+			expectedResult: &presenter.TOTPKey{
+				Secret: "this is a secret",
+				URL:    "otpauth_url",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := presenter.ToTOTPResource(test.totp)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestPrepareAuthChallenge(t *testing.T) {
+	tests := []struct {
+		name           string
+		authChallenges []domain.AuthChallenge
+		expectedResult []presenter.AuthChallenge
+	}{
+		{
+			name:           "Empty authChallenges",
+			authChallenges: []domain.AuthChallenge{},
+			expectedResult: nil,
+		},
+		{
+			name: "Valid authChallenges",
+			authChallenges: []domain.AuthChallenge{
+				{
+					Type:   domain.ChallengeTOTP,
+					Status: domain.ChallengeEnable,
+				},
+				{
+					Type:   domain.ChallengeRecoveryCodes,
+					Status: domain.ChallengeDisabled,
+				},
+			},
+			expectedResult: []presenter.AuthChallenge{
+				{
+					Type:   "TOTP",
+					Status: "ENABLE",
+				},
+				{
+					Type:   "RECOVERY_CODES",
+					Status: "DISABLED",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := presenter.PrepareAuthChallenge(test.authChallenges)
 			require.Equal(t, test.expectedResult, result)
 		})
 	}

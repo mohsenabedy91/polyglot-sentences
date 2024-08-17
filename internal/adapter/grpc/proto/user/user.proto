@@ -91,6 +91,8 @@ message CreateRequest {
   optional string googleId = 6;
   // The status of the user.
   string status = 7;
+  // The gender of the user.
+  string gender = 8;
 }
 
 // Request message for VerifiedEmail.
@@ -125,4 +127,6 @@ message UserResponse {
   bool welcomeMessageSent = 8;
   // The google Id of user has a authentication request.
   optional string googleId = 9;
+  // The gender of user.
+  string gender = 10;
 }

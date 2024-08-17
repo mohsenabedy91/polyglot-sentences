@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gateway-postgres-volume-claim
+  namespace: kong
+  labels:
+    app: gateway-postgres
+    type: back-end
+spec:
+  accessModes:
+    - ReadWriteOnce
+#  storageClassName: "fast-ssd"
+  resources:
+    requests:
+      storage: 10Gi

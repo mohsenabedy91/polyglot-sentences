@@ -22,7 +22,6 @@ pipeline {
                 volumeMounts:
                   - mountPath: "/var/jenkins/agent"
                     name: "jenkins-home"
-                    readOnly: false
                 env:
                   - name: PATH
                     value: "/usr/local/go/bin:/var/jenkins_home/jobs/${JOB_NAME}/builds/${BUILD_ID}/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -37,11 +36,19 @@ pipeline {
                     name: docker-storage
                 command: ['dockerd-entrypoint.sh']
                 args: ['-H', 'tcp://0.0.0.0:4243', '-H', 'unix:///var/run/docker.sock']
+              - name: postgres
+                image: 'postgres:16.3'
+                command:
+                  - /bin/sh
+                  - -c
+                  - "sleep 99d"
+                env:
+                  - name: PATH
+                    value: "/usr/lib/postgresql/12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
               volumes:
               - name: jenkins-home
                 persistentVolumeClaim:
                   claimName: jenkins-volume-claim
-                  readOnly: false
               - name: docker-storage
                 emptyDir: {}
             '''
@@ -70,6 +77,7 @@ pipeline {
                 container('golang') {
                     echo 'Installing dependencies...'
                     dir('polyglot-sentences') {
+                        sh 'go env -w GOPROXY="https://goproxy.io,direct"'
                         sh 'go install github.com/swaggo/swag/cmd/swag@latest'
                         sh 'go get -u github.com/swaggo/gin-swagger'
                         sh 'go get -u github.com/swaggo/swag'
@@ -114,6 +122,27 @@ pipeline {
                 }
             }
         }
+        stage('Check and Create Database') {
+            steps {
+                container('postgres') {
+                    withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
+                        script {
+                            sh '''
+                            set -e
+                            export PGPASSWORD=$DB_PASSWORD
+                            DB_EXIST=$(psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME_TEST}';" | xargs)
+                            if [ "$DB_EXIST" != "1" ]; then
+                                psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "CREATE DATABASE ${DB_NAME_TEST};"
+                                echo "Database '${DB_NAME_TEST}' created."
+                            else
+                                echo "Database '${DB_NAME_TEST}' already exists."
+                            fi
+                            '''
+                        }
+                    }
+                }
+            }
+        }
         stage('Static Analysis') {
             parallel {
                 stage('Lint Code') {
@@ -131,19 +160,23 @@ pipeline {
                     steps {
                         container('golang') {
                             echo 'Running tests...'
-                            withCredentials([string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')]) {
+                            withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
                                 dir('polyglot-sentences') {
-                                    sh 'cp .env.example .env.test'
-                                    sh '''
-                                    sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
-                                    sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
-                                    sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
-                                    sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
-                                    sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
-                                    sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST}/' .env.test
-                                    sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT}/' .env.test
-                                    '''
-                                    sh 'go test -cover -count=1 ./...'
+                                    withEnv(['DB_HOST=' + env.DB_HOST_TEST, 'DB_PORT=' + env.DB_PORT_TEST, 'DB_NAME=' + env.DB_NAME_TEST, 'DB_USERNAME=' + env.DB_USERNAME_TEST]) {
+                                        sh 'cp .env.example .env.test'
+                                        sh '''
+                                        set -e
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env.test
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env.test
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env.test
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env.test
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env.test
+                                        sed -i 's/^REDIS_HOST=.*/REDIS_HOST=${REDIS_HOST_TEST}/' .env.test
+                                        sed -i 's/^REDIS_PORT=.*/REDIS_PORT=${REDIS_PORT_TEST}/' .env.test
+                                        '''
+
+                                        sh 'go test -cover -count=1 ./...'
+                                    }
                                 }
                             }
                         }
@@ -214,6 +247,60 @@ pipeline {
                                 sh 'ssh ${K8S_USER}@${K8S_REMOTE_ADDRESS} kubectl rollout restart deployment -n polyglot-sentences'
                             }
                         }
+                    }
+                }
+            }
+        }
+        stage('Run Migrations and Sync APIs') {
+            parallel {
+                stage('Run Migrations') {
+                    steps {
+                        container('golang') {
+                            echo 'Running Migrations...'
+                            withCredentials([string(credentialsId: 'DB_PASSWORD_STAGE', variable: 'DB_PASSWORD')]) {
+                                dir('polyglot-sentences') {
+                                    withEnv(['DB_HOST=' + env.DB_HOST_STAGE, 'DB_PORT=' + env.DB_PORT_STAGE, 'DB_NAME=' + env.DB_NAME_STAGE, 'DB_USERNAME=' + env.DB_USERNAME_STAGE]) {
+                                        sh 'cp .env.example .env'
+                                        sh '''
+                                        set -e
+                                        sed -i 's/^DB_HOST=.*/DB_HOST=${DB_HOST}/' .env
+                                        sed -i 's/^DB_PORT=.*/DB_PORT=${DB_PORT}/' .env
+                                        sed -i 's/^DB_NAME=.*/DB_NAME=${DB_NAME}/' .env
+                                        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/' .env
+                                        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/' .env
+                                        '''
+                                        sh 'go run cmd/migration/main.go up'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Sync APIs with API Gateway') {
+                    steps {
+                        container('golang') {
+                            echo 'Syncing Kong...'
+                            dir('polyglot-sentences') {
+                                sh 'cp .env.example .env'
+                                sh 'go run cmd/apigateway/main.go'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            container('postgres') {
+                withCredentials([string(credentialsId: 'DB_PASSWORD_TEST', variable: 'DB_PASSWORD')]) {
+                    script {
+                        sh '''
+                        set -e
+                        export PGPASSWORD=$DB_PASSWORD
+                        psql -h ${DB_HOST_TEST} -p ${DB_PORT_TEST} -U ${DB_USERNAME_TEST} -c "DROP DATABASE IF EXISTS ${DB_NAME_TEST};"
+                        echo "Database '${DB_NAME_TEST}' dropped."
+                        '''
                     }
                 }
             }

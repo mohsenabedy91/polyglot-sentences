@@ -23,6 +23,22 @@ const (
 	UserStatusBanned     UserStatusType = UserStatusBannedStr
 )
 
+type UserGenderType string
+
+const (
+	UserGenderMaleStr           = "MALE"
+	UserGenderFemaleStr         = "FEMALE"
+	UserGenderOtherStr          = "OTHER"
+	UserGenderPreferNotToSayStr = "PREFER_NOT_TO_SAY"
+)
+
+const (
+	UserGenderMale           UserGenderType = UserGenderMaleStr
+	UserGenderFemale         UserGenderType = UserGenderFemaleStr
+	UserGenderOther          UserGenderType = UserGenderOtherStr
+	UserGenderPreferNotToSay UserGenderType = UserGenderPreferNotToSayStr
+)
+
 type User struct {
 	Base
 	Modifier
@@ -35,7 +51,25 @@ type User struct {
 	Status    UserStatusType
 
 	WelcomeMessageSent bool
-	GoogleID           *string
+
+	GoogleID       *string
+	TOTPSecret     *string
+	Gender         UserGenderType
+	AuthChallenges []AuthChallenge
+}
+
+func (r *User) AuthChallengeTOTP() {
+	if r.TOTPSecret != nil {
+		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
+			Type:   ChallengeTOTP,
+			Status: ChallengeEnable,
+		})
+	} else {
+		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
+			Type:   ChallengeTOTP,
+			Status: ChallengeDisabled,
+		})
+	}
 }
 
 func (r *User) IsActive() bool {
@@ -112,4 +146,36 @@ func (r *User) SetLastName(lastName sql.NullString) *User {
 		r.LastName = &lastName.String
 	}
 	return r
+}
+
+func (r *UserGenderType) String() string {
+	var str string
+	switch *r {
+	case UserGenderMale:
+		str = UserGenderMaleStr
+	case UserGenderFemale:
+		str = UserGenderFemaleStr
+	case UserGenderOther:
+		str = UserGenderOtherStr
+	default:
+		str = UserGenderPreferNotToSayStr
+	}
+
+	return str
+}
+
+func ToUserGenderType(gender string) UserGenderType {
+	var userGenderType UserGenderType
+	switch gender {
+	case UserGenderMaleStr:
+		userGenderType = UserGenderMale
+	case UserGenderFemaleStr:
+		userGenderType = UserGenderFemale
+	case UserGenderOtherStr:
+		userGenderType = UserGenderOther
+	default:
+		userGenderType = UserGenderPreferNotToSay
+	}
+
+	return userGenderType
 }

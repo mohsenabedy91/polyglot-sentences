@@ -24,6 +24,7 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_Create_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := authrepository.NewRoleRepository(mockLogger, r.GetTx())
@@ -199,6 +200,7 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_Update_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	newRole := insertRole(r.T(), r.GetTx(), &domain.Role{
@@ -277,6 +279,7 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_Delete_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	newRole := insertRole(r.T(), r.GetTx(), &domain.Role{
@@ -513,6 +516,7 @@ func (r *RoleRepositoryTestSuite) TestRoleRepository_GetUserRoleKeys_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	newRole := insertRole(r.T(), r.GetTx(), &domain.Role{

@@ -95,8 +95,8 @@ func TestRepositoriesTestSuite(t *testing.T) {
 
 func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
 	require.NoError(t, tx.QueryRow(
-		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by) 
-							VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by, totp_secret, gender) 
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
 							RETURNING id, uuid`,
 		user.FirstName,
 		user.LastName,
@@ -106,6 +106,8 @@ func insertUser(t *testing.T, tx *sql.Tx, user *domain.User) *domain.User {
 		user.GoogleID,
 		user.Avatar,
 		user.Modifier.CreatedBy,
+		user.TOTPSecret,
+		user.Gender,
 	).Scan(&user.Base.ID, &user.Base.UUID))
 
 	return user

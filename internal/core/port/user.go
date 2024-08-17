@@ -1,6 +1,7 @@
 package port
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 )
@@ -18,6 +19,8 @@ type UserRepository interface {
 	UpdateGoogleID(id uint64, googleID string) error
 	UpdateLastLoginTime(id uint64) error
 	UpdatePassword(id uint64, password string) error
+	UpdateTOTPSecret(id uint64, secret *string) error
+	GetTOTPSecret(id uint64) (*string, error)
 }
 
 // UserService is an interface for interacting with user-related business logic
@@ -33,4 +36,17 @@ type UserService interface {
 	UpdateGoogleID(uow UserUnitOfWork, id uint64, googleID string) error
 	UpdateLastLoginTime(uow UserUnitOfWork, id uint64) error
 	UpdatePassword(uow UserUnitOfWork, id uint64, password string) error
+}
+
+type TOTPService interface {
+	Enroll(ctx context.Context, email string) (*domain.TOTPKey, error)
+	Enable(ctx context.Context, uow UserUnitOfWork, userID uint64, email string, code string) error
+	Disable(ctx context.Context, uow UserUnitOfWork, userID uint64, code string) error
+	Get(ctx context.Context, uow UserUnitOfWork, userID uint64, email string) (*domain.TOTPKey, error)
+	Verify(passCode string, secret string) (bool, error)
+}
+
+type TOTPCache interface {
+	Set(ctx context.Context, key string, value string) error
+	Get(ctx context.Context, key string) (string, error)
 }

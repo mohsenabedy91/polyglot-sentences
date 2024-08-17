@@ -22,12 +22,14 @@ func TestAuthRegister_ToUserDomain(t *testing.T) {
 				Email:             "john.doe@gmail.com",
 				Password:          "password",
 				ConfirmedPassword: "password",
+				Gender:            domain.UserGenderMaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: helper.StringPtr("John"),
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Password:  helper.StringPtr("password"),
+				Gender:    domain.UserGenderMaleStr,
 			},
 		},
 		{
@@ -38,12 +40,14 @@ func TestAuthRegister_ToUserDomain(t *testing.T) {
 				Email:             "john.doe@gmail.com",
 				Password:          "password",
 				ConfirmedPassword: "password",
+				Gender:            domain.UserGenderFemaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: nil,
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Password:  helper.StringPtr("password"),
+				Gender:    domain.UserGenderFemaleStr,
 			},
 		},
 		{
@@ -54,12 +58,14 @@ func TestAuthRegister_ToUserDomain(t *testing.T) {
 				Email:             "john.doe@gmail.com",
 				Password:          "password",
 				ConfirmedPassword: "password",
+				Gender:            domain.UserGenderFemaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: helper.StringPtr("John"),
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
 				Password:  helper.StringPtr("password"),
+				Gender:    domain.UserGenderFemaleStr,
 			},
 		},
 		{
@@ -70,12 +76,14 @@ func TestAuthRegister_ToUserDomain(t *testing.T) {
 				Email:             "john.doe@gmail.com",
 				Password:          "password",
 				ConfirmedPassword: "password",
+				Gender:            domain.UserGenderFemaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: nil,
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
 				Password:  helper.StringPtr("password"),
+				Gender:    domain.UserGenderFemaleStr,
 			},
 		},
 	}

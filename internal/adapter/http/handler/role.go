@@ -32,7 +32,7 @@ func NewRoleHandler(
 }
 
 // Create godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[CREATE_ROLE]
 // @Summary Create a Role
 // @Description Create a Role
@@ -92,7 +92,7 @@ func (r RoleHandler) Create(ctx *gin.Context) {
 }
 
 // Get godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[READ_ROLE]
 // @Summary Get a Role
 // @Description return a role by role uuid
@@ -143,7 +143,7 @@ func (r RoleHandler) Get(ctx *gin.Context) {
 }
 
 // List godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[READ_ROLE]
 // @Summary List of Role
 // @Description return a list of role
@@ -185,7 +185,7 @@ func (r RoleHandler) List(ctx *gin.Context) {
 }
 
 // Update godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[UPDATE_ROLE]
 // @Summary Update a Role
 // @Description Update a Role
@@ -251,7 +251,7 @@ func (r RoleHandler) Update(ctx *gin.Context) {
 }
 
 // Delete godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[DELETE_ROLE]
 // @Summary Delete a Role
 // @Description Delete a Role
@@ -305,7 +305,7 @@ func (r RoleHandler) Delete(ctx *gin.Context) {
 }
 
 // GetPermissions godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[READ_ROLE_PERMISSIONS]
 // @Summary Get Permissions
 // @Description get permissions for a Role
@@ -355,7 +355,7 @@ func (r RoleHandler) GetPermissions(ctx *gin.Context) {
 }
 
 // SyncPermissions godoc
-// @x-kong {"service": "auth"}
+// @x-kong {"service": "auth-service"}
 // @Security AuthBearer[SYNC_PERMISSIONS_WITH_ROLE]
 // @Summary Sync Permissions
 // @Description Assign/Remove permissions for a Role

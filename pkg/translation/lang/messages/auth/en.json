@@ -17,7 +17,11 @@
   },
   "user": {
     "success": {
-      "created": "The User was successfully created."
+      "created": "The User was successfully created.",
+      "totp": {
+        "enabled": "User successfully enabled TOTP.",
+        "disabled": "User successfully disabled from TOTP."
+      }
     }
   }
 }

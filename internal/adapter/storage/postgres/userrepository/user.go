@@ -48,8 +48,8 @@ func (r *UserRepository) IsEmailUnique(email string) (bool, error) {
 
 func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 	err := r.tx.QueryRow(
-		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by) 
-							VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+		`INSERT INTO users (first_name, last_name, email, password, status, google_id, avatar, created_by, gender) 
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
 							RETURNING id, uuid`,
 		user.FirstName,
 		user.LastName,
@@ -59,6 +59,7 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 		user.GoogleID,
 		user.Avatar,
 		user.Modifier.CreatedBy,
+		user.Gender,
 	).Scan(&user.Base.ID, &user.Base.UUID)
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "Save", "Failed").Inc()
@@ -75,7 +76,7 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 
 func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND uuid = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL AND uuid = $1",
 		uuid,
 	)
 	user, err := scanUser(row)
@@ -103,7 +104,7 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 
 func (r *UserRepository) GetByID(id uint64) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL AND id = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL AND id = $1",
 		id,
 	)
 	user, err := scanUser(row)
@@ -161,7 +162,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 }
 
 func (r *UserRepository) List() ([]*domain.User, error) {
-	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status FROM users WHERE deleted_at IS NULL")
+	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
@@ -309,12 +310,70 @@ func (r *UserRepository) UpdatePassword(id uint64, password string) error {
 	return nil
 }
 
+func (r *UserRepository) UpdateTOTPSecret(id uint64, secret *string) error {
+	result, err := r.tx.Exec(
+		"UPDATE users SET totp_secret = $1, updated_at = NOW() WHERE id = $2;",
+		&secret,
+		id,
+	)
+	if err != nil {
+		metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, err.Error(), nil)
+		return serviceerror.NewServerError()
+	}
+
+	if affected, affectedErr := result.RowsAffected(); affectedErr != nil || affected <= 0 {
+		metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseUpdate, fmt.Sprintf("There is any effected row in DB: %v", affectedErr), nil)
+		return serviceerror.NewServerError()
+	}
+	metrics.DbCall.WithLabelValues("users", "UpdateTOTPSecret", "Success").Inc()
+
+	return nil
+}
+
+func (r *UserRepository) GetTOTPSecret(id uint64) (*string, error) {
+	var secret *string
+	err := r.tx.QueryRow(
+		"SELECT totp_secret from users WHERE status = $1 AND id = $2;",
+		domain.UserStatusActive,
+		id,
+	).Scan(&secret)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Success").Inc()
+
+			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+			return nil, nil
+		}
+		metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Failed").Inc()
+
+		r.log.Error(logger.Database, logger.DatabaseSelect, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
+	}
+
+	metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Success").Inc()
+
+	return secret, nil
+}
+
 func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var user domain.User
 	var firstName sql.NullString
 	var lastName sql.NullString
 
-	if err := scanner.Scan(&user.Base.ID, &user.Base.UUID, &firstName, &lastName, &user.Email, &user.Status); err != nil {
+	if err := scanner.Scan(
+		&user.Base.ID,
+		&user.Base.UUID,
+		&firstName,
+		&lastName,
+		&user.Email,
+		&user.Status,
+		&user.TOTPSecret,
+		&user.Gender,
+	); err != nil {
 		return domain.User{}, err
 	}
 

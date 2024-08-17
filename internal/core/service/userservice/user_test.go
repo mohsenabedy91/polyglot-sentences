@@ -1,6 +1,7 @@
 package userservice_test
 
 import (
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"testing"
 
 	"github.com/google/uuid"
@@ -42,6 +43,8 @@ func TestUserService_GetByUUID(t *testing.T) {
 	})
 
 	t.Run("GetByUUID repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -71,9 +74,13 @@ func TestUserService_GetByID(t *testing.T) {
 			ID:   userID,
 			UUID: userUUID,
 		},
+		Gender:     domain.UserGenderMale,
+		TOTPSecret: helper.StringPtr("secret"),
 	}
 
 	t.Run("GetByID success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -86,12 +93,18 @@ func TestUserService_GetByID(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, expectedUser, user)
+		require.Equal(t, user.Gender, expectedUser.Gender)
+		require.Len(t, user.AuthChallenges, 1)
+		require.Equal(t, domain.ChallengeTOTP, user.AuthChallenges[0].Type)
+		require.Equal(t, domain.ChallengeEnable, user.AuthChallenges[0].Status)
 
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("GetByID repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -103,7 +116,7 @@ func TestUserService_GetByID(t *testing.T) {
 		user, err := service.GetByID(mockUow, userID)
 
 		require.Error(t, err)
-		require.Equal(t, &domain.User{}, user)
+		require.Equal(t, (*domain.User)(nil), user)
 		require.IsType(t, &serviceerror.ServiceError{}, err)
 
 		mockUow.AssertExpectations(t)
@@ -116,6 +129,8 @@ func TestUserService_IsEmailUnique(t *testing.T) {
 	email := "test@example.com"
 
 	t.Run("IsEmailUnique success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -133,6 +148,8 @@ func TestUserService_IsEmailUnique(t *testing.T) {
 	})
 
 	t.Run("Email is not unique", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -152,6 +169,8 @@ func TestUserService_IsEmailUnique(t *testing.T) {
 	})
 
 	t.Run("IsEmailUnique repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -179,6 +198,8 @@ func TestUserService_GetByEmail(t *testing.T) {
 	email := "test@example.com"
 
 	t.Run("GetByEmail success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -198,6 +219,8 @@ func TestUserService_GetByEmail(t *testing.T) {
 	})
 
 	t.Run("GetByEmail repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -226,6 +249,8 @@ func TestUserService_List(t *testing.T) {
 	}
 
 	t.Run("List success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -244,6 +269,8 @@ func TestUserService_List(t *testing.T) {
 	})
 
 	t.Run("List repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -280,6 +307,8 @@ func TestUserService_Create(t *testing.T) {
 	newUser.Status = domain.UserStatusUnverified
 
 	t.Run("Create success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -300,6 +329,8 @@ func TestUserService_Create(t *testing.T) {
 	})
 
 	t.Run("Create repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -324,6 +355,8 @@ func TestUserService_VerifiedEmail(t *testing.T) {
 	email := "test@example.com"
 
 	t.Run("VerifiedEmail success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -341,6 +374,8 @@ func TestUserService_VerifiedEmail(t *testing.T) {
 	})
 
 	t.Run("VerifiedEmail repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -365,6 +400,8 @@ func TestUserService_MarkWelcomeMessageSent(t *testing.T) {
 	id := uint64(1)
 
 	t.Run("MarkWelcomeMessageSent success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 		mockUow := new(userrepository.MockUnitOfWork)
 
@@ -382,6 +419,8 @@ func TestUserService_MarkWelcomeMessageSent(t *testing.T) {
 	})
 
 	t.Run("MarkWelcomeMessageSent repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -407,6 +446,8 @@ func TestUserService_UpdateGoogleID(t *testing.T) {
 	googleID := "google123"
 
 	t.Run("UpdateGoogleID success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 		mockUow := new(userrepository.MockUnitOfWork)
 
@@ -424,6 +465,8 @@ func TestUserService_UpdateGoogleID(t *testing.T) {
 	})
 
 	t.Run("UpdateGoogleID repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 		mockUow := new(userrepository.MockUnitOfWork)
 
@@ -448,6 +491,8 @@ func TestUserService_UpdateLastLoginTime(t *testing.T) {
 	id := uint64(1)
 
 	t.Run("UpdateLastLoginTime success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 		mockUow := new(userrepository.MockUnitOfWork)
 
@@ -465,6 +510,8 @@ func TestUserService_UpdateLastLoginTime(t *testing.T) {
 	})
 
 	t.Run("UpdateLastLoginTime repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)
@@ -490,6 +537,8 @@ func TestUserService_UpdatePassword(t *testing.T) {
 	password := "new-password123"
 
 	t.Run("UpdatePassword success", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 		mockUow := new(userrepository.MockUnitOfWork)
 
@@ -507,6 +556,8 @@ func TestUserService_UpdatePassword(t *testing.T) {
 	})
 
 	t.Run("UpdatePassword repository error", func(t *testing.T) {
+		t.Parallel()
+
 		mockRepo := new(userrepository.MockUserRepository)
 
 		mockUow := new(userrepository.MockUnitOfWork)

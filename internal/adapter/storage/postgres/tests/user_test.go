@@ -24,7 +24,8 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveSuccess() {
 		LastName:  helper.StringPtr("Doe"),
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusUnverifiedStr,
+		Status:    domain.UserStatusUnverified,
+		Gender:    domain.UserGenderMale,
 	})
 
 	require.NoError(r.T(), err)
@@ -42,6 +43,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_SaveInValidStatus() {
 		LastName:  helper.StringPtr("Doe"),
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
+		Gender:    domain.UserGenderPreferNotToSay,
 	})
 
 	require.Error(r.T(), err)
@@ -54,11 +56,13 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_Success() {
 	mockLogger := new(logger.MockLogger)
 
 	user := insertUser(r.T(), r.GetTx(), &domain.User{
-		FirstName: helper.StringPtr("John"),
-		LastName:  helper.StringPtr("Doe"),
-		Email:     "john.doe@example.com",
-		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusActive,
+		FirstName:  helper.StringPtr("John"),
+		LastName:   helper.StringPtr("Doe"),
+		Email:      "john.doe@example.com",
+		Password:   helper.StringPtr("hashedPassword"),
+		Status:     domain.UserStatusActive,
+		Gender:     domain.UserGenderMale,
+		TOTPSecret: helper.StringPtr("secret"),
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -67,6 +71,9 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_Success() {
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), fetchedUser)
 	require.Equal(r.T(), user.Base.UUID, fetchedUser.Base.UUID)
+	require.Equal(r.T(), user.Status, fetchedUser.Status)
+	require.Equal(r.T(), user.Gender, fetchedUser.Gender)
+	require.Equal(r.T(), user.TOTPSecret, fetchedUser.TOTPSecret)
 }
 
 func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_UserInActive() {
@@ -79,6 +86,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByUUID_UserInActive() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusUnverifiedStr,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -141,6 +149,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_IsEmailUnique_NotUnique() {
 		Email:     "existing.email@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -171,11 +180,13 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_Success() {
 	mockLogger := new(logger.MockLogger)
 
 	user := insertUser(r.T(), r.GetTx(), &domain.User{
-		FirstName: helper.StringPtr("John"),
-		LastName:  helper.StringPtr("Doe"),
-		Email:     "john.doe@example.com",
-		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusActive,
+		FirstName:  helper.StringPtr("John"),
+		LastName:   helper.StringPtr("Doe"),
+		Email:      "john.doe@example.com",
+		Password:   helper.StringPtr("hashedPassword"),
+		Status:     domain.UserStatusActive,
+		Gender:     domain.UserGenderFemale,
+		TOTPSecret: helper.StringPtr("secret"),
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -184,6 +195,8 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_Success() {
 	require.NoError(r.T(), err)
 	require.NotNil(r.T(), fetchedUser)
 	require.Equal(r.T(), user.Base.ID, fetchedUser.ID)
+	require.Equal(r.T(), user.Gender, fetchedUser.Gender)
+	require.Equal(r.T(), user.TOTPSecret, fetchedUser.TOTPSecret)
 }
 
 func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_UserInActive() {
@@ -196,6 +209,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByID_UserInActive() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusUnverifiedStr,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -248,6 +262,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -295,19 +310,23 @@ func (r *UserRepositoryTestSuite) TestUserRepository_List_Success() {
 	require.NoError(r.T(), err)
 
 	insertUser(r.T(), r.GetTx(), &domain.User{
-		FirstName: helper.StringPtr("John"),
-		LastName:  helper.StringPtr("Doe"),
-		Email:     "john.doe@example.com",
-		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusActive,
+		FirstName:  helper.StringPtr("John"),
+		LastName:   helper.StringPtr("Doe"),
+		Email:      "john.doe@example.com",
+		Password:   helper.StringPtr("hashedPassword"),
+		Status:     domain.UserStatusActive,
+		Gender:     domain.UserGenderMale,
+		TOTPSecret: helper.StringPtr("secret1"),
 	})
 
 	insertUser(r.T(), r.GetTx(), &domain.User{
-		FirstName: helper.StringPtr("Jane"),
-		LastName:  helper.StringPtr("Smith"),
-		Email:     "jane.smith@example.com",
-		Password:  helper.StringPtr("hashedPassword"),
-		Status:    domain.UserStatusActive,
+		FirstName:  helper.StringPtr("Jane"),
+		LastName:   helper.StringPtr("Smith"),
+		Email:      "jane.smith@example.com",
+		Password:   helper.StringPtr("hashedPassword"),
+		Status:     domain.UserStatusActive,
+		Gender:     domain.UserGenderFemale,
+		TOTPSecret: helper.StringPtr("secret2"),
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -344,6 +363,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusUnverifiedStr,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -383,6 +403,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_VerifiedEmail_NoRowsAffecte
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -403,6 +424,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_Succ
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -442,6 +464,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_MarkWelcomeMessageSent_NoRo
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -462,6 +485,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	googleID := "new-google-id"
@@ -503,6 +527,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateGoogleID_NoRowsAffect
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -523,6 +548,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_Success
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -557,6 +583,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdateLastLoginTime_NoRowsA
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -577,6 +604,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	newPassword := "newHashedPassword"
@@ -618,6 +646,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_NoRowsAffect
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
@@ -625,6 +654,117 @@ func (r *UserRepositoryTestSuite) TestUserRepository_UpdatePassword_NoRowsAffect
 
 	require.Error(r.T(), err)
 	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_Success() {
+	mockLogger := new(logger.MockLogger)
+
+	user := insertUser(r.T(), r.GetTx(), &domain.User{
+		Email:  "john.doe@example.com",
+		Status: domain.UserStatusActive,
+		Gender: domain.UserGenderPreferNotToSayStr,
+	})
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err := repo.UpdateTOTPSecret(user.Base.ID, secret)
+
+	require.NoError(r.T(), err)
+
+	fetchedUser, err := repo.GetByID(user.Base.ID)
+
+	require.NoError(r.T(), err)
+	require.Equal(r.T(), secret, fetchedUser.TOTPSecret)
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_DBError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", logger.Database, logger.DatabaseUpdate, mock.Anything, mock.Anything).Return()
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS users CASCADE")
+	require.NoError(r.T(), err)
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err = repo.UpdateTOTPSecret(100_000, secret)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_UpdateTOTPSecret_NoRowsAffected() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	insertUser(r.T(), r.GetTx(), &domain.User{
+		Email:  "john.doe@example.com",
+		Status: domain.UserStatusActive,
+		Gender: domain.UserGenderPreferNotToSayStr,
+	})
+
+	secret := helper.StringPtr("encryptedTOTPSecret")
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	err := repo.UpdateTOTPSecret(100_000, secret)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_Success() {
+	mockLogger := new(logger.MockLogger)
+
+	user := insertUser(r.T(), r.GetTx(), &domain.User{
+		FirstName:  helper.StringPtr("John"),
+		LastName:   helper.StringPtr("Doe"),
+		Email:      "john.doe@example.com",
+		Password:   helper.StringPtr("hashedPassword"),
+		Status:     domain.UserStatusActive,
+		Gender:     domain.UserGenderPreferNotToSayStr,
+		TOTPSecret: helper.StringPtr("encryptedTOTPSecret"),
+	})
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedSecret, err := repo.GetTOTPSecret(user.Base.ID)
+
+	require.NoError(r.T(), err)
+	require.NotNil(r.T(), fetchedSecret)
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_RecordNotFound() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Warn", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedUser, err := repo.GetTOTPSecret(100_000)
+
+	require.NoError(r.T(), err)
+	require.Nil(r.T(), fetchedUser)
+
+	mockLogger.AssertExpectations(r.T())
+}
+
+func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_DBError() {
+	mockLogger := new(logger.MockLogger)
+	mockLogger.On("Error", logger.Database, logger.DatabaseSelect, mock.Anything, mock.Anything).Return()
+
+	_, err := r.GetTx().Exec("DROP TABLE IF EXISTS users CASCADE")
+	require.NoError(r.T(), err)
+
+	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
+	fetchedUser, err := repo.GetTOTPSecret(100_000)
+
+	require.Error(r.T(), err)
+	require.Equal(r.T(), serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
+	require.Nil(r.T(), fetchedUser)
 
 	mockLogger.AssertExpectations(r.T())
 }

@@ -36,6 +36,7 @@ const (
 	Apple           Category = "Apple"
 	Queue           Category = "Queue"
 	Minio           Category = "Minio"
+	TOTP            Category = "TOTP"
 )
 
 const (
@@ -109,6 +110,12 @@ const (
 
 	MinioCreateBucket SubCategory = "MinioCreateBucket"
 	MinioUpload       SubCategory = "MinioUpload"
+
+	GetTOTP     SubCategory = "GetTOTP"
+	EnrollTOTP  SubCategory = "EnrollTOTP"
+	EnableTOTP  SubCategory = "EnableTOTP"
+	VerifyTOTP  SubCategory = "VerifyTOTP"
+	DisableTOTP SubCategory = "DisableTOTP"
 )
 
 const (

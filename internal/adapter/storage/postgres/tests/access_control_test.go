@@ -23,6 +23,7 @@ func (r *ACLRepositoryTestSuite) TestACLRepository_AssignRolesToUser_Success() {
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	adminRole := insertRole(r.T(), r.GetTx(), &domain.Role{

@@ -25,6 +25,9 @@
 
     "invalidRequestBody": "Oops! There's an issue with the information you provided. Please check your request and try again.",
 
-    "roleExisted": "The role with enter Title already exists."
+    "roleExisted": "The role with enter Title already exists.",
+
+    "invalidTOTPCode": "The provided TOTP code is invalid or has expired. Please try again.",
+    "totpNotEnrolled": "TOTP is not currently set up for your account."
   }
 }

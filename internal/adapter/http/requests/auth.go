@@ -8,6 +8,7 @@ type AuthRegister struct {
 	Email             string  `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	Password          string  `json:"password" binding:"required,min=8,max=64,password_complexity" example:"QWer123!@#"`
 	ConfirmedPassword string  `json:"confirmedPassword" binding:"required,eqfield=Password" example:"QWer123!@#"`
+	Gender            string  `json:"gender" binding:"required,oneof=MALE FEMALE OTHER PREFER_NOT_TO_SAY" example:"PREFER_NOT_TO_SAY"`
 }
 
 func (r AuthRegister) ToUserDomain() domain.User {
@@ -16,6 +17,7 @@ func (r AuthRegister) ToUserDomain() domain.User {
 		LastName:  r.LastName,
 		Email:     r.Email,
 		Password:  &r.Password,
+		Gender:    domain.ToUserGenderType(r.Gender),
 	}
 }
 
