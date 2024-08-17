@@ -1,6 +1,7 @@
 package userservice_test
 
 import (
+	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 	"testing"
 
 	"github.com/google/uuid"
@@ -73,6 +74,8 @@ func TestUserService_GetByID(t *testing.T) {
 			ID:   userID,
 			UUID: userUUID,
 		},
+		Gender:     domain.UserGenderMale,
+		TOTPSecret: helper.StringPtr("secret"),
 	}
 
 	t.Run("GetByID success", func(t *testing.T) {
@@ -90,6 +93,10 @@ func TestUserService_GetByID(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, expectedUser, user)
+		require.Equal(t, user.Gender, expectedUser.Gender)
+		require.Len(t, user.AuthChallenges, 1)
+		require.Equal(t, domain.ChallengeTOTP, user.AuthChallenges[0].Type)
+		require.Equal(t, domain.ChallengeEnable, user.AuthChallenges[0].Status)
 
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
@@ -109,7 +116,7 @@ func TestUserService_GetByID(t *testing.T) {
 		user, err := service.GetByID(mockUow, userID)
 
 		require.Error(t, err)
-		require.Equal(t, &domain.User{}, user)
+		require.Equal(t, (*domain.User)(nil), user)
 		require.IsType(t, &serviceerror.ServiceError{}, err)
 
 		mockUow.AssertExpectations(t)

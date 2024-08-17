@@ -327,3 +327,39 @@ func TestUser_SetLastName(t *testing.T) {
 		})
 	}
 }
+
+func TestUser_AuthChallengeTOTP(t *testing.T) {
+	tests := []struct {
+		name           string
+		totpSecret     *string
+		expectedType   domain.ChallengeType
+		expectedStatus domain.ChallengeStatusType
+	}{
+		{
+			name:           "TOTP Secret is set",
+			totpSecret:     helper.StringPtr("some_secret"),
+			expectedType:   domain.ChallengeTOTP,
+			expectedStatus: domain.ChallengeEnable,
+		},
+		{
+			name:           "TOTP Secret is nil",
+			totpSecret:     nil,
+			expectedType:   domain.ChallengeTOTP,
+			expectedStatus: domain.ChallengeDisabled,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			user := domain.User{
+				TOTPSecret: test.totpSecret,
+			}
+
+			user.AuthChallengeTOTP()
+
+			require.Len(t, user.AuthChallenges, 1)
+			require.Equal(t, test.expectedType, user.AuthChallenges[0].Type)
+			require.Equal(t, test.expectedStatus, user.AuthChallenges[0].Status)
+		})
+	}
+}

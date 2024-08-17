@@ -25,7 +25,14 @@ func (r *UserService) GetByUUID(uow port.UserUnitOfWork, uuidStr string) (user *
 }
 
 func (r *UserService) GetByID(uow port.UserUnitOfWork, id uint64) (user *domain.User, err error) {
-	return uow.UserRepository().GetByID(id)
+	user, err = uow.UserRepository().GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	user.AuthChallengeTOTP()
+
+	return user, nil
 }
 
 func (r *UserService) IsEmailUnique(uow port.UserUnitOfWork, email string) error {

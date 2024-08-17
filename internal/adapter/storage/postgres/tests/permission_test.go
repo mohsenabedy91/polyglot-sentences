@@ -26,6 +26,7 @@ func (r *PermissionRepositoryTestSuite) TestPermissionRepository_GetUserPermissi
 		Email:     "john.doe@example.com",
 		Password:  helper.StringPtr("hashedPassword"),
 		Status:    domain.UserStatusActive,
+		Gender:    domain.UserGenderPreferNotToSayStr,
 	})
 
 	userRole := insertRole(r.T(), r.GetTx(), &domain.Role{
