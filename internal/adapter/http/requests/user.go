@@ -10,6 +10,7 @@ type CreateUserRequest struct {
 	LastName  *string               `form:"lastName" binding:"required,regex_alpha,min=2,max=64" example:"Doe"`
 	Email     string                `form:"email" binding:"required,email" example:"john.doe@gmail.com"`
 	Avatar    *multipart.FileHeader `form:"avatar" binding:"required" swaggerignore:"true"`
+	Gender    string                `form:"gender" binding:"required,oneof=MALE FEMALE OTHER PREFER_NOT_TO_SAY" example:"PREFER_NOT_TO_SAY"`
 }
 
 func (r CreateUserRequest) ToUserDomain() domain.User {
@@ -17,6 +18,7 @@ func (r CreateUserRequest) ToUserDomain() domain.User {
 		FirstName: r.FirstName,
 		LastName:  r.LastName,
 		Email:     r.Email,
+		Gender:    domain.ToUserGenderType(r.Gender),
 	}
 }
 

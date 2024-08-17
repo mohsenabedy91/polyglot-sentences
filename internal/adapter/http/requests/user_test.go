@@ -22,11 +22,13 @@ func TestCreateUserRequest_ToUserDomain(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Avatar:    &multipart.FileHeader{Filename: "avatar.png"},
+				Gender:    domain.UserGenderOtherStr,
 			},
 			expectedResult: domain.User{
 				FirstName: helper.StringPtr("John"),
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
+				Gender:    domain.UserGenderOtherStr,
 			},
 		},
 		{
@@ -36,11 +38,13 @@ func TestCreateUserRequest_ToUserDomain(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Avatar:    &multipart.FileHeader{Filename: "avatar.png"},
+				Gender:    domain.UserGenderOtherStr,
 			},
 			expectedResult: domain.User{
 				FirstName: nil,
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
+				Gender:    domain.UserGenderOtherStr,
 			},
 		},
 		{
@@ -50,11 +54,13 @@ func TestCreateUserRequest_ToUserDomain(t *testing.T) {
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
 				Avatar:    &multipart.FileHeader{Filename: "avatar.png"},
+				Gender:    domain.UserGenderPreferNotToSayStr,
 			},
 			expectedResult: domain.User{
 				FirstName: helper.StringPtr("John"),
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
+				Gender:    domain.UserGenderPreferNotToSayStr,
 			},
 		},
 		{
@@ -64,11 +70,13 @@ func TestCreateUserRequest_ToUserDomain(t *testing.T) {
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
 				Avatar:    &multipart.FileHeader{Filename: "avatar.png"},
+				Gender:    domain.UserGenderMaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: nil,
 				LastName:  nil,
 				Email:     "john.doe@gmail.com",
+				Gender:    domain.UserGenderMaleStr,
 			},
 		},
 		{
@@ -78,11 +86,13 @@ func TestCreateUserRequest_ToUserDomain(t *testing.T) {
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
 				Avatar:    nil,
+				Gender:    domain.UserGenderFemaleStr,
 			},
 			expectedResult: domain.User{
 				FirstName: helper.StringPtr("John"),
 				LastName:  helper.StringPtr("Doe"),
 				Email:     "john.doe@gmail.com",
+				Gender:    domain.UserGenderFemaleStr,
 			},
 		},
 	}

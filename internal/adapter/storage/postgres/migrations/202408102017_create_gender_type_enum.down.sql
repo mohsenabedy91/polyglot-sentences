@@ -1,0 +1,1 @@
+DROP TYPE IF EXISTS user_gender_type;
