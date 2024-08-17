@@ -122,12 +122,14 @@ func (r TOTPService) Get(ctx context.Context, uow port.UserUnitOfWork, userID ui
 	key := helper.ToAESKey(r.conf.Auth.EncryptionKey)
 	decryptedSecret, decryptErr := helper.DecryptSecret(*encryptedSecret, key)
 	if decryptErr != nil {
-		return nil, decryptErr
+		r.log.Error(logger.TOTP, logger.GetTOTP, decryptErr.Error(), nil)
+		return nil, serviceerror.NewServerError()
 	}
 
 	decodeString, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(string(decryptedSecret))
 	if err != nil {
-		return nil, err
+		r.log.Error(logger.TOTP, logger.GetTOTP, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
 	}
 	otpKey, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      r.conf.App.Name,
@@ -136,7 +138,8 @@ func (r TOTPService) Get(ctx context.Context, uow port.UserUnitOfWork, userID ui
 		Secret:      decodeString,
 	})
 	if err != nil {
-		return nil, err
+		r.log.Error(logger.TOTP, logger.GetTOTP, err.Error(), nil)
+		return nil, serviceerror.NewServerError()
 	}
 
 	return &domain.TOTPKey{
@@ -158,8 +161,10 @@ func (r TOTPService) Verify(code string, secret string) (bool, error) {
 		},
 	); err != nil || !valid {
 		if err != nil {
-			r.log.Warn(logger.TOTP, logger.VerifyTOTP, err.Error(), nil)
-			return false, err
+			r.log.Error(logger.TOTP, logger.VerifyTOTP, err.Error(), map[logger.ExtraKey]interface{}{
+				"Secret": secret,
+			})
+			return false, serviceerror.NewServerError()
 		}
 
 		r.log.Warn(logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", code), nil)

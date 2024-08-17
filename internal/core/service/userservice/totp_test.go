@@ -344,11 +344,10 @@ func TestTOTPService_Verify(t *testing.T) {
 
 	email := "test@example.com"
 	otpKey := generateTOTPKey(t, conf, email)
+	validCode := generateValidCode(t, otpKey)
 
 	t.Run("Verify success", func(t *testing.T) {
 		t.Parallel()
-
-		validCode := generateValidCode(t, otpKey)
 
 		valid, err := service.Verify(validCode, otpKey.Secret())
 		require.NoError(t, err, "expected no error on successful verification")
@@ -366,6 +365,23 @@ func TestTOTPService_Verify(t *testing.T) {
 		require.False(t, valid, "expected verification to fail")
 		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
+
+		mockLogger.AssertExpectations(t)
+	})
+
+	t.Run("Verify base32 decode error", func(t *testing.T) {
+		t.Parallel()
+
+		invalidBase32Secret := "invalid-base32-secret"
+		mockLogger.On("Error", logger.TOTP, logger.VerifyTOTP, mock.Anything, map[logger.ExtraKey]interface{}{
+			"Secret": invalidBase32Secret,
+		}).Return()
+
+		isValid, err := service.Verify(validCode, invalidBase32Secret)
+		require.Error(t, err, "expected an error due to base32 decoding failure")
+		require.False(t, isValid, "expected verification to fail on base32 decoding failure")
+		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
+		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
 
 		mockLogger.AssertExpectations(t)
 	})
@@ -461,6 +477,8 @@ func TestTOTPService_Get(t *testing.T) {
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(invalidBase32Secret), key)
 
+		mockLogger.On("Error", logger.TOTP, logger.GetTOTP, mock.Anything, mock.Anything).Return()
+
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 
@@ -480,6 +498,8 @@ func TestTOTPService_Get(t *testing.T) {
 
 		key := helper.ToAESKey(conf.Auth.EncryptionKey)
 		encryptedSecret, _ := helper.EncryptSecret([]byte(otpKey.Secret()), key)
+
+		mockLogger.On("Error", logger.TOTP, logger.GetTOTP, mock.Anything, mock.Anything).Return()
 
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
