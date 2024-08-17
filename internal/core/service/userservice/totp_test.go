@@ -365,8 +365,6 @@ func TestTOTPService_Verify(t *testing.T) {
 		require.False(t, valid, "expected verification to fail")
 		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
-
-		mockLogger.AssertExpectations(t)
 	})
 
 	t.Run("Verify base32 decode error", func(t *testing.T) {
@@ -382,9 +380,9 @@ func TestTOTPService_Verify(t *testing.T) {
 		require.False(t, isValid, "expected verification to fail on base32 decoding failure")
 		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
-
-		mockLogger.AssertExpectations(t)
 	})
+
+	mockLogger.AssertExpectations(t)
 }
 
 func TestTOTPService_Get(t *testing.T) {
@@ -515,4 +513,6 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
 	})
+
+	mockLogger.AssertExpectations(t)
 }
