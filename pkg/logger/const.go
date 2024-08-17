@@ -111,6 +111,7 @@ const (
 	MinioCreateBucket SubCategory = "MinioCreateBucket"
 	MinioUpload       SubCategory = "MinioUpload"
 
+	GetTOTP     SubCategory = "GetTOTP"
 	EnrollTOTP  SubCategory = "EnrollTOTP"
 	EnableTOTP  SubCategory = "EnableTOTP"
 	VerifyTOTP  SubCategory = "VerifyTOTP"
