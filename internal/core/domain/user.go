@@ -52,9 +52,24 @@ type User struct {
 
 	WelcomeMessageSent bool
 
-	GoogleID *string
-	Secret   *string
-	Gender   UserGenderType
+	GoogleID       *string
+	TOTPSecret     *string
+	Gender         UserGenderType
+	AuthChallenges []AuthChallenge
+}
+
+func (r *User) AuthChallengeTOTP() {
+	if r.TOTPSecret != nil {
+		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
+			Type:   ChallengeTOTP,
+			Status: ChallengeEnable,
+		})
+	} else {
+		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
+			Type:   ChallengeTOTP,
+			Status: ChallengeDisabled,
+		})
+	}
 }
 
 func (r *User) IsActive() bool {

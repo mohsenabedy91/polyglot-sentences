@@ -76,7 +76,7 @@ func (r *UserRepository) Save(user *domain.User) (*domain.User, error) {
 
 func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL AND uuid = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL AND uuid = $1",
 		uuid,
 	)
 	user, err := scanUser(row)
@@ -104,7 +104,7 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*domain.User, error) {
 
 func (r *UserRepository) GetByID(id uint64) (*domain.User, error) {
 	row := r.tx.QueryRow(
-		"SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL AND id = $1",
+		"SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL AND id = $1",
 		id,
 	)
 	user, err := scanUser(row)
@@ -162,7 +162,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 }
 
 func (r *UserRepository) List() ([]*domain.User, error) {
-	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status, totp_secret FROM users WHERE deleted_at IS NULL")
+	rows, err := r.tx.Query("SELECT id, uuid, first_name, last_name, email, status, totp_secret, gender FROM users WHERE deleted_at IS NULL")
 	if err != nil {
 		metrics.DbCall.WithLabelValues("users", "List", "Failed").Inc()
 
@@ -364,7 +364,16 @@ func scanUser(scanner postgres.Scanner) (domain.User, error) {
 	var firstName sql.NullString
 	var lastName sql.NullString
 
-	if err := scanner.Scan(&user.Base.ID, &user.Base.UUID, &firstName, &lastName, &user.Email, &user.Status, &user.Secret); err != nil {
+	if err := scanner.Scan(
+		&user.Base.ID,
+		&user.Base.UUID,
+		&firstName,
+		&lastName,
+		&user.Email,
+		&user.Status,
+		&user.TOTPSecret,
+		&user.Gender,
+	); err != nil {
 		return domain.User{}, err
 	}
 
