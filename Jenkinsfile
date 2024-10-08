@@ -7,7 +7,7 @@ pipeline {
             spec:
               containers:
               - name: golang
-                image: 'golang:1.22.5'
+                image: 'golang:1.23.2'
                 command:
                   - /bin/sh
                   - -c
