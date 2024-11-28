@@ -26,6 +26,11 @@ type AuthLogin struct {
 	Password string `json:"password" binding:"required,password_complexity" example:"QWer123!@#"`
 }
 
+type AuthChallenge struct {
+	Type string `json:"type" binding:"required" example:"totp"`
+	Code string `json:"code" binding:"required" example:"123456"`
+}
+
 type AuthEmailOTPResend struct {
 	Email string `json:"email" binding:"required,email" example:"john.doe@gmail.com"`
 }

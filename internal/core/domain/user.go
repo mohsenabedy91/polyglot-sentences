@@ -2,6 +2,7 @@ package domain
 
 import (
 	"database/sql"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
 	"strings"
 )
 
@@ -55,19 +56,19 @@ type User struct {
 	GoogleID       *string
 	TOTPSecret     *string
 	Gender         UserGenderType
-	AuthChallenges []AuthChallenge
+	AuthChallenges []*user.AuthChallenge
 }
 
 func (r *User) AuthChallengeTOTP() {
 	if r.TOTPSecret != nil {
-		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
-			Type:   ChallengeTOTP,
-			Status: ChallengeEnable,
+		r.AuthChallenges = append(r.AuthChallenges, &user.AuthChallenge{
+			Type:   ChallengeTOTPStr,
+			Status: ChallengeEnableStr,
 		})
 	} else {
-		r.AuthChallenges = append(r.AuthChallenges, AuthChallenge{
-			Type:   ChallengeTOTP,
-			Status: ChallengeDisabled,
+		r.AuthChallenges = append(r.AuthChallenges, &user.AuthChallenge{
+			Type:   ChallengeTOTPStr,
+			Status: ChallengeDisableStr,
 		})
 	}
 }

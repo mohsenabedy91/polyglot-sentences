@@ -90,6 +90,7 @@ func (r UserClient) GetByEmail(ctx context.Context, email string) (*domain.User,
 			Status:             domain.ToUserStatus(resp.Status),
 			WelcomeMessageSent: resp.WelcomeMessageSent,
 			GoogleID:           resp.GoogleId,
+			AuthChallenges:     resp.AuthChallenges,
 		}, nil
 	}
 

@@ -49,8 +49,8 @@ func TestChallengeStatusType_String(t *testing.T) {
 		},
 		{
 			name:           "Disabled challenge status",
-			status:         domain.ChallengeDisabled,
-			expectedResult: domain.ChallengeDisabledStr,
+			status:         domain.ChallengeDisable,
+			expectedResult: domain.ChallengeDisableStr,
 		},
 		{
 			name:           "Unknown challenge status",

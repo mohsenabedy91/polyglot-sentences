@@ -54,8 +54,15 @@ func (r *UserService) IsEmailUnique(uow port.UserUnitOfWork, email string) error
 	return nil
 }
 
-func (r *UserService) GetByEmail(uow port.UserUnitOfWork, email string) (*domain.User, error) {
-	return uow.UserRepository().GetByEmail(email)
+func (r *UserService) GetByEmail(uow port.UserUnitOfWork, email string) (user *domain.User, err error) {
+	user, err = uow.UserRepository().GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	user.AuthChallengeTOTP()
+
+	return user, nil
 }
 
 func (r *UserService) List(uow port.UserUnitOfWork) ([]*domain.User, error) {

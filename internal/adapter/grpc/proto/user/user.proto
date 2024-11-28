@@ -125,8 +125,16 @@ message UserResponse {
   optional string password = 7;
   // Whether the welcome message has been sent.
   bool welcomeMessageSent = 8;
-  // The google Id of user has a authentication request.
+  // The google Id of the user has a authentication request.
   optional string googleId = 9;
-  // The gender of user.
+  // The gender of the user.
   string gender = 10;
+  // The TOTP secret of the user.
+  repeated AuthChallenge authChallenges = 11;
+}
+
+// Message representing an authentication challenge
+message AuthChallenge {
+  string type = 1;
+  string status = 2;
 }

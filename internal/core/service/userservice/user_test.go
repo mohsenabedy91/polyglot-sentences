@@ -95,8 +95,8 @@ func TestUserService_GetByID(t *testing.T) {
 		require.Equal(t, expectedUser, user)
 		require.Equal(t, user.Gender, expectedUser.Gender)
 		require.Len(t, user.AuthChallenges, 1)
-		require.Equal(t, domain.ChallengeTOTP, user.AuthChallenges[0].Type)
-		require.Equal(t, domain.ChallengeEnable, user.AuthChallenges[0].Status)
+		require.Equal(t, domain.ChallengeTOTPStr, user.AuthChallenges[0].Type)
+		require.Equal(t, domain.ChallengeEnableStr, user.AuthChallenges[0].Status)
 
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
@@ -232,7 +232,7 @@ func TestUserService_GetByEmail(t *testing.T) {
 		user, err := service.GetByEmail(mockUow, email)
 
 		require.Error(t, err)
-		require.Equal(t, &domain.User{}, user)
+		require.Equal(t, (*domain.User)(nil), user)
 		require.IsType(t, &serviceerror.ServiceError{}, err)
 
 		mockUow.AssertExpectations(t)

@@ -145,6 +145,7 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 			Status:             resp.Status.String(),
 			WelcomeMessageSent: resp.WelcomeMessageSent,
 			GoogleId:           resp.GoogleID,
+			AuthChallenges:     resp.AuthChallenges,
 		}, nil
 	}
 

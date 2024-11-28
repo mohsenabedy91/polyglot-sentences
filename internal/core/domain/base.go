@@ -53,13 +53,13 @@ const (
 type ChallengeStatusType string
 
 const (
-	ChallengeEnableStr   = "ENABLE"
-	ChallengeDisabledStr = "DISABLED"
+	ChallengeEnableStr  = "ENABLE"
+	ChallengeDisableStr = "DISABLE"
 )
 
 const (
-	ChallengeEnable   ChallengeStatusType = "ENABLE"
-	ChallengeDisabled ChallengeStatusType = "DISABLED"
+	ChallengeEnable  ChallengeStatusType = ChallengeEnableStr
+	ChallengeDisable ChallengeStatusType = ChallengeDisableStr
 )
 
 type AuthChallenge struct {
@@ -86,8 +86,8 @@ func (r ChallengeStatusType) String() string {
 	switch r {
 	case ChallengeEnable:
 		str = ChallengeEnableStr
-	case ChallengeDisabled:
-		str = ChallengeDisabledStr
+	case ChallengeDisable:
+		str = ChallengeDisableStr
 	default:
 		str = UnknownStr
 	}

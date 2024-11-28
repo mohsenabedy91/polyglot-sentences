@@ -2,6 +2,7 @@ package presenter
 
 import (
 	"github.com/google/uuid"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
 )
@@ -16,8 +17,30 @@ type User struct {
 	AuthChallenges []AuthChallenge `json:"authChallenges"`
 }
 
+func toAuthChallenge(challenge *user.AuthChallenge) AuthChallenge {
+	return AuthChallenge{
+		Type:   challenge.Type,
+		Status: challenge.Status,
+	}
+}
+
+func toAuthChallengeCollection(challenges []*user.AuthChallenge) []AuthChallenge {
+	if len(challenges) == 0 {
+		return nil
+	}
+
+	var authChallenges []AuthChallenge
+	for _, challenge := range challenges {
+		if challenge.Status == domain.ChallengeEnableStr {
+			authChallenges = append(authChallenges, toAuthChallenge(challenge))
+		}
+	}
+
+	return authChallenges
+}
+
 type AuthChallenge struct {
-	Type   string `json:"type,omitempty" example:"Basic"`
+	Type   string `json:"type,omitempty" example:"TOTP"`
 	Status string `json:"status,omitempty" example:"ACTIVE"`
 }
 
@@ -53,12 +76,12 @@ func ToUserCollection(users []*domain.User) []User {
 	return response
 }
 
-func PrepareAuthChallenge(authChallenges []domain.AuthChallenge) []AuthChallenge {
+func PrepareAuthChallenge(authChallenges []*user.AuthChallenge) []AuthChallenge {
 	var response []AuthChallenge
 	for _, authChallenge := range authChallenges {
 		response = append(response, AuthChallenge{
-			Type:   authChallenge.Type.String(),
-			Status: authChallenge.Status.String(),
+			Type:   authChallenge.Type,
+			Status: authChallenge.Status,
 		})
 	}
 

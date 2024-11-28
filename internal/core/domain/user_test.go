@@ -331,35 +331,38 @@ func TestUser_SetLastName(t *testing.T) {
 func TestUser_AuthChallengeTOTP(t *testing.T) {
 	tests := []struct {
 		name           string
-		totpSecret     *string
-		expectedType   domain.ChallengeType
-		expectedStatus domain.ChallengeStatusType
+		user           domain.User
+		expectedType   string
+		expectedStatus string
 	}{
 		{
 			name:           "TOTP Secret is set",
-			totpSecret:     helper.StringPtr("some_secret"),
-			expectedType:   domain.ChallengeTOTP,
-			expectedStatus: domain.ChallengeEnable,
+			user:           domain.User{TOTPSecret: helper.StringPtr("some_secret")},
+			expectedType:   domain.ChallengeTOTPStr,
+			expectedStatus: domain.ChallengeEnableStr,
 		},
 		{
 			name:           "TOTP Secret is nil",
-			totpSecret:     nil,
-			expectedType:   domain.ChallengeTOTP,
-			expectedStatus: domain.ChallengeDisabled,
+			user:           domain.User{TOTPSecret: nil},
+			expectedType:   domain.ChallengeTOTPStr,
+			expectedStatus: domain.ChallengeDisableStr,
+		},
+		{
+			name:           "TOTP User is nil",
+			user:           domain.User{},
+			expectedType:   domain.ChallengeTOTPStr,
+			expectedStatus: domain.ChallengeDisableStr,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			user := domain.User{
-				TOTPSecret: test.totpSecret,
-			}
 
-			user.AuthChallengeTOTP()
+			test.user.AuthChallengeTOTP()
 
-			require.Len(t, user.AuthChallenges, 1)
-			require.Equal(t, test.expectedType, user.AuthChallenges[0].Type)
-			require.Equal(t, test.expectedStatus, user.AuthChallenges[0].Status)
+			require.Len(t, test.user.AuthChallenges, 1)
+			require.Equal(t, test.expectedType, test.user.AuthChallenges[0].Type)
+			require.Equal(t, test.expectedStatus, test.user.AuthChallenges[0].Status)
 		})
 	}
 }

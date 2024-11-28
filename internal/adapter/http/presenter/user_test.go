@@ -2,6 +2,7 @@ package presenter_test
 
 import (
 	"github.com/google/uuid"
+	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/grpc/proto/user"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/adapter/http/presenter"
 	"github.com/mohsenabedy91/polyglot-sentences/internal/core/domain"
 	"github.com/mohsenabedy91/polyglot-sentences/pkg/helper"
@@ -31,10 +32,10 @@ func TestPrepareUser(t *testing.T) {
 				Email:     "john.doe@gmail.com",
 				Status:    domain.UserStatusActive,
 				Gender:    domain.UserGenderMale,
-				AuthChallenges: []domain.AuthChallenge{
+				AuthChallenges: []*user.AuthChallenge{
 					{
-						Type:   domain.ChallengeTOTP,
-						Status: domain.ChallengeEnable,
+						Type:   domain.ChallengeTOTPStr,
+						Status: domain.ChallengeEnableStr,
 					},
 				},
 			},
@@ -324,24 +325,24 @@ func TestToTOTPResource(t *testing.T) {
 func TestPrepareAuthChallenge(t *testing.T) {
 	tests := []struct {
 		name           string
-		authChallenges []domain.AuthChallenge
+		authChallenges []*user.AuthChallenge
 		expectedResult []presenter.AuthChallenge
 	}{
 		{
 			name:           "Empty authChallenges",
-			authChallenges: []domain.AuthChallenge{},
+			authChallenges: []*user.AuthChallenge{},
 			expectedResult: nil,
 		},
 		{
 			name: "Valid authChallenges",
-			authChallenges: []domain.AuthChallenge{
+			authChallenges: []*user.AuthChallenge{
 				{
-					Type:   domain.ChallengeTOTP,
-					Status: domain.ChallengeEnable,
+					Type:   domain.ChallengeTOTPStr,
+					Status: domain.ChallengeEnableStr,
 				},
 				{
-					Type:   domain.ChallengeRecoveryCodes,
-					Status: domain.ChallengeDisabled,
+					Type:   domain.ChallengeRecoveryCodesStr,
+					Status: domain.ChallengeDisableStr,
 				},
 			},
 			expectedResult: []presenter.AuthChallenge{
@@ -351,7 +352,7 @@ func TestPrepareAuthChallenge(t *testing.T) {
 				},
 				{
 					Type:   "RECOVERY_CODES",
-					Status: "DISABLED",
+					Status: "DISABLE",
 				},
 			},
 		},

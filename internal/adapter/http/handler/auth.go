@@ -290,6 +290,7 @@ func (r AuthHandler) EmailOTPVerify(ctx *gin.Context) {
 // @Param language path string true "language 2 abbreviations" default(en)
 // @Param request body requests.AuthLogin true "Login request"
 // @Success 200 {object} presenter.Response{data=presenter.Token} "Successful response"
+// @Success 201 {object} presenter.Response{data=presenter.Challenges} "Successful response"
 // @Failure 400 {object} presenter.Error "Failed response"
 // @Failure 422 {object} presenter.Response{validationErrors=[]presenter.ValidationError} "Validation error"
 // @Failure 500 {object} presenter.Error "Internal server error"
@@ -347,6 +348,12 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.CredentialInvalid),
 		).Echo()
+		return
+	}
+
+	authChallenges := presenter.NeedAuthChallenge(user.AuthChallenges)
+	if len(authChallenges.Challenges) > 0 {
+		presenter.NewResponse(ctx, r.trans).Payload(authChallenges).Echo(http.StatusAccepted)
 		return
 	}
 
