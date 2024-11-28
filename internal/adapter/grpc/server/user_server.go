@@ -79,12 +79,12 @@ func (r Server) GetByUUID(ctx context.Context, req *userpb.GetByUUIDRequest) (*u
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
-	if err := uowFactory.Commit(); err != nil {
+	if commitErr := uowFactory.Commit(); commitErr != nil {
 		var se *serviceerror.ServiceError
-		if errors.As(err, &se) {
+		if errors.As(commitErr, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
 		}
-		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", commitErr)
 	}
 
 	if resp != nil {
@@ -126,12 +126,12 @@ func (r Server) GetByEmail(ctx context.Context, req *userpb.GetByEmailRequest) (
 		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
 	}
 
-	if err := uowFactory.Commit(); err != nil {
+	if commitErr := uowFactory.Commit(); commitErr != nil {
 		var se *serviceerror.ServiceError
-		if errors.As(err, &se) {
+		if errors.As(commitErr, &se) {
 			return nil, serviceerror.ConvertToGrpcError(se)
 		}
-		return nil, status.Errorf(codes.Internal, "unexpected error: %v", err)
+		return nil, status.Errorf(codes.Internal, "unexpected error: %v", commitErr)
 	}
 
 	if resp != nil {

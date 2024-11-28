@@ -323,13 +323,12 @@ func (r AuthHandler) Login(ctx *gin.Context) {
 		}
 
 		// TODO add rate limit
-		message := authevent.SendEmailOTPDto{
+		authevent.NewSendEmailOTP(r.queue).Publish(authevent.SendEmailOTPDto{
 			To:       user.Email,
 			Name:     user.GetFullName(),
 			OTP:      otp,
 			Language: ctx.Param("language"),
-		}
-		authevent.NewSendEmailOTP(r.queue).Publish(message)
+		})
 
 		presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(
 			serviceerror.New(serviceerror.UserUnVerified),

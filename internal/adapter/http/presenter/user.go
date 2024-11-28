@@ -43,8 +43,8 @@ func ToUserResource(user *domain.User) *User {
 
 func ToUserCollection(users []*domain.User) []User {
 	var response []User
-	for _, user := range users {
-		result := PrepareUser(user)
+	for _, userDetail := range users {
+		result := PrepareUser(userDetail)
 		if result != nil {
 			response = append(response, *result)
 		}
