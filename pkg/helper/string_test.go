@@ -124,3 +124,39 @@ func TestStringPtr(t *testing.T) {
 		})
 	}
 }
+
+func TestRandomString(t *testing.T) {
+	tests := []struct {
+		name   string
+		length int
+	}{
+		{
+			name:   "Zero length string",
+			length: 0,
+		},
+		{
+			name:   "Small length string",
+			length: 5,
+		},
+		{
+			name:   "Very large length string",
+			length: 1000,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := helper.RandomString(test.length)
+
+			require.Equal(t, test.length, len(result))
+		})
+	}
+
+	t.Run("Different results for the same length", func(t *testing.T) {
+		length := 10
+		result1 := helper.RandomString(length)
+		result2 := helper.RandomString(length)
+
+		require.NotEqual(t, result1, result2)
+	})
+}
