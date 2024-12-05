@@ -31,6 +31,7 @@
     "AccessToken": "رمز الوصول",
     "Title": "العنوان",
     "Description": "الوصف",
-    "Permissions": "الأذونات"
+    "Permissions": "الأذونات",
+    "FlowToken": "رمز التدفق"
   }
 }
