@@ -69,7 +69,7 @@ func Authentication(conf config.Jwt, trans translation.Translator, cache port.Au
 }
 
 func checkLogout(ctx context.Context, cache port.AuthCache, jti string) error {
-	result, err := cache.GetTokenState(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
+	result, err := cache.Get(ctx, fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, jti))
 	if err != nil {
 		return serviceerror.NewServerError()
 	} else if result == constant.LogoutRedisValue {

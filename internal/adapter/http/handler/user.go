@@ -437,7 +437,7 @@ func (r UserHandler) DisableTOTP(ctx *gin.Context) {
 		return
 	}
 
-	if disableErr := r.totpService.Disable(ctx.Request.Context(), uowFactory, header.UserID, request.Code); disableErr != nil {
+	if disableErr := r.totpService.Disable(uowFactory, header.UserID, request.Code); disableErr != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()
 			return
@@ -493,7 +493,7 @@ func (r UserHandler) GetTOTP(ctx *gin.Context) {
 		return
 	}
 
-	totpKey, err := r.totpService.Get(ctx.Request.Context(), uowFactory, user.Base.ID, user.Email)
+	totpKey, err := r.totpService.Get(uowFactory, user.Base.ID, user.Email)
 	if err != nil {
 		if rErr := uowFactory.Rollback(); rErr != nil {
 			presenter.NewResponse(ctx, r.trans, StatusCodeMapping).Error(rErr).Echo()

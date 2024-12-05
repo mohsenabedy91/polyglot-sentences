@@ -40,7 +40,7 @@ func TestJWTService_GenerateToken(t *testing.T) {
 		wg.Add(1)
 
 		key := fmt.Sprintf("%s:%s", constant.RedisAuthTokenPrefix, expectedJTI)
-		mockCache.On("SetTokenState", mock.Anything, key, "", 24*time.Hour).
+		mockCache.On("Set", mock.Anything, key, "", 24*time.Hour).
 			Run(func(args mock.Arguments) {
 				defer wg.Done()
 			}).
@@ -106,7 +106,7 @@ func TestJWTService_LogoutToken(t *testing.T) {
 	t.Run("LogoutToken success", func(t *testing.T) {
 		mockCache := new(authrepository.MockAuthCache)
 
-		mockCache.On("SetTokenState", mock.Anything, key, constant.LogoutRedisValue, mock.Anything).Return(nil)
+		mockCache.On("Set", mock.Anything, key, constant.LogoutRedisValue, mock.Anything).Return(nil)
 
 		service := authservice.New(mockLogger, conf, mockCache, jtiGenerator, nil)
 		err := service.LogoutToken(ctx, expectedJTI, exp.Unix())
@@ -119,7 +119,7 @@ func TestJWTService_LogoutToken(t *testing.T) {
 	t.Run("LogoutToken failure cache error", func(t *testing.T) {
 		mockCache := new(authrepository.MockAuthCache)
 
-		mockCache.On("SetTokenState", mock.Anything, key, constant.LogoutRedisValue, mock.Anything).Return(serviceerror.NewServerError())
+		mockCache.On("Set", mock.Anything, key, constant.LogoutRedisValue, mock.Anything).Return(serviceerror.NewServerError())
 
 		service := authservice.New(mockLogger, conf, mockCache, jtiGenerator, nil)
 		err := service.LogoutToken(ctx, expectedJTI, exp.Unix())

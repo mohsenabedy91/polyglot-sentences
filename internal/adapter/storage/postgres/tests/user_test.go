@@ -280,7 +280,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetByEmail_RecordNotFound()
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
 	fetchedUser, err := repo.GetByEmail("notfound.email@example.com")
 
-	require.NoError(r.T(), err)
+	require.Equal(r.T(), serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 	require.Nil(r.T(), fetchedUser)
 
 	mockLogger.AssertExpectations(r.T())
@@ -746,7 +746,7 @@ func (r *UserRepositoryTestSuite) TestUserRepository_GetTOTPSecret_RecordNotFoun
 	repo := userrepository.NewUserRepository(mockLogger, r.GetTx())
 	fetchedUser, err := repo.GetTOTPSecret(100_000)
 
-	require.NoError(r.T(), err)
+	require.Equal(r.T(), serviceerror.RecordNotFound, err.(*serviceerror.ServiceError).GetErrorMessage())
 	require.Nil(r.T(), fetchedUser)
 
 	mockLogger.AssertExpectations(r.T())

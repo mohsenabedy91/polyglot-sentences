@@ -83,7 +83,7 @@ func (r TOTPService) Enable(ctx context.Context, uow port.UserUnitOfWork, userID
 	return nil
 }
 
-func (r TOTPService) Disable(ctx context.Context, uow port.UserUnitOfWork, userID uint64, code string) error {
+func (r TOTPService) Disable(uow port.UserUnitOfWork, userID uint64, code string) error {
 	encryptedSecret, err := uow.UserRepository().GetTOTPSecret(userID)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (r TOTPService) Disable(ctx context.Context, uow port.UserUnitOfWork, userI
 	return nil
 }
 
-func (r TOTPService) Get(ctx context.Context, uow port.UserUnitOfWork, userID uint64, email string) (*domain.TOTPKey, error) {
+func (r TOTPService) Get(uow port.UserUnitOfWork, userID uint64, email string) (*domain.TOTPKey, error) {
 	encryptedSecret, err := uow.UserRepository().GetTOTPSecret(userID)
 	if err != nil {
 		return nil, err

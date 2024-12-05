@@ -61,7 +61,7 @@ func (r RoleCache) Get(ctx context.Context, key string) (*domain.RoleKeyType, er
 		}
 		if errors.Is(err, redis.Nil) {
 			r.log.Warn(logger.Cache, logger.RedisGet, fmt.Sprintf("Warn Get value: %v", err), extra)
-			return nil, nil
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
 
 		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), extra)

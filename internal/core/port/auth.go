@@ -28,6 +28,6 @@ type UserClient interface {
 }
 
 type AuthCache interface {
-	SetTokenState(ctx context.Context, key string, value string, expiration time.Duration) error
-	GetTokenState(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value string, expiration time.Duration) error
+	Get(ctx context.Context, key string) (string, error)
 }

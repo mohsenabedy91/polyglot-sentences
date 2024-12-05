@@ -239,7 +239,7 @@ func TestTOTPService_Disable(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 		mockRepo.On("UpdateTOTPSecret", userID, (*string)(nil)).Return(nil)
-		require.NoError(t, service.Disable(ctx, mockUow, userID, validCode), "expected no error on successful TOTP disable")
+		require.NoError(t, service.Disable(mockUow, userID, validCode), "expected no error on successful TOTP disable")
 
 		mockUow.AssertExpectations(t)
 		mockRepo.AssertExpectations(t)
@@ -257,7 +257,7 @@ func TestTOTPService_Disable(t *testing.T) {
 		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), serviceerror.NewServerError())
 
 		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
-		err := service.Disable(ctx, mockUow, userID, validCode)
+		err := service.Disable(mockUow, userID, validCode)
 		require.Error(t, err, "expected an error due to repository GetTOTPSecret failure")
 		require.Equal(t, serviceerror.ServerError, err.(*serviceerror.ServiceError).GetErrorMessage())
 
@@ -276,7 +276,7 @@ func TestTOTPService_Disable(t *testing.T) {
 		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), nil)
 
 		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
-		err := service.Disable(ctx, mockUow, userID, validCode)
+		err := service.Disable(mockUow, userID, validCode)
 		require.Error(t, err, "expected an error due to TOTP not being enrolled")
 		require.Equal(t, serviceerror.TOTPNotEnrolled, err.(*serviceerror.ServiceError).GetErrorMessage())
 
@@ -300,7 +300,7 @@ func TestTOTPService_Disable(t *testing.T) {
 		invalidCode := "654321"
 		mockLogger.On("Warn", logger.TOTP, logger.VerifyTOTP, fmt.Sprintf("The code «%s» is not valid ", invalidCode), mock.Anything).Return()
 
-		err := service.Disable(ctx, mockUow, userID, invalidCode)
+		err := service.Disable(mockUow, userID, invalidCode)
 		require.Error(t, err, "expected an error due to invalid TOTP code")
 		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
 		require.Equal(t, serviceerror.InvalidTOTPCode, err.(*serviceerror.ServiceError).GetErrorMessage())
@@ -324,7 +324,7 @@ func TestTOTPService_Disable(t *testing.T) {
 		mockRepo.On("UpdateTOTPSecret", userID, (*string)(nil)).Return(errors.New("repository error"))
 
 		service := userservice.NewTOTPService(mockLogger, conf, mockTOTPCache)
-		err := service.Disable(ctx, mockUow, userID, validCode)
+		err := service.Disable(mockUow, userID, validCode)
 		require.Error(t, err, "expected an error due to repository UpdateTOTPSecret failure")
 		require.Equal(t, "repository error", err.Error(), "expected specific repository error message")
 
@@ -396,7 +396,6 @@ func TestTOTPService_Get(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	userID := uint64(1)
 	email := "test@example.com"
 
@@ -415,7 +414,7 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 
-		totpKey, err := service.Get(ctx, mockUow, userID, email)
+		totpKey, err := service.Get(mockUow, userID, email)
 		require.NoError(t, err, "expected no error on successful Get")
 		require.NotNil(t, totpKey, "expected non-nil TOTP key")
 		require.NotEmpty(t, totpKey.Secret, "expected non-empty TOTP secret")
@@ -435,7 +434,7 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), errors.New("repository error"))
 
-		totpKey, err := service.Get(ctx, mockUow, userID, email)
+		totpKey, err := service.Get(mockUow, userID, email)
 		require.Error(t, err, "expected an error due to repository failure")
 		require.Nil(t, totpKey, "expected nil TOTP key on repository failure")
 		require.Equal(t, "repository error", err.Error(), "expected specific repository error message")
@@ -454,7 +453,7 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return((*string)(nil), nil)
 
-		totpKey, err := service.Get(ctx, mockUow, userID, email)
+		totpKey, err := service.Get(mockUow, userID, email)
 		require.Error(t, err, "expected an error due to TOTP not being enrolled")
 		require.Nil(t, totpKey, "expected nil TOTP key when not enrolled")
 		require.IsType(t, &serviceerror.ServiceError{}, err, "expected ServiceError type")
@@ -480,7 +479,7 @@ func TestTOTPService_Get(t *testing.T) {
 		mockUow.On("UserRepository").Return(mockRepo)
 		mockRepo.On("GetTOTPSecret", userID).Return(&encryptedSecret, nil)
 
-		totpKey, err := service.Get(ctx, mockUow, userID, email)
+		totpKey, err := service.Get(mockUow, userID, email)
 		require.Error(t, err, "expected an error due to base32 decoding failure")
 		require.Nil(t, totpKey, "expected nil TOTP key on base32 decoding failure")
 
@@ -506,7 +505,7 @@ func TestTOTPService_Get(t *testing.T) {
 		invalidConf.App.Name = ""
 
 		service := userservice.NewTOTPService(mockLogger, invalidConf, nil)
-		totpKey, err := service.Get(ctx, mockUow, userID, email)
+		totpKey, err := service.Get(mockUow, userID, email)
 		require.Error(t, err, "expected an error due to TOTP key generation failure")
 		require.Nil(t, totpKey, "expected nil TOTP key on generation failure")
 

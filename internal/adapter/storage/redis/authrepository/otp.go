@@ -58,7 +58,7 @@ func (r OTPCache) Get(ctx context.Context, key string) (*domain.OTP, error) {
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			r.log.Warn(logger.Cache, logger.RedisGet, fmt.Sprintf("Warn Get value: %v", err), nil)
-			return nil, nil
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
 
 		r.log.Error(logger.Cache, logger.RedisGet, fmt.Sprintf("Error Get value: %v", err), nil)

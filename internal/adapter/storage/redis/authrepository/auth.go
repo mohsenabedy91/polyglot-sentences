@@ -25,7 +25,7 @@ func NewAuthCache(log logger.Logger, conf config.Redis, driver *redis.Client) *A
 	}
 }
 
-func (r AuthCache) SetTokenState(ctx context.Context, key string, value string, expiration time.Duration) error {
+func (r AuthCache) Set(ctx context.Context, key string, value string, expiration time.Duration) error {
 	key = fmt.Sprintf("%s:%s", r.conf.Prefix, key)
 
 	extra := map[logger.ExtraKey]interface{}{
@@ -41,7 +41,7 @@ func (r AuthCache) SetTokenState(ctx context.Context, key string, value string, 
 	return nil
 }
 
-func (r AuthCache) GetTokenState(ctx context.Context, key string) (string, error) {
+func (r AuthCache) Get(ctx context.Context, key string) (string, error) {
 	key = fmt.Sprintf("%s:%s", r.conf.Prefix, key)
 
 	result, err := r.client.WithContext(ctx).Get(key).Result()

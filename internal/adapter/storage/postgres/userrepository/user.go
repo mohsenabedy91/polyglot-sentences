@@ -157,7 +157,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 			metrics.DbCall.WithLabelValues("users", "GetByEmail", "Success").Inc()
 
 			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return nil, nil
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
 		metrics.DbCall.WithLabelValues("users", "GetByEmail", "Failed").Inc()
 
@@ -357,7 +357,7 @@ func (r *UserRepository) GetTOTPSecret(id uint64) (*string, error) {
 			metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Success").Inc()
 
 			r.log.Warn(logger.Database, logger.DatabaseSelect, err.Error(), nil)
-			return nil, nil
+			return nil, serviceerror.New(serviceerror.RecordNotFound)
 		}
 		metrics.DbCall.WithLabelValues("users", "GetTOTPSecret", "Failed").Inc()
 
