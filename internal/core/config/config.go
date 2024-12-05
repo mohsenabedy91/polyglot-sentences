@@ -136,8 +136,10 @@ type Redis struct {
 }
 
 type Jwt struct {
-	AccessTokenSecret    string
-	AccessTokenExpireDay time.Duration
+	AccessTokenSecret      string
+	AccessTokenExpireDay   time.Duration
+	FlowTokenLength        int
+	FlowTokenExpireMinutes time.Duration
 }
 
 type Password struct {
@@ -308,6 +310,8 @@ func (r *Config) LoadConfig(envPath ...string) (Config, error) {
 	var jwt Jwt
 	jwt.AccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwt.AccessTokenExpireDay = time.Duration(getIntEnv("JWT_ACCESS_TOKEN_EXPIRE_DAY", 7))
+	jwt.FlowTokenLength = getIntEnv("JWT_FLOW_TOKEN_LENGTH", 64)
+	jwt.FlowTokenExpireMinutes = time.Duration(getIntEnv("JWT_FLOW_TOKEN_EXPIRE_MINUTES", 10))
 
 	var password Password
 	password.BcryptCost = getIntEnv("PASSWORD_BCRYPT_COST", 10)
