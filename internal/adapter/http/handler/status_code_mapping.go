@@ -27,8 +27,10 @@ var StatusCodeMapping = map[serviceerror.ErrorMessage]int{
 	serviceerror.InvalidOTP: http.StatusBadRequest,
 	serviceerror.OTPExpired: http.StatusUnauthorized,
 	// Token
-	serviceerror.InvalidToken: http.StatusUnauthorized,
-	serviceerror.TokenExpired: http.StatusUnauthorized,
+	serviceerror.FlowTokenExpired: http.StatusUnauthorized,
+	serviceerror.InvalidFlowToken: http.StatusBadRequest,
+	serviceerror.InvalidToken:     http.StatusUnauthorized,
+	serviceerror.TokenExpired:     http.StatusUnauthorized,
 	// Validation
 	serviceerror.InvalidRequestBody: http.StatusBadRequest,
 	// Role

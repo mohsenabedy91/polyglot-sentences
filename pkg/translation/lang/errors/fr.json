@@ -20,6 +20,8 @@
     "invalidOTP": "Le mot de passe à usage unique (OTP) que vous avez saisi est invalide. Veuillez réessayer ou demander un nouvel OTP.",
     "OTPExpired": "Le mot de passe à usage unique (OTP) a expiré. Veuillez demander un nouvel OTP pour continuer.",
 
+    "flowTokenExpired": "Le jeton de flux a expiré. Veuillez initier un nouveau flux.",
+    "invalidFlowToken": "Jeton de flux invalide. Veuillez fournir un jeton de flux valide.",
     "invalidToken": "Jeton invalide. Veuillez fournir un jeton d'authentification valide.",
     "tokenExpired": "Le jeton a expiré. Veuillez obtenir un nouveau jeton d'authentification.",
 

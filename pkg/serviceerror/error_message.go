@@ -27,8 +27,10 @@ var (
 	OTPExpired ErrorMessage = "errors.OTPExpired"
 
 	// Token
-	InvalidToken ErrorMessage = "errors.invalidToken"
-	TokenExpired ErrorMessage = "errors.tokenExpired"
+	FlowTokenExpired ErrorMessage = "errors.flowTokenExpired"
+	InvalidFlowToken ErrorMessage = "errors.invalidFlowToken"
+	InvalidToken     ErrorMessage = "errors.invalidToken"
+	TokenExpired     ErrorMessage = "errors.tokenExpired"
 
 	// Validation
 	InvalidRequestBody ErrorMessage = "errors.invalidRequestBody"

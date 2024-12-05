@@ -20,6 +20,8 @@
     "invalidOTP": "The One-Time Password (OTP) you entered is invalid. Please try again or request a new OTP.",
     "OTPExpired": "The One-Time Password (OTP) has expired. Please request a new OTP to continue.",
 
+    "flowTokenExpired": "The flow token has expired. Please initiate a new flow.",
+    "invalidFlowToken": "Invalid flow token. Please provide a valid flow token.",
     "invalidToken": "Invalid token. Please provide a valid authentication token.",
     "tokenExpired": "The token has expired. Please obtain a new authentication token.",
 
